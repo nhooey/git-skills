@@ -1,0 +1,5 @@
+# Nix build output symlinks
+/result
+/result-*
+/skills/*/result
+/skills/*/result-*

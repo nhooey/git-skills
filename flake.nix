@@ -1,5 +1,5 @@
 {
-  description = "git: Claude Code skill for opinionated Git hygiene (commit messages, history cleanliness, force-push safety, branch naming, post-merge cleanup, .gitignore discipline)";
+  description = "skills-git: Claude Code skills marketplace as a Nix flake (git hygiene, GitHub repo settings)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -7,11 +7,9 @@
     flake-skills.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs =
-    { nixpkgs, flake-skills, ... }:
-    flake-skills.lib.mkSkillFlake {
+  outputs = { nixpkgs, flake-skills, ... }@inputs:
+    flake-skills.lib.mkAllSkillsFlake {
       inherit nixpkgs;
-      skillName = "git";
-      src = ./.;
+      skillsDir = ./skills;
     };
 }
