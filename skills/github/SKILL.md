@@ -403,10 +403,16 @@ cleanups, all default-checked:
 - **Delete locally** — `git branch -d <branch>` (use `-d`; the
   merged-only safety check is the point).
 - **Delete on remote** — `git push origin --delete <branch>`.
-  **Skip the option entirely** if rule 2's
-  `delete_branch_on_merge` already removed it; check first with
-  `git ls-remote --exit-code origin <branch>`. A no-op question
-  is noise.
+  Pre-check with `git ls-remote --exit-code origin <branch>`
+  and skip the option entirely if the branch is already gone.
+  But rule 2's `delete_branch_on_merge` is asynchronous — the
+  pre-check can pass and the branch can vanish in the window
+  between the prompt and the user's pick — so the actual
+  `git push --delete` must treat `error: unable to delete
+  '<branch>': remote ref does not exist` as success, not
+  failure. The desired end-state has been reached, just by
+  another mechanism. A no-op question is noise; a phantom
+  failure on the cleanup is worse.
 - **Rebase local default** — `git checkout <default> && git pull
   --rebase origin <default>`. Bail loudly on a dirty tree.
 
