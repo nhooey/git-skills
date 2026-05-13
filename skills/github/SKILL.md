@@ -197,6 +197,65 @@ If the repo has been unprotected for a while, expect cleanup:
    wall. Mention rule 1 in the PR/issue you open to announce the
    change.
 
+## 5. `gh` CLI gotchas when landing PRs
+
+Three failure modes worth knowing before they cost a debugging
+detour. All observed against `gh` 2.85+ and the current GitHub REST
+API.
+
+**`gh pr edit` exits 1 on a Projects-classic deprecation warning,
+without applying the edit.** Symptom:
+
+```
+$ gh pr edit 3 --body-file body.md
+GraphQL: Projects (classic) is being deprecated in favor of the new
+Projects experience, see: https://github.blog/changelog/2024-05-23-...
+$ echo $?
+1
+```
+
+The body is *not* updated despite no other error. The warning fires
+because `gh pr edit` queries the deprecated
+`repository.pullRequest.projectCards` field in its standard request
+set. Workaround: skip `gh pr edit` and PATCH directly through the
+REST API, which doesn't touch Projects classic:
+
+```bash
+gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
+  --field body=@body.md
+```
+
+`--field body=@path` (note the `@`) reads the body from a file —
+necessary for multi-line markdown.
+
+**`gh pr view --json merged` is not a valid field.** The accessor is
+`state` (`OPEN` / `MERGED` / `CLOSED`), not `merged`. A merge-watcher
+needs:
+
+```bash
+gh pr view <num> --json state --jq .state
+# emits one of: OPEN, MERGED, CLOSED
+```
+
+`mergedAt` (non-null when merged) is also valid. Don't try `merged`
+— it errors with `Unknown JSON field: "merged"` and lists every
+available field, which is a lot of noise to scroll past when
+debugging a watcher script.
+
+**GitHub blocks self-approval.** Even with admin rights you can't
+`gh pr review --approve` a PR you authored — the API rejects with
+`Review Can not approve your own pull request`. For solo workflows
+(stacked PRs you push and merge yourself), skip approval and merge
+directly:
+
+```bash
+gh pr merge <num> --merge --delete-branch
+```
+
+The `--delete-branch` flag deletes both the remote branch and the
+local tracking ref in one shot — useful as a one-off if rule 2's
+repo-level `delete_branch_on_merge` setting isn't (yet) enabled.
+
 ## When to apply
 
 - Creating a new GitHub repo → rules 1, 2, 3 immediately.
