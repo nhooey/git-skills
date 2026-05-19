@@ -90,6 +90,11 @@ If the user wants the structured template (e.g., their team
 requires Summary/Test-plan blocks), they will say so. Until then,
 write what rule 1 would write.
 
+This standard doesn't stop applying once the PR is open. If you
+later amend the commit behind an open PR, the PR title and body do
+not follow automatically — bring them back to these standards by
+hand. See rule 5a.
+
 ## 2. Keep historical / diachronic and migration-related info OUT of the code
 
 Resist embedding sentences like "added in v3.2", "TODO: remove after Q4
@@ -183,59 +188,76 @@ Once a commit has been pushed and others may have pulled it, this rule
 flips — see rule 4 about why rewriting pushed history is a coordination
 problem.
 
-## 6. Long branch names with memorable, autocomplete-friendly prefixes
+### 5a. Re-sync the PR title and body after amending
 
-Favour branch names like `nhooey/rate-limit-cache-eviction` over short
-cryptic names (`fix-rl`, `wip`) **and** over sterile dated or numeric
-names (`nhooey/2026-04-task-1234`, `tmp-3`, `feature-7`). Two reasons:
+Amending (or rebasing) rewrites the commit message, but it does **not**
+update an already-open PR. GitHub derives the PR title and body from the
+commit message exactly once, at PR-creation time:
 
-- **Tab completion stays smooth.** A unique prefix (your username, a
-  topic word, a project codename) means typing `git checkout nh<TAB>`
-  narrows fast. Short generic names collide and you end up scrolling
-  completion menus.
-- **`git branch` listings are self-documenting.** A list of 30 branches
-  with descriptive names is browsable. A list of 30 branches named
-  `fix`, `wip`, `tmp` is not — and a list named `nhooey/2026-04-1`,
-  `nhooey/2026-04-2`, `nhooey/2026-04-3` is almost as bad: you can't
-  read it without cross-referencing dates or tickets.
+- **Single-commit branch:** title from the commit subject, body from
+  the commit message body.
+- **Multi-commit branch:** title from the branch name, body left empty.
 
-### Pick prefixes a human will remember a week later
+After that point the PR title and body are independent text. A later
+`git commit --amend` + force-push refreshes the diff and the commits
+tab but leaves the title and description frozen at their original
+wording. If you reworded the commit, the PR page now misrepresents what
+it ships.
 
-The disambiguator should carry semantic weight, not just numerical
-uniqueness. **The branch name is a hook your memory hangs on**, so
-make it interesting and meaningful. Good prefixes:
+So whenever you amend a commit on a branch that already has an open PR,
+also bring the PR into line with what GitHub *would* derive from the
+amended message on a fresh PR:
 
-- **Topic words from the change itself** — `cache-eviction`,
-  `auth-rewrite`, `dark-mode`, `flaky-login-test`. By the time
-  you're triaging stale branches, you remember the *topic*, not
-  the date.
-- **Project codenames** when the team uses them — `aurora`,
-  `falcon`, `kraken`. These are memorable by design.
-- **Your handle** for shared repos so collaborators can filter
-  your branches — `nhooey/...`.
-- **Verbs that describe intent** — `fix-`, `add-`, `refactor-`,
-  `try-` — when paired with a topic word.
+```
+gh pr edit <number> --title "<new subject>" --body "<new body>"
+```
 
-**Avoid** out-of-context dates and numbers as prefixes:
+Hold the re-synced title and body to rule 1 and rule 1a — they are a
+commit message on a different rendering surface, so the same
+subject / blank-line / why-not-what discipline applies.
 
-- **Dates** (`2026-04-...`, `q2-...`): the year/month is rarely
-  what you remember about a branch, and dates push the meaningful
-  topic word later in the name where autocomplete reaches it last.
-  If a branch needs a "when," `git log` already records that.
-- **Bare ticket numbers** (`task-1234`, `JIRA-1234-...`): only OK
-  if the team's culture genuinely thinks in tickets *and* you're
-  still going to follow them with a topic word
-  (`JIRA-1234-streaming-api`, never `JIRA-1234`).
-- **Counter suffixes** (`tmp-3`, `feature-7`, `wip2`): the number
-  disambiguates without describing. You're labelling without
-  naming.
+## 6. Branch names: long, descriptive, dash-separated, autocomplete-friendly
 
-The rough shape: `<who-or-what-prefix>/<topic-description>`, where
-the topic description is the part you'd say out loud to a
-colleague ("can you rebase the cache-eviction branch?"). Aim for
-the name to be specific enough that you can read the branch list
-in 6 months and remember what each one was — without consulting a
-calendar or ticket tracker.
+Favour branch names like `rate-limit-cache-eviction` over short
+cryptic ones (`fix-rl`, `wip`) or sterile dated and numeric ones
+(`2026-04-task-1234`, `tmp-3`, `feature-7`). Four properties to
+hold the name to:
+
+- **Long enough to read.** Aim for 3-6 words. Weeks-old branch
+  listings are browsable when the names are sentences; opaque
+  when they're abbreviations.
+- **Descriptive of the change.** The topic word is what your
+  memory hangs on by the time you're triaging stale branches —
+  not the date, not the ticket number, not a counter.
+- **Dash-separated** (`rate-limit-cache-eviction`, not
+  `rate_limit_cache_eviction` or `RateLimitCacheEviction`).
+  That's what git tooling, autocomplete, and URL slugs expect,
+  and what reads cleanly in `git log --first-parent`.
+- **Autocomplete-friendly against the branches you already
+  have.** Before naming, glance at `git branch -a`: pick a
+  leading word that disambiguates from the current set in 1-2
+  characters. If half the open branches start with `fix-`, your
+  next `fix-...` needs most of its name typed before `<TAB>`
+  resolves; a more specific topic word at the front fixes that.
+
+**Avoid:**
+
+- **Dates as the leading element** (`2026-04-...`, `q2-...`).
+  The year/month is rarely what you remember about a branch,
+  and a date prefix pushes the meaningful topic word past where
+  autocomplete reaches it first. `git log` already records when.
+- **Bare ticket numbers** (`task-1234`, `JIRA-1234`). Only
+  acceptable followed by a topic word
+  (`JIRA-1234-streaming-api`), never alone.
+- **Counter suffixes** (`tmp-3`, `feature-7`, `wip2`). The
+  number disambiguates without describing — you're labelling
+  without naming.
+
+Read your branch list before opening the PR. If a name doesn't
+tell you what the work was in one glance six months later, it's
+too short or too generic — rename before the PR lands, because
+the name then lives forever in `git log --first-parent` as the
+merge commit subject.
 
 ## 7. Delete merged branches; flag stragglers
 
@@ -487,7 +509,9 @@ directly to main. Subcases:
 - *On a feature branch, with new commits:* push the branch, then
   **ask the user whether to open a PR** (`gh pr create`). If a PR
   for the branch already exists (`gh pr list --head <branch>`), just
-  push — the existing PR updates automatically.
+  push — the existing PR's diff updates automatically, but its title
+  and body do not. If you amended or reworded the commit, re-sync
+  them per rule 5a.
 
 **Mode 3 — Ask each time.**
 The user wants a per-push prompt. Before any push, ask: "Push to main
@@ -557,7 +581,8 @@ user is on a feature branch):**
 >
 > - **Push branch + open PR:** Push the branch and, if no PR is
 >   open for it yet, open one with `gh pr create`. If a PR already
->   exists, just push (the existing PR updates).
+>   exists, just push — the diff updates, but re-sync the title and
+>   body per rule 5a if you amended the commit message.
 > - **Push branch only:** Just push the branch. Don't auto-open a
 >   PR — leave that to the user. (Useful if the user prefers to
 >   write PR descriptions themselves or uses a non-`gh` flow.)
@@ -588,6 +613,7 @@ the repo's norms, and the cheapest way to know is to ask once.
 - About to add a "historical note" comment → rule 2
 - About to force-push → rule 4
 - Made a follow-up change to unpushed work → rule 5
+- Amended/reworded a commit on a branch with an open PR → rules 5a, 1a
 - About to create a new branch → rule 6
 - A PR just merged, or `git branch --merged` shows stragglers → rule 7
 - About to edit `.gitignore`, or reviewing one → rule 8

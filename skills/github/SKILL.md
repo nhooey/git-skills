@@ -1,12 +1,18 @@
 ---
 name: github
 description: |
-  Opinionated GitHub repository hygiene: protect the default branch
-  against direct pushes / force-pushes / deletion, require pull requests
-  for changes, and enable auto-deletion of head branches after merge.
-  Apply when creating a new GitHub repository, auditing an existing one,
-  or noticing that the default branch is unprotected or that merged
-  branches are piling up on the remote.
+  Opinionated GitHub repository hygiene plus the agent pull-request
+  lifecycle. Apply these rules for ANY GitHub operation — anything
+  that reaches a GitHub server: a push, force-push, or fetch against
+  a GitHub remote; opening, amending, re-titling, reviewing, or
+  merging a pull request; creating or auditing a repo. They cover
+  protecting the default branch (block direct/force pushes and
+  deletion, require PRs), auto-deleting merged head branches,
+  keeping every PR a thin wrapper over its single commit (title =
+  commit subject, body = unwrapped commit body, re-synced after each
+  amend), surfacing PR URLs with live status, and watching PR state.
+  Companion to the `git` skill — load both whenever a local git
+  action will talk to a GitHub remote.
 allowed-tools:
   - Bash
   - Read
@@ -456,6 +462,18 @@ already an order of magnitude past any realistic paragraph.
 limit at all. **Avoid `gh pr create --fill`** for multi-paragraph
 bodies — it passes the message through verbatim, hard wraps and
 all.
+
+**The unwrap is not optional just because you hand-build the
+payload.** `--fill` is the obvious trap, but constructing the body
+yourself reintroduces the same one: a heredoc, a `jq -n --arg
+body "$(…)"`, or `gh api … --input -` with a JSON body all preserve
+every `\n` verbatim, so a 72-col commit body goes in jagged exactly
+as if you'd used `--fill`. The reflow (`fmt -w 2500`, `par`, or the
+`awk` one-liner) must run on the body text *before* it is captured
+into the variable / heredoc / JSON — there is no rendering surface
+between `jq --arg` and GitHub that will re-fill it for you. If you
+reach for `jq -n --arg body` to "be safe with quoting," you've
+picked the one route that quietly keeps the wrap.
 
 **Re-sync the PR after any commit amend.** Force-pushing an
 amended commit does *not* refresh the PR's title or description
