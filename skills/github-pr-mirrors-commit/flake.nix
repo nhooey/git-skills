@@ -1,5 +1,5 @@
 {
-  description = "github: Claude Code skill for GitHub repository hygiene (protect the default branch, auto-delete merged branches, sensible merge settings)";
+  description = "github-pr-mirrors-commit: Claude Code skill — one commit per PR; title = subject, body = body (unwrapped via fmt -w 2500); re-sync title/body after every amend";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github";
+      skillName = "github-pr-mirrors-commit";
       src = ./.;
     };
 }
