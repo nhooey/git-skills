@@ -21,7 +21,7 @@
 
       packs = {
         # All 11 git-* skills.
-        git-pack-all = [
+        agent-skills-git-all = [
           "git-branch-naming"
           "git-clean-local-history"
           "git-cleanup-merged-branches"
@@ -38,7 +38,7 @@
         # Narrow subset: universally-good git rules with broad team appeal.
         # Excludes opinionated style (branch-naming, CC) and interactive
         # workflow (push-workflow-mode, cleanup-merged-branches).
-        git-pack-minimal = [
+        agent-skills-git-minimal = [
           "git-commit-message-format"
           "git-push-force-safely"
           "git-gitignore-discipline"
@@ -46,7 +46,7 @@
         ];
 
         # All 9 github-* skills (includes the agent-* trio).
-        github-pack-all = [
+        agent-skills-github-all = [
           "github-changeset-prompt"
           "github-pr-status-line"
           "github-pr-watcher"
@@ -59,7 +59,7 @@
         ];
 
         # One-time repo configuration: branch protection, auto-delete, owners.
-        github-pack-setup = [
+        agent-skills-github-setup = [
           "github-auto-delete-merged-branches"
           "github-codeowners"
           "github-protect-default-branch"

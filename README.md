@@ -41,7 +41,7 @@ nix run 'github:nhooey/skills-git?dir=skills/git-push-force-safely#install'   # 
 # Or build a derivation containing the skill files (no install side-effect)
 nix build github:nhooey/skills-git#all                  # every skill, symlinkJoined
 nix build github:nhooey/skills-git#git-push-force-safely # one skill
-nix build github:nhooey/skills-git#git-pack-minimal     # a curated subset (see below)
+nix build github:nhooey/skills-git#agent-skills-git-minimal     # a curated subset (see below)
 ```
 
 The installer copies into `$CLAUDE_SKILLS_DIR` if set, otherwise `~/.claude/skills/`. Existing skill directories with the same name are replaced.
@@ -54,15 +54,15 @@ Curated subsets exposed as flake packages. Build a pack the same way as a single
 
 | Pack | Contents | Why |
 | --- | --- | --- |
-| `git-pack-minimal` | `git-commit-message-format`, `git-push-force-safely`, `git-gitignore-discipline`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
-| `git-pack-all` | All 11 `git-*` skills | Everything local. |
-| `github-pack-setup` | `github-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
-| `github-pack-all` | All 9 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-git-minimal` | `git-commit-message-format`, `git-push-force-safely`, `git-gitignore-discipline`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
+| `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
+| `agent-skills-github-setup` | `github-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
+| `agent-skills-github-all` | All 9 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
 | `agent-pack` | `github-pr-watcher`, `github-pr-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
-nix build github:nhooey/skills-git#git-pack-minimal
+nix build github:nhooey/skills-git#agent-skills-git-minimal
 nix run github:nhooey/skills-git#agent-pack    # (no install, just build)
 ```
 
