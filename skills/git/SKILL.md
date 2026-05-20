@@ -38,9 +38,13 @@ an explicit request before acting.
 
 ## 1. Commit log messages
 
-- **First line under 72 characters.** GitHub, `git log --oneline`, and most
-  tools truncate or wrap past that. Aim for ~50, hard cap at 72. Use the
-  imperative mood ("Add X", not "Added X").
+- **First line under 72 characters.** Aim for ~50, hard cap at 72 — the
+  50/72 convention from [Tim Pope's *A Note About Git Commit Messages*
+  (2008)](https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html),
+  restated by [Chris Beams' *How to Write a Git Commit Message*](https://cbea.ms/git-commit/)
+  and *Pro Git* §5.2. GitHub, `git log --oneline`, and most tools truncate
+  or wrap past 72 (see the `github` skill rule 7 for the empirical GitHub
+  truncation). Use the imperative mood ("Add X", not "Added X").
 - **Blank line after the first line.** Many tools rely on this to separate
   subject from body. No blank line means the body gets glued to the subject.
 - **Wrap body lines at 72 characters.** `git log` indents the body by 4
@@ -48,6 +52,14 @@ an explicit request before acting.
 - **Use the body to explain why, not what.** The diff already shows what
   changed. Spend the body on motivation, alternatives considered, landmines
   hit, and links to issues or discussions.
+- **Conventional Commits is recommended when applicable.** The
+  `type(scope): subject` format (`docs`, `feat`, `fix`, `refactor`,
+  `chore`, …) compresses meta into the subject, signals intent at a
+  glance, and plays well with changelog generators. When a repo's
+  `git log` already follows a different convention, match it instead —
+  consistency within a repo beats matching an external standard. The
+  `type(scope):` prefix eats into the ~50-char budget; tighten the
+  summary side rather than allowing the subject past 72.
 
 When writing a commit, draft the subject first, then add a blank line, then
 write the body wrapped at 72. If a subject feels longer than 72, the commit
