@@ -34,8 +34,17 @@ time a commit comes up.
   restated by [Chris Beams' *How to Write a Git Commit Message*](https://cbea.ms/git-commit/)
   and *Pro Git* §5.2. GitHub, `git log --oneline`, and most tools
   truncate or wrap past 72 (see `github-pr-mirrors-commit` for the
-  empirical GitHub truncation). Use the imperative mood ("Add X", not
-  "Added X").
+  empirical GitHub truncation).
+- **Use the imperative mood in the subject.** "Add X", not "Added X" or
+  "Adds X". Sanity check: read "If applied, this commit will *<your
+  subject>*" — if it parses as a coherent instruction, the mood is right
+  (Beams).
+- **Capitalize the subject.** Treat it as a title, not a sentence
+  fragment. Matches how `git log --oneline` displays a column of
+  subjects.
+- **No trailing period on the subject.** It's a title, not a sentence —
+  the period wastes a character against the 50-char target and reads as
+  noise in `git log --oneline`.
 - **Blank line after the first line.** Many tools rely on this to
   separate subject from body. No blank line means the body gets glued to
   the subject.
