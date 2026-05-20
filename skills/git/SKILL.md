@@ -107,6 +107,70 @@ later amend the commit behind an open PR, the PR title and body do
 not follow automatically — bring them back to these standards by
 hand. See rule 5a.
 
+### 1b. Inspect, stage, and review before writing the message
+
+Before turning a working-tree change into a commit, walk three small
+steps. None of them takes more than a few seconds; together they catch
+the failure modes that show up later as "why is this in my diff?",
+"why did I commit my `.env`?", or "this commit does three things at
+once."
+
+**1. Inspect before staging.**
+
+```bash
+git status         # what changed
+git diff           # what the changes are
+git diff --stat    # if the diff is too large to scan inline
+```
+
+Don't reach for `git add` before reading these. Surprises in `git diff`
+— a stray `console.log`, an editor's auto-format-on-save, a secret
+that crept in — are cheap to undo before staging and expensive to undo
+after committing.
+
+**2. Stage only what belongs in this commit.**
+
+When the changes are clean and all belong together, `git add <paths>`
+is fine. When the working tree mixes concerns (refactor + feature,
+formatting + logic, tests + prod code), stage by hunks instead:
+
+```bash
+git add -p                   # iterate hunk-by-hunk, accept/reject each
+git restore --staged -p      # unstage by hunk
+git restore --staged <path>  # unstage a file
+```
+
+The 1-2-sentence test (step 3) is the forcing function for whether to
+split: if you can't describe the staged change in 1-2 sentences (what
++ why), the commit is mixed; unstage some hunks and write a separate
+commit for them.
+
+**3. Review what will actually be committed.**
+
+```bash
+git diff --cached    # the diff that's about to be committed
+```
+
+Scan for three failure modes that often slip past `git diff` in step 1
+but become embarrassing after the push:
+
+- **Secrets / tokens.** Hard-coded API keys, `.env` files, `id_rsa`,
+  anything with `password=` or `token=` followed by a long random
+  string.
+- **Debug logging.** `console.log`, `print(...)`, `dbg!`,
+  commented-out experiments left over from local poking.
+- **Unrelated formatting churn.** A reformatter ran on save and
+  rewrote 200 lines you didn't intend to touch. Either separate the
+  reformat into its own commit (per step 2) or revert it.
+
+If the repo has a fast meaningful check (a typecheck on the staged
+files, a unit-test subset, a `lint --since=HEAD`), run it here too —
+cheaper to find a broken commit before it lands in history than after
+it does.
+
+If any of these surface a problem, fix and re-stage. Don't commit
+"and clean it up next time" — next time is harder.
+
 ## 2. Keep historical / diachronic and migration-related info OUT of the code
 
 Resist embedding sentences like "added in v3.2", "TODO: remove after Q4
@@ -622,6 +686,7 @@ the repo's norms, and the cheapest way to know is to ask once.
 ## When to apply
 
 - About to write a commit message → rules 1, 2, 3
+- About to stage and commit changes → rule 1b
 - About to add a "historical note" comment → rule 2
 - About to force-push → rule 4
 - Made a follow-up change to unpushed work → rule 5
