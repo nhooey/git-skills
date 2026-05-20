@@ -266,6 +266,47 @@ The `--delete-branch` flag deletes both the remote branch and the
 local tracking ref in one shot — useful as a one-off if rule 2's
 repo-level `delete_branch_on_merge` setting isn't (yet) enabled.
 
+**`POST /repos/{owner}/{repo}/branches/{branch}/rename` auto-closes
+open PRs whose head is that branch.** GitHub's docs imply head refs
+follow the rename; in practice they don't. Observed 2026-05-13 on
+`nhooey/skills-nix`: four `nhooey/2026-04-*` branches were renamed
+via `gh api -X POST .../rename`; the API succeeded, the branches
+were renamed, every open PR with the old head ref recorded a
+`head_ref_deleted` event and was auto-closed. The PR's `head.ref`
+field continued to show the old name. Recovery requires either
+reverting the rename or recreating the PRs against the new branch.
+
+Since GitHub does not permit changing a PR's `head_ref` after
+creation, the procedure for renaming a branch with an open PR is:
+
+```bash
+# 1. Capture the PR's metadata.
+gh pr view <num> --json title,body,baseRefName > /tmp/pr.json
+
+# 2. Rename locally and push the new name from the same tip.
+git branch -m <old> <new>
+git push -u origin <new>
+
+# 3. Open a new PR with the captured content.
+gh pr create --base "$(jq -r .baseRefName /tmp/pr.json)" \
+  --head <new> \
+  --title "$(jq -r .title /tmp/pr.json)" \
+  --body "$(jq -r .body /tmp/pr.json)"
+
+# 4. Comment-close the old PR pointing at the new one.
+gh pr comment <old-num> --body "Superseded by #<new-num> after \
+renaming the branch from \`<old>\` to \`<new>\`."
+gh pr close <old-num>
+
+# 5. Delete the old remote branch.
+git push origin --delete <old>
+```
+
+The PR number changes — that's unavoidable. Before running the
+rename API on any branch, run
+`gh pr list --state open --json headRefName,number` and stop if any
+open PR has that branch as its head.
+
 ## 6. After pushing to a PR branch, watch and react to state changes
 
 After pushing to a branch with an open (or imminent) PR, arm a
