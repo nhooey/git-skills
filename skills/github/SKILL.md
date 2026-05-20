@@ -483,6 +483,16 @@ commit is the durable record; the PR is the review surface. If
 you want a Summary or Test-plan section, put it in the commit
 body so both surfaces have it.
 
+**Subject length: GitHub truncates at ~72 chars.** GitHub itself
+doesn't publish a subject-length limit, but its UI clips the commit
+subject with `…` past ~72 chars across commit lists, the PR
+compare-view title, and notification subjects — see
+[community discussion #12450](https://github.com/orgs/community/discussions/12450).
+The `/git` rule 1 hard-cap at 72 derives from that empirical limit.
+If a Conventional Commits subject is bumping into the cap because
+of a long `type(scope):` prefix, tighten the summary side rather
+than the scope; the scope carries the load-bearing classification.
+
 **Unwrap hard-wrapped lines before opening.** Commit bodies are
 hard-wrapped at ~72 cols for `git log` readability, but GFM
 renders single newlines as hard breaks — so the PR description
