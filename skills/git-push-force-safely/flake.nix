@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-push-force-safely";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-branch-naming";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

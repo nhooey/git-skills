@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-push-workflow-mode";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

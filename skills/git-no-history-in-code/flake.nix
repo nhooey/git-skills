@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-no-history-in-code";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

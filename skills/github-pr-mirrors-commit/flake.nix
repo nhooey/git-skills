@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "github-pr-mirrors-commit";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

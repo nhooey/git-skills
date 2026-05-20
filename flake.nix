@@ -13,6 +13,7 @@
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
+        packagePrefix = "agent-skill-";
       };
 
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
@@ -80,7 +81,7 @@
         in
         pkgs.symlinkJoin {
           name = "skills-pack";
-          paths = builtins.map (n: base.packages.${system}."skill-${n}") skillNames;
+          paths = builtins.map (n: base.packages.${system}."agent-skill-${n}") skillNames;
         };
 
       packPackages = forSystems (

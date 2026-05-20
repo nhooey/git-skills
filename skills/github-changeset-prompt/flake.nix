@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "github-changeset-prompt";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

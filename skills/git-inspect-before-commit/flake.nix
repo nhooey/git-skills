@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-inspect-before-commit";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

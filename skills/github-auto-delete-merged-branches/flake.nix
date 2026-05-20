@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "github-auto-delete-merged-branches";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

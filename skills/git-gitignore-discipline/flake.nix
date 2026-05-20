@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-gitignore-discipline";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

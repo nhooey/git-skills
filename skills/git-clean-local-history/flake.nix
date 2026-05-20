@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-clean-local-history";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

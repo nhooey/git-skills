@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "github-gh-cli-gotchas";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

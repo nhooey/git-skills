@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-commit-message-format";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

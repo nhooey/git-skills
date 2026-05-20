@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "github-merge-commits-only";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

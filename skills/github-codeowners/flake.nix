@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "github-codeowners";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }

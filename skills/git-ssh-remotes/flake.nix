@@ -12,6 +12,7 @@
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
       skillName = "git-ssh-remotes";
+      packagePrefix = "agent-skill-";
       src = ./.;
     };
 }
