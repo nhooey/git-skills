@@ -191,6 +191,33 @@ Pick (a) by default; reach for (b) when the body genuinely needs
 structure (e.g., a refactor touching several files that benefits from
 headed sections).
 
+## Mark "computer words" and code segments for GFM
+
+GitHub renders the commit body through GFM on the PR page. Two markup
+conventions pay off whenever the body refers to code:
+
+- **Computer words in backticks.** File paths, binary / library /
+  module names, identifiers, env vars, flags, command names — wrap
+  each one in `backticks` so GFM renders monospace. Side benefits:
+  disambiguates identifiers that read as English in plain `git log`
+  ("install matter" vs. "install `matter`"), and shields against
+  Markdown's accidental interpretation of `_` or `*` inside the name.
+- **Code segments in fenced blocks with a language tag.** Triple
+  backticks plus a language hint (`bash`, `nix`, `python`, `json`,
+  etc.) yields syntax highlighting on the PR page; omitting the
+  language only gets a plain monospace box.
+
+  ````
+  ```bash
+  gh pr view 20 --json state,mergedAt
+  ```
+  ````
+
+`git log` shows the backticks and fences as plain characters either
+way, so this costs nothing on the terminal side. Treat it as part of
+commit-body craft, not PR-only polish — the PR is just the surface
+that happens to render it.
+
 ## When to apply
 
 - About to open a PR with `gh pr create`.
