@@ -543,9 +543,41 @@ gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
 in `title`. `%B` (uppercase) would double-print it. `-f` vs
 `-F`, and shell substitution vs `body=@path`: see rule 5.
 
-Caveat: `fmt` unwraps fenced and indented code blocks too. Rare
-in commit messages, but if the body has code, run `fmt` only on
-the prose.
+**Caveat: `fmt` reflows by paragraph and breaks on three GFM
+constructs.** `fmt -w 2500` joins all lines within a paragraph (text
+between blank lines) into one long line. That works for plain prose
+but breaks when the commit body uses GFM block structure:
+
+- **Fenced and indented code blocks** are unwrapped along with prose.
+- **`##` headings without a blank line below them** flow into the
+  next line — `## Changes\n- First bullet` becomes
+  `## Changes - First bullet`.
+- **Bullets with hanging-indent continuations** get split at the
+  indent change — `fmt` treats the 2-space-indented continuation as
+  a separate paragraph from the bullet's 0-indented `- ` start, so a
+  multi-line bullet renders as two short lines instead of one
+  flowing one.
+
+Two reliable workarounds:
+
+- **(a) Plain narrative prose in the commit body.** No headings, no
+  bullets. `fmt -w 2500` reflows it cleanly. Best for short /
+  focused commits.
+- **(b) GFM-shape from the start.** Blank line after every `##`
+  heading, each bullet on a single long line (no hard-wrap inside
+  the bullet), then *skip* `fmt` and pass the body through verbatim:
+  ```bash
+  gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
+    -f title="$(git log -1 --pretty=%s)" \
+    -f body="$(git log -1 --pretty=%b)"
+  ```
+  Costs slightly longer lines in `git log` (a 100-char bullet is
+  harmless; terminals wrap dynamically) but renders identically on
+  both surfaces.
+
+Pick (a) by default; reach for (b) when the body genuinely needs
+structure (e.g., a refactor touching several files that benefits
+from headed sections).
 
 ## 8. Surface PR URLs visibly when you create or refer to one
 
