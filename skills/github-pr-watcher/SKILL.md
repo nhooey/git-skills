@@ -186,7 +186,7 @@ Three cleanups, all default-checked:
 - **Rebase local default** — `git checkout <default> && git pull
   --rebase origin <default>`. Bail loudly on a dirty tree.
 
-`git-cleanup-merged-branches` covers the same cleanup from the local
+`git-hygiene-merged-branches` covers the same cleanup from the local
 side; this rule fires it at the right moment.
 
 ## When to apply

@@ -17,7 +17,7 @@ allowed-tools:
 When more than one person can merge to the default branch, define code
 owners so the right reviewer gets pulled into each PR automatically.
 Pairs with the `require_code_owner_review` flag in
-`github-protect-default-branch`'s ruleset.
+`github-hygiene-protect-default-branch`'s ruleset.
 
 ## How to load this skill
 
@@ -46,7 +46,7 @@ wins.
 ## Flip the ruleset flag
 
 Once `.github/CODEOWNERS` is in place, update the ruleset created by
-`github-protect-default-branch` so PRs require approval from a code
+`github-hygiene-protect-default-branch` so PRs require approval from a code
 owner of the changed paths:
 
 ```bash
@@ -61,5 +61,5 @@ gh api "repos/<owner>/<repo>/rulesets" --jq '.[] | select(.name=="protect-defaul
 
 - Onboarding a second contributor with merge rights.
 - Auditing an existing repo's review requirements.
-- After applying `github-protect-default-branch`, when you're ready
+- After applying `github-hygiene-protect-default-branch`, when you're ready
   to require code-owner review.
