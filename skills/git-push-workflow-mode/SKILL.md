@@ -78,7 +78,11 @@ Subcases:
 
 **Mode 3 — Ask each time.** The user wants a per-push prompt. Before
 any push, ask: "Push to main directly, or open a PR?" — with the
-current branch state baked into the question.
+current branch state baked into the question. Probe
+`gh pr list --head <branch> --state open` first so the question is
+informed: "Push to main, or push branch + (open PR | update PR #N)?"
+If a PR already exists and you amended the commit, re-sync title and
+body per `github-hygiene-pull-request-mirrors-commit`.
 
 ## What to ask, when
 
@@ -191,6 +195,17 @@ Also add a one-line index entry to the project's `MEMORY.md`:
 
 On every subsequent push in any future session, the memory loads
 automatically and this skill applies the saved mode without prompting.
+
+## Safety net
+
+The `pr-sync-check.sh` PostToolUse hook (configured in
+`~/.claude/settings.json`) probes for an open PR on every
+`git commit --amend` and `git push`, and emits a system reminder if
+HEAD's commit message has diverged from the PR's title or body. This
+catches amend-without-push and forgotten-PATCH cases that heuristic
+skill loading might miss. The hook is non-blocking — it nudges, it
+does not deny — but treat its reminder as authoritative and run the
+PATCH it suggests.
 
 ## Why this rule exists
 

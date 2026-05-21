@@ -154,6 +154,30 @@ gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
 `title`. `%B` (uppercase) would double-print it. `-f` vs `-F`, and
 shell substitution vs `body=@path`: see `github-gh-cli-gotchas`.
 
+## How to detect there's an open PR for the current branch
+
+The re-sync rule above assumes the agent already knows a PR exists.
+Two ways to detect:
+
+1. **Active probe** — before any `git commit --amend` on a feature
+   branch, run:
+   ```bash
+   gh pr list --head "$(git branch --show-current)" --state open \
+     --json number,title,body --jq '.[0] // empty'
+   ```
+   Empty output → no open PR, no PATCH needed. Non-empty → grab
+   `.number` and PATCH after the amend.
+
+2. **Hook-driven nudge** — the `pr-sync-check.sh` PostToolUse hook
+   (configured in `~/.claude/settings.json`) runs the same probe
+   automatically on every `git commit --amend` and `git push`, and
+   emits a system reminder if HEAD's commit message has diverged
+   from the PR's title or body. Treat the reminder as authoritative
+   and run the PATCH it suggests.
+
+The active probe is the right discipline; the hook is the safety net
+for when the discipline lapses.
+
 ## Caveat: `fmt` reflows by paragraph and breaks on three GFM constructs
 
 `fmt -w 2500` joins all lines within a paragraph (text between blank
