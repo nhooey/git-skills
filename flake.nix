@@ -22,26 +22,26 @@
       packs = {
         # All 11 git-* skills.
         agent-skills-git-all = [
-          "git-branch-naming"
-          "git-clean-local-history"
-          "git-cleanup-merged-branches"
-          "git-commit-message-format"
-          "git-conventional-commits"
-          "git-push-force-safely"
-          "git-gitignore-discipline"
-          "git-inspect-before-commit"
-          "git-no-history-in-code"
+          "git-hygiene-branch-naming"
+          "git-hygiene-local-history"
+          "git-hygiene-merged-branches"
+          "git-hygiene-commit-message-format"
+          "git-hygiene-conventional-commits"
+          "git-hygiene-push-force-safely"
+          "git-hygiene-gitignore"
+          "git-hygiene-inspect-before-commit"
+          "git-hygiene-no-history-in-code"
           "git-push-workflow-mode"
           "git-ssh-remotes"
         ];
 
         # Narrow subset: universally-good git rules with broad team appeal.
         # Excludes opinionated style (branch-naming, CC) and interactive
-        # workflow (push-workflow-mode, cleanup-merged-branches).
+        # workflow (push-workflow-mode, merged-branches).
         agent-skills-git-minimal = [
-          "git-commit-message-format"
-          "git-push-force-safely"
-          "git-gitignore-discipline"
+          "git-hygiene-commit-message-format"
+          "git-hygiene-push-force-safely"
+          "git-hygiene-gitignore"
           "git-ssh-remotes"
         ];
 
@@ -54,8 +54,8 @@
           "github-codeowners"
           "github-gh-cli-gotchas"
           "github-merge-commits-only"
-          "github-pr-mirrors-commit"
-          "github-protect-default-branch"
+          "github-hygiene-pr-mirrors-commit"
+          "github-hygiene-protect-default-branch"
           "github-stacked-pull-requests"
         ];
 
@@ -63,7 +63,7 @@
         agent-skills-github-setup = [
           "github-auto-delete-merged-branches"
           "github-codeowners"
-          "github-protect-default-branch"
+          "github-hygiene-protect-default-branch"
         ];
 
         # The three purely agent-flavored skills (pr-watcher, pr-status-line,

@@ -66,5 +66,5 @@ that's their cleanup.
 
 - Creating a new GitHub repo.
 - Auditing an existing repo where merged branches accumulate.
-- Companion to `github-protect-default-branch` — apply both at repo
+- Companion to `github-hygiene-protect-default-branch` — apply both at repo
   setup time.

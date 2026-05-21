@@ -32,15 +32,15 @@ The default `nix run` is a **read-only preview** — it lists what would be inst
 ```sh
 # Preview what would be installed (no side effects)
 nix run github:nhooey/skills-git
-nix run 'github:nhooey/skills-git?dir=skills/git-push-force-safely'
+nix run 'github:nhooey/skills-git?dir=skills/git-hygiene-push-force-safely'
 
 # Actually install
 nix run github:nhooey/skills-git#install                              # all skills
-nix run 'github:nhooey/skills-git?dir=skills/git-push-force-safely#install'   # just one
+nix run 'github:nhooey/skills-git?dir=skills/git-hygiene-push-force-safely#install'   # just one
 
 # Or build a derivation containing the skill files (no install side-effect)
 nix build github:nhooey/skills-git#all                  # every skill, symlinkJoined
-nix build github:nhooey/skills-git#git-push-force-safely # one skill
+nix build github:nhooey/skills-git#git-hygiene-push-force-safely # one skill
 nix build github:nhooey/skills-git#agent-skills-git-minimal     # a curated subset (see below)
 ```
 
@@ -54,9 +54,9 @@ Curated subsets exposed as flake packages. Build a pack the same way as a single
 
 | Pack | Contents | Why |
 | --- | --- | --- |
-| `agent-skills-git-minimal` | `git-commit-message-format`, `git-push-force-safely`, `git-gitignore-discipline`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
+| `agent-skills-git-minimal` | `git-hygiene-commit-message-format`, `git-hygiene-push-force-safely`, `git-hygiene-gitignore`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
 | `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
-| `agent-skills-github-setup` | `github-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
+| `agent-skills-github-setup` | `github-hygiene-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
 | `agent-skills-github-all` | All 10 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
 | `agent-pack` | `github-pr-watcher`, `github-pr-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
@@ -72,15 +72,15 @@ nix run github:nhooey/skills-git#agent-pack    # (no install, just build)
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [git-commit-message-format](skills/git-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what. |
-| [git-conventional-commits](skills/git-conventional-commits) | style, team-stance | `type(scope): subject` Conventional Commits format. |
-| [git-inspect-before-commit](skills/git-inspect-before-commit) | workflow | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
-| [git-no-history-in-code](skills/git-no-history-in-code) | style | Don't embed "added in v3.2" notes in source — put them in commit messages. |
-| [git-clean-local-history](skills/git-clean-local-history) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
-| [git-push-force-safely](skills/git-push-force-safely) | safety | Always force-push with `--force-with-lease`, never plain `--force`. |
-| [git-branch-naming](skills/git-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
-| [git-cleanup-merged-branches](skills/git-cleanup-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
-| [git-gitignore-discipline](skills/git-gitignore-discipline) | style | Anchor paths, keep personal preferences in `~/.gitignore_global`, compress patterns safely. |
+| [git-hygiene-commit-message-format](skills/git-hygiene-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what. |
+| [git-hygiene-conventional-commits](skills/git-hygiene-conventional-commits) | style, team-stance | `type(scope): subject` Conventional Commits format. |
+| [git-hygiene-inspect-before-commit](skills/git-hygiene-inspect-before-commit) | workflow | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
+| [git-hygiene-no-history-in-code](skills/git-hygiene-no-history-in-code) | style | Don't embed "added in v3.2" notes in source — put them in commit messages. |
+| [git-hygiene-local-history](skills/git-hygiene-local-history) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
+| [git-hygiene-push-force-safely](skills/git-hygiene-push-force-safely) | safety | Always force-push with `--force-with-lease`, never plain `--force`. |
+| [git-hygiene-branch-naming](skills/git-hygiene-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
+| [git-hygiene-merged-branches](skills/git-hygiene-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
+| [git-hygiene-gitignore](skills/git-hygiene-gitignore) | style | Anchor paths, keep personal preferences in `~/.gitignore_global`, compress patterns safely. |
 | [git-ssh-remotes](skills/git-ssh-remotes) | setup, style | Prefer SSH (`git@github.com:owner/repo.git`) over HTTPS. |
 | [git-push-workflow-mode](skills/git-push-workflow-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
 
@@ -88,12 +88,12 @@ nix run github:nhooey/skills-git#agent-pack    # (no install, just build)
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [github-protect-default-branch](skills/github-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
+| [github-hygiene-protect-default-branch](skills/github-hygiene-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
 | [github-auto-delete-merged-branches](skills/github-auto-delete-merged-branches) | setup | Enable `delete_branch_on_merge`. |
 | [github-merge-commits-only](skills/github-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
 | [github-codeowners](skills/github-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
 | [github-gh-cli-gotchas](skills/github-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
-| [github-pr-mirrors-commit](skills/github-pr-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
+| [github-hygiene-pr-mirrors-commit](skills/github-hygiene-pr-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
 | [github-stacked-pull-requests](skills/github-stacked-pull-requests) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
 
 ### `agent`-tagged `github-*` — agent-behavior skills
@@ -152,4 +152,4 @@ tags: [style]
 
 Write the `description` so an agent can decide whether to invoke the skill from that one line — describe both *what it does* and *when to use it*. Pick `tags` from the vocabulary above.
 
-To make a new skill installable via Nix in isolation, drop a `flake.nix` into the skill folder modeled on `skills/git-push-force-safely/flake.nix`. The top-level flake auto-discovers any subdirectory of `skills/` that contains a `SKILL.md`, so the aggregate package picks up new skills without further changes. If the new skill belongs in a starter pack, add its name to the pack's list in the top-level `flake.nix`.
+To make a new skill installable via Nix in isolation, drop a `flake.nix` into the skill folder modeled on `skills/git-hygiene-push-force-safely/flake.nix`. The top-level flake auto-discovers any subdirectory of `skills/` that contains a `SKILL.md`, so the aggregate package picks up new skills without further changes. If the new skill belongs in a starter pack, add its name to the pack's list in the top-level `flake.nix`.

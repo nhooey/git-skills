@@ -49,13 +49,13 @@ Two reasons:
    --first-parent`, `git log --graph`, and `git blame` can use them.
    Squash-merge discards those commits and their messages; rebase-
    merge loses the topology. If you're investing in
-   `git-clean-local-history` (curating per-commit history before
+   `git-hygiene-local-history` (curating per-commit history before
    push), squash-merge throws that effort away.
 
 ## Compatibility caveat
 
 Do **not** add `{ "type": "required_linear_history" }` to the ruleset
-in `github-protect-default-branch` — that rule rejects exactly the
+in `github-hygiene-protect-default-branch` — that rule rejects exactly the
 merge commits this option produces. The two settings are mutually
 exclusive; pick one.
 
@@ -63,5 +63,5 @@ exclusive; pick one.
 
 - Creating a new GitHub repo where the team wants merge commits.
 - Auditing an existing repo for merge strategy.
-- After enabling `github-protect-default-branch`, double-check that
+- After enabling `github-hygiene-protect-default-branch`, double-check that
   `required_linear_history` is NOT in the ruleset.

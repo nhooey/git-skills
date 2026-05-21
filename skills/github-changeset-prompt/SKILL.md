@@ -34,12 +34,12 @@ change-set lands in the work tree.
 - **Amend** — fold into the last commit (`git commit --amend`).
 - **Push** — regular `git push`.
 - **Force** — `git push --force-with-lease` (see
-  `git-push-force-safely`).
+  `git-hygiene-push-force-safely`).
 - **Open Pull Request** — `gh pr create` per
-  `github-pr-mirrors-commit` (single commit, `--fill`-equivalent
+  `github-hygiene-pr-mirrors-commit` (single commit, `--fill`-equivalent
   title and unwrapped body).
 - **Re-derive PR name + title** — re-PATCH title and body per
-  `github-pr-mirrors-commit`.
+  `github-hygiene-pr-mirrors-commit`.
 - **Monitor + react** — arm or re-arm `github-pr-watcher`.
 
 ## Split into three questions (4-option cap)
