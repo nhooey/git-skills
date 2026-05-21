@@ -37,7 +37,7 @@ three flavors keyed on who controls the merge button:
   §A, plus the branch-prefix requirement.
 
 Each PR in the stack is still a single-commit PR — this skill is
-compatible with [`github-hygiene-pr-mirrors-commit`](../github-hygiene-pr-mirrors-commit),
+compatible with [`github-hygiene-pull-request-mirrors-commit`](../github-hygiene-pull-request-mirrors-commit),
 which governs the title/body/commit relationship for any one PR in the
 chain. And every restack force-pushes to a branch, so
 [`git-hygiene-push-force-safely`](../git-hygiene-push-force-safely) applies — `gt` uses

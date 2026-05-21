@@ -1,5 +1,5 @@
 {
-  description = "github-pr-watcher: Claude Code skill — background Monitor that polls PR check-runs/comments/state and reacts to each event";
+  description = "github-hygiene-pull-request-mirrors-commit: Claude Code skill — one commit per PR; title = subject, body = body (unwrapped via fmt -w 2500); re-sync title/body after every amend";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-pr-watcher";
+      skillName = "github-hygiene-pull-request-mirrors-commit";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

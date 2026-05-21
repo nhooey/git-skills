@@ -1,5 +1,5 @@
 ---
-name: github-hygiene-pr-mirrors-commit
+name: github-hygiene-pull-request-mirrors-commit
 description: |
   Keep each PR a thin wrapper over a single commit: title = subject,
   body = body (unwrapped from 72-col to GFM-paragraph form via
@@ -13,7 +13,7 @@ allowed-tools:
   - Read
 ---
 
-# github-hygiene-pr-mirrors-commit
+# github-hygiene-pull-request-mirrors-commit
 
 A team-stance: this skill takes the position that each PR is a thin
 wrapper over a single commit. The PR title is the commit subject, the

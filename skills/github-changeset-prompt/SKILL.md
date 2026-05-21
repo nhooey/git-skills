@@ -36,11 +36,11 @@ change-set lands in the work tree.
 - **Force** — `git push --force-with-lease` (see
   `git-hygiene-push-force-safely`).
 - **Open Pull Request** — `gh pr create` per
-  `github-hygiene-pr-mirrors-commit` (single commit, `--fill`-equivalent
+  `github-hygiene-pull-request-mirrors-commit` (single commit, `--fill`-equivalent
   title and unwrapped body).
 - **Re-derive PR name + title** — re-PATCH title and body per
-  `github-hygiene-pr-mirrors-commit`.
-- **Monitor + react** — arm or re-arm `github-pr-watcher`.
+  `github-hygiene-pull-request-mirrors-commit`.
+- **Monitor + react** — arm or re-arm `github-pull-request-watcher`.
 
 ## Split into three questions (4-option cap)
 

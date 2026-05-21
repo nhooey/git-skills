@@ -1,5 +1,5 @@
 {
-  description = "github-pr-status-line: Claude Code skill — surface PRs as `<status-circle> <url> — **PR #<num>: <title>**` with live state";
+  description = "github-pull-request-watcher: Claude Code skill — background Monitor that polls PR check-runs/comments/state and reacts to each event";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-pr-status-line";
+      skillName = "github-pull-request-watcher";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

@@ -36,7 +36,7 @@ time a commit comes up.
   (2008)](https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html),
   restated by [Chris Beams' *How to Write a Git Commit Message*](https://cbea.ms/git-commit/)
   and *Pro Git* §5.2. GitHub, `git log --oneline`, and most tools
-  truncate or wrap past 72 (see `github-hygiene-pr-mirrors-commit` for
+  truncate or wrap past 72 (see `github-hygiene-pull-request-mirrors-commit` for
   the empirical GitHub truncation).
 - **Use the imperative mood in the subject.** "Add X", not "Added X" or
   "Adds X". Sanity check: read "If applied, this commit will *<your
@@ -79,7 +79,7 @@ Symptoms that the body has drifted into WHAT:
 - **Audit / alternatives walkthrough.** File-by-file rationale and
   long "alternatives weighed" prose belong in the PR description or
   a design doc, not the commit. (If the repo follows
-  `github-hygiene-pr-mirrors-commit`, commit body = PR body, so this
+  `github-hygiene-pull-request-mirrors-commit`, commit body = PR body, so this
   content has no home on the PR either — push it to a design doc or
   a follow-up comment, or just cut it.) Keep at most the one
   path-not-taken that's load-bearing for future readers.
