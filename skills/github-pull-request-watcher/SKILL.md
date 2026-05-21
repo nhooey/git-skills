@@ -32,6 +32,12 @@ push will discover, too late and against a deleted branch, that the
 PR has already landed. Arm both when both apply; they run in parallel
 on different event streams.
 
+Conversely, this watcher does **not** substitute for the
+`pr-sync-check.sh` PostToolUse hook: the watcher arms only after a
+push and watches external events (CI, comments, merge), while the
+hook fires on local `git commit --amend` and catches title/body
+drift even before any push happens.
+
 ## How to load this skill
 
 Active. Loading triggers the arming of a Monitor on the current PR
