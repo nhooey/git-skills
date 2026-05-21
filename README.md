@@ -1,5 +1,7 @@
 # skills-git
 
+[![built with garnix](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fgarnix.io%2Fapi%2Fbadges%2Fnhooey%2Fskills-git)](https://garnix.io/repo/nhooey/skills-git)
+
 A collection of small, opinionated [Agent Skills](https://www.anthropic.com/engineering/agent-skills) for Git and GitHub workflows, compatible with Claude Code, Codex, Gemini CLI, Cursor, and the `npx skills` / `gh skill` CLIs.
 
 Each rule lives in its own skill so you can pick and choose. Skills are grouped by lexical prefix:
