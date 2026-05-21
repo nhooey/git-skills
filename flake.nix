@@ -74,18 +74,22 @@
         ];
       };
 
-      mkPack =
-        system: skillNames:
-        let
+      # Build a `flake-skills.lib.mkSkillsEnv` for one (packName,
+      # skillNames) pair. The env keeps the same `nix run`/`nix build`
+      # UX as a plain `symlinkJoin`, but also carries the
+      # `passthru.isFlakeSkillsEnv` + `flakeSkillsEnv` records that
+      # `programs.flake-skills.skills` needs to expand the env back
+      # into per-skill records on home-manager activation.
+      mkEnv =
+        system: packName: skillNames:
+        flake-skills.lib.mkSkillsEnv {
           pkgs = nixpkgs.legacyPackages.${system};
-        in
-        pkgs.symlinkJoin {
-          name = "skills-pack";
-          paths = builtins.map (n: base.packages.${system}."agent-skill-${n}") skillNames;
+          name = packName;
+          skills = builtins.map (n: base.packages.${system}."agent-skill-${n}") skillNames;
         };
 
       packPackages = forSystems (
-        system: nixpkgs.lib.mapAttrs (_: skills: mkPack system skills) packs
+        system: nixpkgs.lib.mapAttrs (packName: skills: mkEnv system packName skills) packs
       );
     in
     base
