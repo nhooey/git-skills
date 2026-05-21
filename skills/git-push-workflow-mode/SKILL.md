@@ -74,7 +74,7 @@ Subcases:
   the branch already exists (`gh pr list --head <branch>`), just push
   — the existing PR's diff updates automatically, but its title and
   body do not. If you amended or reworded the commit, re-sync them
-  per `github-hygiene-pr-mirrors-commit`.
+  per `github-hygiene-pull-request-mirrors-commit`.
 
 **Mode 3 — Ask each time.** The user wants a per-push prompt. Before
 any push, ask: "Push to main directly, or open a PR?" — with the
@@ -145,7 +145,7 @@ is on a feature branch):**
 > - **Push branch + open PR:** Push the branch and, if no PR is open
 >   for it yet, open one with `gh pr create`. If a PR already exists,
 >   just push — the diff updates, but re-sync the title and body per
->   `github-hygiene-pr-mirrors-commit` if you amended the commit message.
+>   `github-hygiene-pull-request-mirrors-commit` if you amended the commit message.
 > - **Push branch only:** Just push the branch. Don't auto-open a PR —
 >   leave that to the user. (Useful if the user prefers to write PR
 >   descriptions themselves or uses a non-`gh` flow.)
@@ -180,7 +180,7 @@ metadata:
 **Why:** Repo has prior PR history; user confirmed PRs-always
 **How to apply:** On any push from this repo, follow Mode 2 silently.
 Never push to main; always open or update a PR. On amend behind an
-open PR, re-sync the title/body per `github-hygiene-pr-mirrors-commit`.
+open PR, re-sync the title/body per `github-hygiene-pull-request-mirrors-commit`.
 ```
 
 Also add a one-line index entry to the project's `MEMORY.md`:

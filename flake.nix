@@ -48,13 +48,13 @@
         # All github-* skills (includes the agent-* trio).
         agent-skills-github-all = [
           "github-changeset-prompt"
-          "github-pr-status-line"
-          "github-pr-watcher"
+          "github-pull-request-status-line"
+          "github-pull-request-watcher"
           "github-auto-delete-merged-branches"
           "github-codeowners"
           "github-gh-cli-gotchas"
           "github-merge-commits-only"
-          "github-hygiene-pr-mirrors-commit"
+          "github-hygiene-pull-request-mirrors-commit"
           "github-hygiene-protect-default-branch"
           "github-stacked-pull-requests"
         ];
@@ -66,12 +66,12 @@
           "github-hygiene-protect-default-branch"
         ];
 
-        # The three purely agent-flavored skills (pr-watcher, pr-status-line,
-        # changeset-prompt). Only meaningful when an LLM is driving.
-        agent-pack = [
+        # The three purely agent-flavored skills covering the changeset
+        # → PR open → watch loop. Only meaningful when an LLM is driving.
+        agent-skills-github-pull-request-lifecycle = [
           "github-changeset-prompt"
-          "github-pr-status-line"
-          "github-pr-watcher"
+          "github-pull-request-status-line"
+          "github-pull-request-watcher"
         ];
       };
 

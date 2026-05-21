@@ -1,5 +1,5 @@
 ---
-name: github-pr-watcher
+name: github-pull-request-watcher
 description: |
   After pushing to a branch with an open or imminent PR, arm a
   background Monitor that polls check-runs, issue-comments, review-
@@ -14,7 +14,7 @@ allowed-tools:
   - Monitor
 ---
 
-# github-pr-watcher
+# github-pull-request-watcher
 
 After pushing to a branch with an open (or imminent) PR, arm a
 background watcher that emits on *every* PR event — check completions,
@@ -40,7 +40,7 @@ state. If there's no relevant PR for the current branch, no-op.
 ## Reactions per event type
 
 - **Check green** — surface 🟢 in the next reply (see
-  `github-pr-status-line` for the format).
+  `github-pull-request-status-line` for the format).
 - **Check red** — read the log (`gh run view <id> --log`), propose a
   fix, surface 🔴.
 - **Comment from the session-running user** (identify with
@@ -49,7 +49,7 @@ state. If there's no relevant PR for the current branch, no-op.
   the conversation surface (often because they're on mobile or
   reviewing the diff side-by-side). Read it, do the work locally, and
   surface a *comment line* in your chat reply confirming what was
-  addressed (format defined in `github-pr-status-line`).
+  addressed (format defined in `github-pull-request-status-line`).
   **Don't post a reply on the PR itself** — that publishes under the
   user's identity, and the safety layer blocks it (rightly: the agent
   shouldn't speak as the user). The chat comment line is the

@@ -1,5 +1,5 @@
 ---
-name: github-pr-status-line
+name: github-pull-request-status-line
 description: |
   Whenever a PR comes up in a reply, surface it on its own line:
   `<status> <url> — **PR #<num>: <title>**` where status is one of
@@ -13,7 +13,7 @@ allowed-tools:
   - Read
 ---
 
-# github-pr-status-line
+# github-pull-request-status-line
 
 Whenever the PR comes up in a reply, output its URL on its own line
 in this exact format:
@@ -108,7 +108,7 @@ The comment URL is the `.html_url` field on the comment API response
 (e.g. `gh api repos/.../pulls/<num>/comments` → `.[].html_url`).
 
 This is the workaround for the agent-impersonation guardrail (see
-`github-pr-watcher`): `gh pr review --reply` and `gh api ...
+`github-pull-request-watcher`): `gh pr review --reply` and `gh api ...
 /comments/<id>/replies` post under the user's identity and the safety
 layer blocks them. The comment block keeps the user in the loop
 without anything getting published publicly. Emit one block per
@@ -118,7 +118,7 @@ reported.
 ## When to apply
 
 - Creating a PR (output the line immediately after `gh pr create`).
-- Every Monitor event from `github-pr-watcher`.
+- Every Monitor event from `github-pull-request-watcher`.
 - Every prose citation of a PR by number.
 - Before and after any operation that changes the PR (push, label,
   merge).

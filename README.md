@@ -60,12 +60,12 @@ Curated subsets exposed as flake packages. Build a pack the same way as a single
 | `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
 | `agent-skills-github-setup` | `github-hygiene-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
 | `agent-skills-github-all` | All 10 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
-| `agent-pack` | `github-pr-watcher`, `github-pr-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
+| `agent-skills-github-pull-request-lifecycle` | `github-pull-request-watcher`, `github-pull-request-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
 nix build github:nhooey/skills-git#agent-skills-git-minimal
-nix run github:nhooey/skills-git#agent-pack    # (no install, just build)
+nix run github:nhooey/skills-git#agent-skills-github-pull-request-lifecycle    # (no install, just build)
 ```
 
 ## Skills in this repo
@@ -95,7 +95,7 @@ nix run github:nhooey/skills-git#agent-pack    # (no install, just build)
 | [github-merge-commits-only](skills/github-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
 | [github-codeowners](skills/github-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
 | [github-gh-cli-gotchas](skills/github-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
-| [github-hygiene-pr-mirrors-commit](skills/github-hygiene-pr-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
+| [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
 | [github-stacked-pull-requests](skills/github-stacked-pull-requests) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
 
 ### `agent`-tagged `github-*` — agent-behavior skills
@@ -104,8 +104,8 @@ These three skills only make sense when an LLM is driving the session. They live
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [github-pr-watcher](skills/github-pr-watcher) | agent, workflow | Background Monitor polling PR check-runs/comments/state; one reaction per event type. |
-| [github-pr-status-line](skills/github-pr-status-line) | agent, style | Surface PRs as `<status-circle> <url> — **PR #<num>: <title>**` with live state. |
+| [github-pull-request-watcher](skills/github-pull-request-watcher) | agent, workflow | Background Monitor polling PR check-runs/comments/state; one reaction per event type. |
+| [github-pull-request-status-line](skills/github-pull-request-status-line) | agent, style | Surface PRs as `<status-circle> <url> — **PR #<num>: <title>**` with live state. |
 | [github-changeset-prompt](skills/github-changeset-prompt) | agent, interactive | Multi-select `AskUserQuestion` after every change-set: Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor. |
 
 ## Tag vocabulary

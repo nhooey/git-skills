@@ -75,7 +75,7 @@ self-referential noise, not about cramming unrelated work together.
 Once a commit has been pushed and others may have pulled it, this rule
 flips — rewriting pushed history is a coordination problem (see
 `git-hygiene-push-force-safely` for the safety mechanism, and
-`github-hygiene-pr-mirrors-commit` for re-syncing the PR after the rewrite).
+`github-hygiene-pull-request-mirrors-commit` for re-syncing the PR after the rewrite).
 
 ## When to apply
 
