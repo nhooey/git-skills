@@ -57,7 +57,7 @@ Curated subsets exposed as flake packages. Build a pack the same way as a single
 | `agent-skills-git-minimal` | `git-commit-message-format`, `git-push-force-safely`, `git-gitignore-discipline`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
 | `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
 | `agent-skills-github-setup` | `github-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
-| `agent-skills-github-all` | All 9 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-github-all` | All 10 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
 | `agent-pack` | `github-pr-watcher`, `github-pr-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
@@ -94,6 +94,7 @@ nix run github:nhooey/skills-git#agent-pack    # (no install, just build)
 | [github-codeowners](skills/github-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
 | [github-gh-cli-gotchas](skills/github-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
 | [github-pr-mirrors-commit](skills/github-pr-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
+| [github-stacked-pull-requests](skills/github-stacked-pull-requests) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
 
 ### `agent`-tagged `github-*` — agent-behavior skills
 

@@ -45,7 +45,7 @@
           "git-ssh-remotes"
         ];
 
-        # All 9 github-* skills (includes the agent-* trio).
+        # All github-* skills (includes the agent-* trio).
         agent-skills-github-all = [
           "github-changeset-prompt"
           "github-pr-status-line"
@@ -56,6 +56,7 @@
           "github-merge-commits-only"
           "github-pr-mirrors-commit"
           "github-protect-default-branch"
+          "github-stacked-pull-requests"
         ];
 
         # One-time repo configuration: branch protection, auto-delete, owners.
