@@ -218,6 +218,27 @@ way, so this costs nothing on the terminal side. Treat it as part of
 commit-body craft, not PR-only polish — the PR is just the surface
 that happens to render it.
 
+## Cross-repo PR/issue refs need `owner/repo#N`
+
+`#123` in a commit body or PR description auto-links to PR or issue
+123 *in the current repository only*. Writing `#123` to point at
+another repo's PR silently links the wrong thing — the number resolves
+against whatever repo GitHub is rendering the body on, not whatever
+repo you had in mind.
+
+To reference a PR or issue in a different repository, qualify it:
+
+- `owner/repo#123` — GitHub renders this as a link to PR/issue 123 in
+  `owner/repo`. Compact and idiomatic; safe in both commit bodies and
+  PR descriptions.
+- Full URL (`https://github.com/owner/repo/pull/123`) — also fine,
+  GitHub auto-collapses the display text to `owner/repo#123` on
+  rendered surfaces.
+
+The same rule applies to commit SHAs (`owner/repo@abcdef1`) and to
+@-mentions of teams (`@org/team`). A bare `@username`, by contrast, is
+global — no qualification needed.
+
 ## When to apply
 
 - About to open a PR with `gh pr create`.
