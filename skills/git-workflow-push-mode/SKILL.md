@@ -1,5 +1,5 @@
 ---
-name: git-push-workflow-mode
+name: git-workflow-push-mode
 description: |
   Before the first push to a repo, check project memory for a saved
   push-mode preference. If none, ask the user once which push workflow
@@ -16,7 +16,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# git-push-workflow-mode
+# git-workflow-push-mode
 
 Before pushing anything to a remote, know which workflow this repo
 uses. The choice has real consequences (PR history, review surface,

@@ -1,5 +1,5 @@
 ---
-name: git-hygiene-cleanup-merged-branches
+name: git-workflow-cleanup-merged-branches
 description: |
   After merging your own branch into main, delete the local and remote
   copies. When noticing merged branches the session didn't create,
@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# git-hygiene-cleanup-merged-branches
+# git-workflow-cleanup-merged-branches
 
 ## How to load this skill
 

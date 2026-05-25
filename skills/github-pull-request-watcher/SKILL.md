@@ -130,7 +130,7 @@ done
 Run via `Monitor` with `persistent: true`; a fixed timeout fires
 spuriously on PRs that sit for hours. `state` is the right JSON
 accessor — `merged` isn't a valid field (see
-`github-gh-cli-gotchas`). Both comment endpoints are fetched exactly
+`github-hygiene-gh-cli-gotchas`). Both comment endpoints are fetched exactly
 once per iteration: the shared `fmt_comments` jq filter is
 parameterized via `--arg` and `--argjson` so issue and inline-review
 comments flow through the same emit logic without duplication. The
@@ -194,7 +194,7 @@ Three cleanups, all default-checked:
 - **Rebase local default** — `git checkout <default> && git pull
   --rebase origin <default>`. Bail loudly on a dirty tree.
 
-`git-hygiene-cleanup-merged-branches` covers the same cleanup from the local
+`git-workflow-cleanup-merged-branches` covers the same cleanup from the local
 side; this rule fires it at the right moment.
 
 ## Companion hook: `pull-request-sync-check.sh`

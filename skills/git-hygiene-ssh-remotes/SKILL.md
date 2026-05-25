@@ -1,5 +1,5 @@
 ---
-name: git-ssh-remotes
+name: git-hygiene-ssh-remotes
 description: |
   Use SSH remotes (`git@github.com:owner/repo.git`) over HTTPS. SSH
   avoids per-push username/PAT prompts when `ssh-agent` is loaded; HTTPS
@@ -11,7 +11,7 @@ allowed-tools:
   - Read
 ---
 
-# git-ssh-remotes
+# git-hygiene-ssh-remotes
 
 When adding a remote (or cloning), prefer the SSH form:
 

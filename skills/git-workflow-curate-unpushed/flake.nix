@@ -1,5 +1,5 @@
 {
-  description = "git-push-workflow-mode: Claude Code skill — pick direct-to-main / PR-always / ask-each-time once per repo; saved to project memory so future sessions don't re-ask";
+  description = "git-workflow-curate-unpushed: Claude Code skill — squash noise + amend forward to curate unpushed history";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "git-push-workflow-mode";
+      skillName = "git-workflow-curate-unpushed";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

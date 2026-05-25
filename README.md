@@ -6,10 +6,13 @@ A collection of small, opinionated [Agent Skills](https://www.anthropic.com/engi
 
 Each rule lives in its own skill so you can pick and choose. Skills are grouped by lexical prefix:
 
-- `git-*` — local-only git hygiene (commit messages, history, branches, `.gitignore`, remotes)
-- `github-*` — GitHub-side repository hygiene + PR lifecycle (rulesets, merge settings, PR-mirrors-commit, agent PR-watcher / status-line / changeset-prompt)
+- `git-hygiene-*` — local style rules (commit format, branch naming, `.gitignore`, force-push safety, SSH remotes)
+- `git-workflow-*` — interactive / multi-step procedures (inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice)
+- `github-hygiene-*` — PR-shape discipline + `gh` CLI gotchas
+- `github-policy-*` — one-time repo configuration (branch ruleset, codeowners, auto-delete, merge-commits-only)
+- `github-pull-request-*` — PR lifecycle including the agent-driven watcher / status-line / changeset-prompt
 
-Skills that are only meaningful when an LLM is driving the session are tagged `agent` (see the [Tag vocabulary](#tag-vocabulary) section). Filter by tag, not by name prefix.
+Each skill belongs to exactly one pack — the second segment of the name is the pack. Skills that only make sense when an LLM is driving the session carry the `agent` tag (see [Tag vocabulary](#tag-vocabulary)); filter by tag, not by name prefix.
 
 ## Install
 
@@ -43,7 +46,7 @@ nix run 'github:nhooey/skills-git?dir=skills/git-hygiene-push-force-safely#insta
 # Or build a derivation containing the skill files (no install side-effect)
 nix build github:nhooey/skills-git#all                  # every skill, symlinkJoined
 nix build github:nhooey/skills-git#git-hygiene-push-force-safely # one skill
-nix build github:nhooey/skills-git#agent-skills-git-minimal     # a curated subset (see below)
+nix build github:nhooey/skills-git#agent-skills-git-all         # a curated subset (see below)
 ```
 
 The installer copies into `$CLAUDE_SKILLS_DIR` if set, otherwise `~/.claude/skills/`. Existing skill directories with the same name are replaced.
@@ -52,61 +55,75 @@ Each skill derivation produces `$out/share/claude-skills/<name>/` containing `SK
 
 ## Starter packs
 
-Curated subsets exposed as flake packages. Build a pack the same way as a single skill:
+Curated subsets exposed as flake packages. Build a pack the same way as a single skill.
+
+Five prefix packs partition the 21 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
 
 | Pack | Contents | Why |
 | --- | --- | --- |
-| `agent-skills-git-minimal` | `git-hygiene-commit-message-format`, `git-hygiene-push-force-safely`, `git-hygiene-gitignore`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
+| `agent-skills-git-hygiene` | All 7 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no-history-in-code, conventional commits, safe force-push, SSH remotes. |
+| `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice. |
 | `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
-| `agent-skills-github-setup` | `github-policy-protect-default-branch`, `github-policy-auto-delete-merged-branches`, `github-policy-codeowners` | Apply once per repo at creation. |
+| `agent-skills-github-hygiene` | All 2 `github-hygiene-*` skills | PR-mirrors-commit discipline + `gh` CLI gotchas. |
+| `agent-skills-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
+| `agent-skills-github-pull-request` | All 4 `github-pull-request-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher. |
 | `agent-skills-github-all` | All 10 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
-| `agent-skills-github-pull-request-lifecycle` | `github-pull-request-watcher`, `github-pull-request-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
-nix build github:nhooey/skills-git#agent-skills-git-minimal
-nix run github:nhooey/skills-git#agent-skills-github-pull-request-lifecycle    # (no install, just build)
+nix build github:nhooey/skills-git#agent-skills-git-hygiene
+nix run github:nhooey/skills-git#agent-skills-github-policy    # (no install, just build)
 ```
 
 ## Skills in this repo
 
-### `git-*` — local git hygiene
+One section per pack. The three skills tagged `agent` (only meaningful when an LLM is driving) live under `github-pull-request-*`; filter by tag if a human reads this without an agent.
+
+### `git-hygiene-*` — local style rules
 
 | Name | Tags | What |
 | --- | --- | --- |
+| [git-hygiene-branch-naming](skills/git-hygiene-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
 | [git-hygiene-commit-message-format](skills/git-hygiene-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what. |
 | [git-hygiene-conventional-commits](skills/git-hygiene-conventional-commits) | style, team-stance | `type(scope): subject` Conventional Commits format. |
-| [git-hygiene-inspect-before-commit](skills/git-hygiene-inspect-before-commit) | workflow | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
-| [git-hygiene-no-history-in-code](skills/git-hygiene-no-history-in-code) | style | Don't embed "added in v3.2" notes in source — put them in commit messages. |
-| [git-hygiene-local-history](skills/git-hygiene-local-history) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
-| [git-hygiene-push-force-safely](skills/git-hygiene-push-force-safely) | safety | Always force-push with `--force-with-lease`, never plain `--force`. |
-| [git-hygiene-branch-naming](skills/git-hygiene-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
-| [git-hygiene-cleanup-merged-branches](skills/git-hygiene-cleanup-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
 | [git-hygiene-gitignore](skills/git-hygiene-gitignore) | style | Anchor paths, keep personal preferences in `~/.gitignore_global`, compress patterns safely. |
-| [git-ssh-remotes](skills/git-ssh-remotes) | setup, style | Prefer SSH (`git@github.com:owner/repo.git`) over HTTPS. |
-| [git-push-workflow-mode](skills/git-push-workflow-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
+| [git-hygiene-no-history-in-code](skills/git-hygiene-no-history-in-code) | style | Don't embed "added in v3.2" notes in source — put them in commit messages. |
+| [git-hygiene-push-force-safely](skills/git-hygiene-push-force-safely) | safety | Always force-push with `--force-with-lease`, never plain `--force`. |
+| [git-hygiene-ssh-remotes](skills/git-hygiene-ssh-remotes) | setup, style | Prefer SSH (`git@github.com:owner/repo.git`) over HTTPS. |
 
-### `github-*` — GitHub repo hygiene and PR lifecycle
+### `git-workflow-*` — interactive procedures
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [github-policy-protect-default-branch](skills/github-policy-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
-| [github-policy-auto-delete-merged-branches](skills/github-policy-auto-delete-merged-branches) | setup | Enable `delete_branch_on_merge`. |
-| [github-policy-merge-commits-only](skills/github-policy-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
-| [github-policy-codeowners](skills/github-policy-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
-| [github-gh-cli-gotchas](skills/github-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
+| [git-workflow-cleanup-merged-branches](skills/git-workflow-cleanup-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
+| [git-workflow-curate-unpushed](skills/git-workflow-curate-unpushed) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
+| [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
+| [git-workflow-push-mode](skills/git-workflow-push-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
+
+### `github-hygiene-*` — PR-shape discipline + `gh` gotchas
+
+| Name | Tags | What |
+| --- | --- | --- |
+| [github-hygiene-gh-cli-gotchas](skills/github-hygiene-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
 | [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
-| [github-stacked-pull-requests](skills/github-stacked-pull-requests) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
 
-### `agent`-tagged `github-*` — agent-behavior skills
-
-These three skills only make sense when an LLM is driving the session. They live under the `github-*` prefix like any other GitHub skill, but carry the `agent` tag so non-agent users can filter them out.
+### `github-policy-*` — one-time repo configuration
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [github-pull-request-watcher](skills/github-pull-request-watcher) | agent, workflow | Background Monitor polling PR check-runs/comments/state; one reaction per event type. |
+| [github-policy-auto-delete-merged-branches](skills/github-policy-auto-delete-merged-branches) | setup | Enable `delete_branch_on_merge`. |
+| [github-policy-codeowners](skills/github-policy-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
+| [github-policy-merge-commits-only](skills/github-policy-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
+| [github-policy-protect-default-branch](skills/github-policy-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
+
+### `github-pull-request-*` — PR lifecycle (includes agent-tagged trio)
+
+| Name | Tags | What |
+| --- | --- | --- |
+| [github-pull-request-changeset-prompt](skills/github-pull-request-changeset-prompt) | agent, interactive | Multi-select `AskUserQuestion` after every change-set: Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor. |
+| [github-pull-request-stacked](skills/github-pull-request-stacked) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
 | [github-pull-request-status-line](skills/github-pull-request-status-line) | agent, style | Surface PRs as `<status-circle> <url> — **PR #<num>: <title>**` with live state. |
-| [github-changeset-prompt](skills/github-changeset-prompt) | agent, interactive | Multi-select `AskUserQuestion` after every change-set: Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor. |
+| [github-pull-request-watcher](skills/github-pull-request-watcher) | agent, workflow | Background Monitor polling PR check-runs/comments/state; one reaction per event type. |
 
 ## Tag vocabulary
 
