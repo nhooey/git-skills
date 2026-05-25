@@ -97,11 +97,11 @@ Repeat for PR #2, then #3.
 
 **Merge-strategy interaction.** `gt sync` detects merged PRs by SHA
 when the repo uses merge commits (see
-[`github-merge-commits-only`](../github-merge-commits-only)) and by
+[`github-policy-merge-commits-only`](../github-policy-merge-commits-only)) and by
 patch-id when it uses squash merge. Both work cleanly; rebase-merge
 also works but is the noisiest of the three for stacking — prefer
 merge-commits-only or squash. With
-[`github-auto-delete-merged-branches`](../github-auto-delete-merged-branches)
+[`github-policy-auto-delete-merged-branches`](../github-policy-auto-delete-merged-branches)
 enabled, the remote head branches vanish on merge and `gt sync` will
 clean up the local copies.
 

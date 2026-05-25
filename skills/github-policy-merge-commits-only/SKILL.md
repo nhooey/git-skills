@@ -1,5 +1,5 @@
 ---
-name: github-merge-commits-only
+name: github-policy-merge-commits-only
 description: |
   Configure repo so PRs land as explicit merge commits — disable squash
   and rebase merges. The merge commit is a clean revert point (`git
@@ -12,7 +12,7 @@ allowed-tools:
   - Read
 ---
 
-# github-merge-commits-only
+# github-policy-merge-commits-only
 
 A team-stance: this skill takes the position that every PR should land
 as an explicit merge commit. Other teams legitimately prefer
@@ -55,7 +55,7 @@ Two reasons:
 ## Compatibility caveat
 
 Do **not** add `{ "type": "required_linear_history" }` to the ruleset
-in `github-hygiene-protect-default-branch` — that rule rejects exactly the
+in `github-policy-protect-default-branch` — that rule rejects exactly the
 merge commits this option produces. The two settings are mutually
 exclusive; pick one.
 
@@ -63,5 +63,5 @@ exclusive; pick one.
 
 - Creating a new GitHub repo where the team wants merge commits.
 - Auditing an existing repo for merge strategy.
-- After enabling `github-hygiene-protect-default-branch`, double-check that
+- After enabling `github-policy-protect-default-branch`, double-check that
   `required_linear_history` is NOT in the ruleset.

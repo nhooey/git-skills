@@ -1,5 +1,5 @@
 {
-  description = "github-codeowners: Claude Code skill — set up .github/CODEOWNERS and require_code_owner_review for multi-contributor repos";
+  description = "github-policy-protect-default-branch: Claude Code skill — apply Rulesets-API branch protection (require PR, status checks, block force-push, block deletion)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-codeowners";
+      skillName = "github-policy-protect-default-branch";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

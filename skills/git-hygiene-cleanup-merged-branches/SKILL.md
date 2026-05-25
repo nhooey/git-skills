@@ -1,5 +1,5 @@
 ---
-name: git-hygiene-merged-branches
+name: git-hygiene-cleanup-merged-branches
 description: |
   After merging your own branch into main, delete the local and remote
   copies. When noticing merged branches the session didn't create,
@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# git-hygiene-merged-branches
+# git-hygiene-cleanup-merged-branches
 
 ## How to load this skill
 
@@ -28,7 +28,7 @@ the right cleanup.
    is the safety check you want).
 2. Delete the remote branch: `git push origin --delete <branch>` (or
    enable auto-delete on the hosting platform; see
-   `github-auto-delete-merged-branches`).
+   `github-policy-auto-delete-merged-branches`).
 
 ## When you notice merged branches this session didn't create
 

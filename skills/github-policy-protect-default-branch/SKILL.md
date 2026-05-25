@@ -1,5 +1,5 @@
 ---
-name: github-hygiene-protect-default-branch
+name: github-policy-protect-default-branch
 description: |
   Apply a Rulesets-API branch ruleset to the default branch: require PR,
   required status checks, block force-pushes (`non_fast_forward`), block
@@ -14,7 +14,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# github-hygiene-protect-default-branch
+# github-policy-protect-default-branch
 
 The default branch (`main` or `master`) is what every fresh clone
 checks out and what production deploys typically track. An unprotected
@@ -107,7 +107,7 @@ If the repo has been unprotected for a while, expect cleanup:
 
 1. **Audit local clones.** Run `git fetch --prune` to drop tracking
    refs whose remote branches have already been deleted. See
-   `git-hygiene-merged-branches` for the local cleanup workflow.
+   `git-hygiene-cleanup-merged-branches` for the local cleanup workflow.
 2. **Survey stale remote branches.** Many will already be merged:
    ```bash
    gh api "repos/<owner>/<repo>/branches?protected=false&per_page=100" \
@@ -124,6 +124,6 @@ If the repo has been unprotected for a while, expect cleanup:
 
 - Creating a new GitHub repo.
 - Auditing an existing repo with no branch protection.
-- Adding a second contributor (also see `github-codeowners`).
+- Adding a second contributor (also see `github-policy-codeowners`).
 - Renaming the default branch — confirm `~DEFAULT_BRANCH` still
   matches your ruleset's target.

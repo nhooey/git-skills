@@ -1,5 +1,5 @@
 {
-  description = "git-hygiene-merged-branches: Claude Code skill — delete local/remote merged branches; ask before bulk-pruning";
+  description = "github-policy-codeowners: Claude Code skill — set up .github/CODEOWNERS and require_code_owner_review for multi-contributor repos";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "git-hygiene-merged-branches";
+      skillName = "github-policy-codeowners";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

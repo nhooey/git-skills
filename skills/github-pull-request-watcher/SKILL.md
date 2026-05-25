@@ -33,10 +33,12 @@ PR has already landed. Arm both when both apply; they run in parallel
 on different event streams.
 
 Conversely, this watcher does **not** substitute for the
-`pr-sync-check.sh` PostToolUse hook: the watcher arms only after a
-push and watches external events (CI, comments, merge), while the
-hook fires on local `git commit --amend` and catches title/body
-drift even before any push happens.
+`pull-request-sync-check.sh` PostToolUse hook shipped in this
+skill's `scripts/` directory (see "Companion hook" below): the
+watcher arms only after a push and watches external events (CI,
+comments, merge), while the hook fires on local
+`git commit --amend` and catches title/body drift even before any
+push happens.
 
 ## How to load this skill
 
@@ -182,7 +184,7 @@ Three cleanups, all default-checked:
 - **Delete on remote** — `git push origin --delete <branch>`. Pre-
   check with `git ls-remote --exit-code origin <branch>` and skip
   the option entirely if the branch is already gone. But
-  `github-auto-delete-merged-branches` is asynchronous — the pre-
+  `github-policy-auto-delete-merged-branches` is asynchronous — the pre-
   check can pass and the branch can vanish in the window between the
   prompt and the user's pick — so the actual `git push --delete`
   must treat `error: unable to delete '<branch>': remote ref does
@@ -192,8 +194,63 @@ Three cleanups, all default-checked:
 - **Rebase local default** — `git checkout <default> && git pull
   --rebase origin <default>`. Bail loudly on a dirty tree.
 
-`git-hygiene-merged-branches` covers the same cleanup from the local
+`git-hygiene-cleanup-merged-branches` covers the same cleanup from the local
 side; this rule fires it at the right moment.
+
+## Companion hook: `pull-request-sync-check.sh`
+
+This skill ships a PostToolUse hook at
+`scripts/pull-request-sync-check.sh` that closes the local-amend
+gap the Monitor can't reach. The Monitor watches GitHub-side events
+after a push; the hook fires on the *local* `git commit --amend`
+and `git push` Bash calls and probes
+`gh pr list --head <branch> --state open`. If an open PR exists
+and HEAD's commit subject or body has drifted from the PR's
+title/body, the hook emits a `systemMessage` with the exact
+`gh api --method PATCH …` invocation to re-sync (per
+`github-hygiene-pull-request-mirrors-commit`).
+
+Behaviour contract:
+
+- Gate on the command pattern (`git commit --amend` or
+  `git push`); other Bash calls exit 0 silent.
+- Skip silently when there's no git repo, no current branch
+  (detached HEAD), no `gh` available, or no open PR.
+- Body comparison is whitespace-normalised (`tr -s '[:space:]' ' '`)
+  so a 72-col commit body and a `fmt -w 2500`-unwrapped PR body
+  compare equal when the words match.
+- Never exits non-zero. Blocking would be hostile; the agent just
+  needs the nudge.
+
+To wire it up, add this to `~/.claude/settings.json` (assumes
+skills are installed at `~/.claude/skills/`):
+
+```json
+"hooks": {
+  "PostToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
+          "timeout": 15
+        }
+      ]
+    }
+  ]
+}
+```
+
+Nix users: the script ships via `flake-skills` standard
+`installPhase` — the `scripts/` directory is auto-copied into
+`$out/share/claude-skills/github-pull-request-watcher/scripts/`.
+The bash shebang plus standard tools (`jq`, `gh`, `git`, `tr`,
+`sed`, `diff`, `head`, `fmt`) resolve via the user's PATH at hook-
+exec time; no wrapper is needed in the typical case. If you want
+fully-pinned dependencies, wrap the script with
+`pkgs.writeShellApplication` in a downstream module — the script
+itself has no Nix-specific assumptions.
 
 ## When to apply
 

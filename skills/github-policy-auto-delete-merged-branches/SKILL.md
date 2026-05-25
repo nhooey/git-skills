@@ -1,5 +1,5 @@
 ---
-name: github-auto-delete-merged-branches
+name: github-policy-auto-delete-merged-branches
 description: |
   Enable GitHub's `delete_branch_on_merge` setting so PR head branches
   vanish on merge. One PATCH per repo. Apply when creating a new repo
@@ -10,7 +10,7 @@ allowed-tools:
   - Read
 ---
 
-# github-auto-delete-merged-branches
+# github-policy-auto-delete-merged-branches
 
 Once a PR is merged, the source branch has done its job. Leaving it on
 the remote creates two ongoing costs:
@@ -66,5 +66,5 @@ that's their cleanup.
 
 - Creating a new GitHub repo.
 - Auditing an existing repo where merged branches accumulate.
-- Companion to `github-hygiene-protect-default-branch` — apply both at repo
+- Companion to `github-policy-protect-default-branch` — apply both at repo
   setup time.

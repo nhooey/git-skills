@@ -83,7 +83,7 @@ gh pr merge <num> --merge --delete-branch
 
 The `--delete-branch` flag deletes both the remote branch and the
 local tracking ref in one shot — useful as a one-off if
-`github-auto-delete-merged-branches` isn't (yet) enabled.
+`github-policy-auto-delete-merged-branches` isn't (yet) enabled.
 
 ## `POST /repos/{owner}/{repo}/branches/{branch}/rename` auto-closes open PRs whose head is that branch
 

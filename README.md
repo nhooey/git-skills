@@ -58,7 +58,7 @@ Curated subsets exposed as flake packages. Build a pack the same way as a single
 | --- | --- | --- |
 | `agent-skills-git-minimal` | `git-hygiene-commit-message-format`, `git-hygiene-push-force-safely`, `git-hygiene-gitignore`, `git-ssh-remotes` | Near-universally-good git rules. Skips stylistic and team-stance choices. |
 | `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
-| `agent-skills-github-setup` | `github-hygiene-protect-default-branch`, `github-auto-delete-merged-branches`, `github-codeowners` | Apply once per repo at creation. |
+| `agent-skills-github-setup` | `github-policy-protect-default-branch`, `github-policy-auto-delete-merged-branches`, `github-policy-codeowners` | Apply once per repo at creation. |
 | `agent-skills-github-all` | All 10 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
 | `agent-skills-github-pull-request-lifecycle` | `github-pull-request-watcher`, `github-pull-request-status-line`, `github-changeset-prompt` | The purely agent-behavior skills. Only meaningful when an LLM is driving. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
@@ -81,7 +81,7 @@ nix run github:nhooey/skills-git#agent-skills-github-pull-request-lifecycle    #
 | [git-hygiene-local-history](skills/git-hygiene-local-history) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
 | [git-hygiene-push-force-safely](skills/git-hygiene-push-force-safely) | safety | Always force-push with `--force-with-lease`, never plain `--force`. |
 | [git-hygiene-branch-naming](skills/git-hygiene-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
-| [git-hygiene-merged-branches](skills/git-hygiene-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
+| [git-hygiene-cleanup-merged-branches](skills/git-hygiene-cleanup-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
 | [git-hygiene-gitignore](skills/git-hygiene-gitignore) | style | Anchor paths, keep personal preferences in `~/.gitignore_global`, compress patterns safely. |
 | [git-ssh-remotes](skills/git-ssh-remotes) | setup, style | Prefer SSH (`git@github.com:owner/repo.git`) over HTTPS. |
 | [git-push-workflow-mode](skills/git-push-workflow-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
@@ -90,10 +90,10 @@ nix run github:nhooey/skills-git#agent-skills-github-pull-request-lifecycle    #
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [github-hygiene-protect-default-branch](skills/github-hygiene-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
-| [github-auto-delete-merged-branches](skills/github-auto-delete-merged-branches) | setup | Enable `delete_branch_on_merge`. |
-| [github-merge-commits-only](skills/github-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
-| [github-codeowners](skills/github-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
+| [github-policy-protect-default-branch](skills/github-policy-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
+| [github-policy-auto-delete-merged-branches](skills/github-policy-auto-delete-merged-branches) | setup | Enable `delete_branch_on_merge`. |
+| [github-policy-merge-commits-only](skills/github-policy-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
+| [github-policy-codeowners](skills/github-policy-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
 | [github-gh-cli-gotchas](skills/github-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
 | [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
 | [github-stacked-pull-requests](skills/github-stacked-pull-requests) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
