@@ -49,7 +49,7 @@ Two reasons:
    --first-parent`, `git log --graph`, and `git blame` can use them.
    Squash-merge discards those commits and their messages; rebase-
    merge loses the topology. If you're investing in
-   `git-hygiene-local-history` (curating per-commit history before
+   `git-workflow-curate-unpushed` (curating per-commit history before
    push), squash-merge throws that effort away.
 
 ## Compatibility caveat

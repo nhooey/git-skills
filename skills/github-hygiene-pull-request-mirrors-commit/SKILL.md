@@ -152,7 +152,7 @@ gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
 
 `--pretty=%b` (lowercase) strips the subject line — it belongs in
 `title`. `%B` (uppercase) would double-print it. `-f` vs `-F`, and
-shell substitution vs `body=@path`: see `github-gh-cli-gotchas`.
+shell substitution vs `body=@path`: see `github-hygiene-gh-cli-gotchas`.
 
 ## How to detect there's an open PR for the current branch
 

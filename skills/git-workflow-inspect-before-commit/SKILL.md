@@ -1,5 +1,5 @@
 ---
-name: git-hygiene-inspect-before-commit
+name: git-workflow-inspect-before-commit
 description: |
   Before turning working-tree changes into a commit, walk three steps:
   inspect (`git status` / `git diff`), stage only what belongs (`git add
@@ -12,7 +12,7 @@ allowed-tools:
   - Read
 ---
 
-# git-hygiene-inspect-before-commit
+# git-workflow-inspect-before-commit
 
 Before turning a working-tree change into a commit, walk three small
 steps. None of them takes more than a few seconds; together they catch

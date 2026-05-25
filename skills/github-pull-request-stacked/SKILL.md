@@ -1,5 +1,5 @@
 ---
-name: github-stacked-pull-requests
+name: github-pull-request-stacked
 description: |
   Submit a chain of dependent PRs on GitHub. Covers three cases:
   (a) repos you control — `gt submit --stack`, merge bottom-first,
@@ -15,7 +15,7 @@ allowed-tools:
   - Read
 ---
 
-# github-stacked-pull-requests
+# github-pull-request-stacked
 
 This skill captures the workflow for submitting a chain of **dependent**
 pull requests — where each PR builds on the previous, and the child

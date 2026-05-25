@@ -100,8 +100,8 @@ Symptoms that the body has drifted into WHAT:
   parenthetical or clause. Split or cut to one.
 
 **Aim for ≤4 body paragraphs.** Over that, the commit is usually
-either doing too much (split it — see `git-hygiene-local-history` for
-the local-history curation that makes splits cheap) or restating the
+either doing too much (split it — see `git-workflow-curate-unpushed`
+for the local-history curation that makes splits cheap) or restating the
 diff / PR description (cut it). A change as big as adding a new
 public API knob with full test coverage typically lands in 3
 paragraphs: motivation, ruled-out alternative, one non-obvious

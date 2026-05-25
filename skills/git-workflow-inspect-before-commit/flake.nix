@@ -1,5 +1,5 @@
 {
-  description = "github-changeset-prompt: Claude Code skill — multi-select AskUserQuestion after every change-set (Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor)";
+  description = "git-workflow-inspect-before-commit: Claude Code skill — inspect/stage/review (git status/diff/diff --cached) before every commit";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-changeset-prompt";
+      skillName = "git-workflow-inspect-before-commit";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

@@ -1,5 +1,5 @@
 {
-  description = "git-hygiene-inspect-before-commit: Claude Code skill — inspect/stage/review (git status/diff/diff --cached) before every commit";
+  description = "git-hygiene-ssh-remotes: Claude Code skill — prefer SSH (git@github.com:owner/repo.git) over HTTPS for git remotes";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "git-hygiene-inspect-before-commit";
+      skillName = "git-hygiene-ssh-remotes";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

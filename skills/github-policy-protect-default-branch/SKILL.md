@@ -107,7 +107,7 @@ If the repo has been unprotected for a while, expect cleanup:
 
 1. **Audit local clones.** Run `git fetch --prune` to drop tracking
    refs whose remote branches have already been deleted. See
-   `git-hygiene-cleanup-merged-branches` for the local cleanup workflow.
+   `git-workflow-cleanup-merged-branches` for the local cleanup workflow.
 2. **Survey stale remote branches.** Many will already be merged:
    ```bash
    gh api "repos/<owner>/<repo>/branches?protected=false&per_page=100" \

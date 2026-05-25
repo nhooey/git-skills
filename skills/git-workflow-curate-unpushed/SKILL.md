@@ -1,5 +1,5 @@
 ---
-name: git-hygiene-local-history
+name: git-workflow-curate-unpushed
 description: |
   Curate local history before pushing: squash noise commits ("fix typo",
   "oops", trial-and-error iterations), and amend forward into existing
@@ -13,7 +13,7 @@ allowed-tools:
   - Read
 ---
 
-# git-hygiene-local-history
+# git-workflow-curate-unpushed
 
 Apply when you have unpushed commits and want to clean them up before
 they hit the remote. Two complementary moves: squash uninteresting

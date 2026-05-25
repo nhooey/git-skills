@@ -23,53 +23,70 @@
         # All 11 git-* skills.
         agent-skills-git-all = [
           "git-hygiene-branch-naming"
-          "git-hygiene-local-history"
-          "git-hygiene-cleanup-merged-branches"
           "git-hygiene-commit-message-format"
           "git-hygiene-conventional-commits"
-          "git-hygiene-push-force-safely"
           "git-hygiene-gitignore"
-          "git-hygiene-inspect-before-commit"
           "git-hygiene-no-history-in-code"
-          "git-push-workflow-mode"
-          "git-ssh-remotes"
-        ];
-
-        # Narrow subset: universally-good git rules with broad team appeal.
-        # Excludes opinionated style (branch-naming, CC) and interactive
-        # workflow (push-workflow-mode, merged-branches).
-        agent-skills-git-minimal = [
-          "git-hygiene-commit-message-format"
           "git-hygiene-push-force-safely"
-          "git-hygiene-gitignore"
-          "git-ssh-remotes"
+          "git-hygiene-ssh-remotes"
+          "git-workflow-cleanup-merged-branches"
+          "git-workflow-curate-unpushed"
+          "git-workflow-inspect-before-commit"
+          "git-workflow-push-mode"
         ];
 
-        # All github-* skills (includes the agent-* trio).
+        # All git-hygiene-* skills: rules-of-thumb (commit/branch style,
+        # safe force-push, SSH-by-default).
+        agent-skills-git-hygiene = [
+          "git-hygiene-branch-naming"
+          "git-hygiene-commit-message-format"
+          "git-hygiene-conventional-commits"
+          "git-hygiene-gitignore"
+          "git-hygiene-no-history-in-code"
+          "git-hygiene-push-force-safely"
+          "git-hygiene-ssh-remotes"
+        ];
+
+        # All git-workflow-* skills: interactive / multi-step procedures.
+        agent-skills-git-workflow = [
+          "git-workflow-cleanup-merged-branches"
+          "git-workflow-curate-unpushed"
+          "git-workflow-inspect-before-commit"
+          "git-workflow-push-mode"
+        ];
+
+        # All 10 github-* skills (includes the agent-tagged trio).
         agent-skills-github-all = [
-          "github-changeset-prompt"
-          "github-pull-request-status-line"
-          "github-pull-request-watcher"
-          "github-gh-cli-gotchas"
+          "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
           "github-policy-auto-delete-merged-branches"
           "github-policy-codeowners"
           "github-policy-merge-commits-only"
           "github-policy-protect-default-branch"
-          "github-stacked-pull-requests"
+          "github-pull-request-changeset-prompt"
+          "github-pull-request-stacked"
+          "github-pull-request-status-line"
+          "github-pull-request-watcher"
         ];
 
-        # One-time repo configuration: branch protection, auto-delete, owners.
-        agent-skills-github-setup = [
+        # All github-hygiene-* skills: PR-shape discipline + `gh` CLI gotchas.
+        agent-skills-github-hygiene = [
+          "github-hygiene-gh-cli-gotchas"
+          "github-hygiene-pull-request-mirrors-commit"
+        ];
+
+        # All github-policy-* skills: one-time repo configuration.
+        agent-skills-github-policy = [
           "github-policy-auto-delete-merged-branches"
           "github-policy-codeowners"
+          "github-policy-merge-commits-only"
           "github-policy-protect-default-branch"
         ];
 
-        # The three purely agent-flavored skills covering the changeset
-        # → PR open → watch loop. Only meaningful when an LLM is driving.
-        agent-skills-github-pull-request-lifecycle = [
-          "github-changeset-prompt"
+        # All github-pull-request-* skills: PR lifecycle / agent behavior.
+        agent-skills-github-pull-request = [
+          "github-pull-request-changeset-prompt"
+          "github-pull-request-stacked"
           "github-pull-request-status-line"
           "github-pull-request-watcher"
         ];

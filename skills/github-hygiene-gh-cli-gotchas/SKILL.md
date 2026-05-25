@@ -1,5 +1,5 @@
 ---
-name: github-gh-cli-gotchas
+name: github-hygiene-gh-cli-gotchas
 description: |
   Known traps in the `gh` CLI for PR workflows: `gh pr edit` exits 1
   on a Projects-classic deprecation warning without applying the edit
@@ -14,7 +14,7 @@ allowed-tools:
   - Read
 ---
 
-# github-gh-cli-gotchas
+# github-hygiene-gh-cli-gotchas
 
 Four failure modes worth knowing before they cost a debugging detour.
 All observed against `gh` 2.85+ and the current GitHub REST API.

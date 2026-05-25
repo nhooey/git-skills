@@ -1,5 +1,5 @@
 ---
-name: github-changeset-prompt
+name: github-pull-request-changeset-prompt
 description: |
   After completing any change-set in the work tree, present a
   multi-select `AskUserQuestion` prompt (split into Local / Push /
@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# github-changeset-prompt
+# github-pull-request-changeset-prompt
 
 Once you've made changes in the work tree, don't auto-decide whether
 to stage, commit, push, or follow up on the PR. Present a multi-select

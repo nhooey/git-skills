@@ -1,5 +1,5 @@
 {
-  description = "git-hygiene-local-history: Claude Code skill — squash noise + amend forward to curate unpushed history";
+  description = "github-pull-request-changeset-prompt: Claude Code skill — multi-select AskUserQuestion after every change-set (Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "git-hygiene-local-history";
+      skillName = "github-pull-request-changeset-prompt";
       packagePrefix = "agent-skill-";
       src = ./.;
     };
