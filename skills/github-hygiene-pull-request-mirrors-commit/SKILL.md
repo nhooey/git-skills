@@ -168,12 +168,14 @@ Two ways to detect:
    Empty output → no open PR, no PATCH needed. Non-empty → grab
    `.number` and PATCH after the amend.
 
-2. **Hook-driven nudge** — the `pr-sync-check.sh` PostToolUse hook
-   (configured in `~/.claude/settings.json`) runs the same probe
-   automatically on every `git commit --amend` and `git push`, and
-   emits a system reminder if HEAD's commit message has diverged
-   from the PR's title or body. Treat the reminder as authoritative
-   and run the PATCH it suggests.
+2. **Hook-driven nudge** — the `pull-request-sync-check.sh`
+   PostToolUse hook shipped by `github-pull-request-watcher` (wired
+   into `~/.claude/settings.json`) runs the same probe automatically
+   on every `git commit --amend` and `git push`, and emits a system
+   reminder if HEAD's commit message has diverged from the PR's
+   title or body. Treat the reminder as authoritative and run the
+   PATCH it suggests. See `github-pull-request-watcher`'s "Companion
+   hook" section for wiring instructions.
 
 The active probe is the right discipline; the hook is the safety net
 for when the discipline lapses.

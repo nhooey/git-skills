@@ -1,5 +1,5 @@
 {
-  description = "github-merge-commits-only: Claude Code skill — disable squash and rebase merges; every PR lands as a merge commit";
+  description = "github-policy-auto-delete-merged-branches: Claude Code skill — enable delete_branch_on_merge so PR head branches vanish on merge";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-merge-commits-only";
+      skillName = "github-policy-auto-delete-merged-branches";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

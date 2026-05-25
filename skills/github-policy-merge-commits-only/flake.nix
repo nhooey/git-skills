@@ -1,5 +1,5 @@
 {
-  description = "github-hygiene-protect-default-branch: Claude Code skill — apply Rulesets-API branch protection (require PR, status checks, block force-push, block deletion)";
+  description = "github-policy-merge-commits-only: Claude Code skill — disable squash and rebase merges; every PR lands as a merge commit";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-hygiene-protect-default-branch";
+      skillName = "github-policy-merge-commits-only";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

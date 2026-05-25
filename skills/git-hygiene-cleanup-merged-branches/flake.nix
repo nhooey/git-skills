@@ -1,5 +1,5 @@
 {
-  description = "github-auto-delete-merged-branches: Claude Code skill — enable delete_branch_on_merge so PR head branches vanish on merge";
+  description = "git-hygiene-cleanup-merged-branches: Claude Code skill — delete local/remote merged branches; ask before bulk-pruning";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -11,7 +11,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
-      skillName = "github-auto-delete-merged-branches";
+      skillName = "git-hygiene-cleanup-merged-branches";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

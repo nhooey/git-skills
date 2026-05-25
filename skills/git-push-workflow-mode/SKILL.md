@@ -198,14 +198,16 @@ automatically and this skill applies the saved mode without prompting.
 
 ## Safety net
 
-The `pr-sync-check.sh` PostToolUse hook (configured in
+The `pull-request-sync-check.sh` PostToolUse hook shipped by the
+`github-pull-request-watcher` skill (wired into
 `~/.claude/settings.json`) probes for an open PR on every
 `git commit --amend` and `git push`, and emits a system reminder if
 HEAD's commit message has diverged from the PR's title or body. This
 catches amend-without-push and forgotten-PATCH cases that heuristic
 skill loading might miss. The hook is non-blocking — it nudges, it
 does not deny — but treat its reminder as authoritative and run the
-PATCH it suggests.
+PATCH it suggests. See the watcher skill's "Companion hook" section
+for wiring instructions.
 
 ## Why this rule exists
 

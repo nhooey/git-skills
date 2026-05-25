@@ -24,7 +24,7 @@
         agent-skills-git-all = [
           "git-hygiene-branch-naming"
           "git-hygiene-local-history"
-          "git-hygiene-merged-branches"
+          "git-hygiene-cleanup-merged-branches"
           "git-hygiene-commit-message-format"
           "git-hygiene-conventional-commits"
           "git-hygiene-push-force-safely"
@@ -50,20 +50,20 @@
           "github-changeset-prompt"
           "github-pull-request-status-line"
           "github-pull-request-watcher"
-          "github-auto-delete-merged-branches"
-          "github-codeowners"
           "github-gh-cli-gotchas"
-          "github-merge-commits-only"
           "github-hygiene-pull-request-mirrors-commit"
-          "github-hygiene-protect-default-branch"
+          "github-policy-auto-delete-merged-branches"
+          "github-policy-codeowners"
+          "github-policy-merge-commits-only"
+          "github-policy-protect-default-branch"
           "github-stacked-pull-requests"
         ];
 
         # One-time repo configuration: branch protection, auto-delete, owners.
         agent-skills-github-setup = [
-          "github-auto-delete-merged-branches"
-          "github-codeowners"
-          "github-hygiene-protect-default-branch"
+          "github-policy-auto-delete-merged-branches"
+          "github-policy-codeowners"
+          "github-policy-protect-default-branch"
         ];
 
         # The three purely agent-flavored skills covering the changeset
