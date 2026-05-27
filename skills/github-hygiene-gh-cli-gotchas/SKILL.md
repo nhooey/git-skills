@@ -3,10 +3,12 @@ name: github-hygiene-gh-cli-gotchas
 description: |
   Known traps in the `gh` CLI for PR workflows: `gh pr edit` exits 1
   on a Projects-classic deprecation warning without applying the edit
-  (workaround: REST PATCH); `--json merged` is not a valid field (use
-  `state`); GitHub blocks self-approval; the
-  `branches/<branch>/rename` API auto-closes open PRs whose head is
-  that branch. Passive reference — load when using `gh` for non-
+  (workaround: REST PATCH); `gh pr view --json` accepts a narrower set
+  of fields than the GraphQL `pullRequest` type, so `merged` and
+  `reviewThreads` (among others) error out — and the failure is
+  invisible under `2>/dev/null` watchers; GitHub blocks self-approval;
+  the `branches/<branch>/rename` API auto-closes open PRs whose head
+  is that branch. Passive reference — load when using `gh` for non-
   trivial PR operations.
 tags: [reference]
 allowed-tools:
@@ -55,20 +57,50 @@ number `42`. Prefer shell substitution (`$(cat …)`, `$(git log -1
 --pretty=%b)`) over `--field body=@path` — no stale `/tmp` file, no
 race with a parallel agent.
 
-## `gh pr view --json merged` is not a valid field
+## `gh pr view --json` rejects field names that aren't on its allow-list
 
-The accessor is `state` (`OPEN` / `MERGED` / `CLOSED`), not `merged`.
-A merge-watcher needs:
+The fields `gh pr view --json` exposes are a strict subset of the
+GraphQL `pullRequest` type. Two ways to get bitten:
+
+1. **Inventing a field name** because it sounds reasonable.
+   `--json merged` is the classic — the accessor is `state` (emits
+   `OPEN` / `MERGED` / `CLOSED`) or `mergedAt` (non-null when
+   merged), not `merged`.
+2. **Borrowing a field from the GraphQL type** that `gh pr view
+   --json` doesn't surface. `reviewThreads` is the canonical
+   example: it exists on the GraphQL `pullRequest`, but the CLI
+   doesn't expose it. Inline review-thread comments live behind
+   the REST endpoint `repos/<owner>/<repo>/pulls/<num>/comments`,
+   not behind `gh pr view --json reviewThreads`.
+
+In both cases the CLI exits 1 with `Unknown JSON field: "<name>"`
+and dumps the full list of valid fields. That dump is easy to miss
+when debugging a watcher that suppresses stderr — the canonical
+`gh ... 2>/dev/null || echo '{}'` pattern leaves jq parsing an
+empty `{}` and the loop polls a permanently-null state forever,
+never reaching its terminal-state break. The watcher looks armed
+but is brain-dead. Observed 2026-05-27 on a PR #24 watcher in
+`nhooey/skills-nix`: `--json …,reviewThreads` masked the merge
+event for ~10 minutes until the user pointed out the silence.
+
+Validate the field list up front, with stderr intact:
 
 ```bash
-gh pr view <num> --json state --jq .state
-# emits one of: OPEN, MERGED, CLOSED
+gh pr view <num> --json state,statusCheckRollup,comments 2>&1 | head -1
 ```
 
-`mergedAt` (non-null when merged) is also valid. Don't try `merged` —
-it errors with `Unknown JSON field: "merged"` and lists every
-available field, which is a lot of noise to scroll past when
-debugging a watcher script.
+If you see `Unknown JSON field:`, fix the query before arming a
+Monitor against it. To enumerate what's currently valid, run
+`gh pr view <num> --json invalid` once — the error output lists
+every accepted field. The set has grown over `gh` releases; the
+authoritative list is whatever the local `gh` build emits, not
+anything pinned in this document.
+
+The currently-known PR-watcher-relevant fields are: `state`,
+`mergedAt`, `mergedBy`, `mergeCommit`, `mergeStateStatus`,
+`mergeable`, `isDraft`, `reviewDecision`, `reviews`,
+`latestReviews`, `statusCheckRollup`, `comments`, `commits`,
+`headRefName`, `headRefOid`, `baseRefName`, `labels`.
 
 ## GitHub blocks self-approval
 
