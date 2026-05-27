@@ -3,10 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    # Validate against the install-scope-required branch end-to-end
-    # before that PR is merged. Switch back to the bare
-    # `github:nhooey/flake-skills` ref once Phase 1 lands.
-    flake-skills.url = "github:nhooey/flake-skills/install-scope-required";
+    flake-skills.url = "github:nhooey/flake-skills";
     flake-skills.inputs.nixpkgs.follows = "nixpkgs";
     skills-nix.url = "github:nhooey/skills-nix";
     skills-nix.inputs.nixpkgs.follows = "nixpkgs";
