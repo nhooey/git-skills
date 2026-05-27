@@ -153,6 +153,40 @@ every existing comment, and (c) cause `comm -13` of a non-empty
 `awk 'NF { print … }'` (instead of `sed`) is defence in depth — even
 if the guard fails, empty lines never get a prefix.
 
+## Dry-run every gh invocation before passing the script to `Monitor`
+
+The empty-fetch guard above protects against *intermittent* failures
+(network hiccup, rate-limit ping). It does **not** protect against
+*systematic* failures — an invalid `--json` field, a typo in the
+endpoint path, a missing repo permission. Those return non-zero
+*every* poll; `2>/dev/null` swallows the stderr; the empty-body
+guard keeps the previous (empty) state; the loop polls silently
+forever, never emitting events and never reaching its terminal-state
+break. The watcher looks "armed" but is brain-dead — and the failure
+mode is silent enough that the user is often the one who notices,
+not the agent.
+
+Before handing the script to `Monitor`, run every distinct gh
+invocation it contains exactly once with stderr **intact**, and
+confirm each prints the expected shape:
+
+```bash
+gh pr view "$PR" --repo "$REPO" --json state,reviewDecision
+gh api "repos/$REPO/issues/$PR/comments"
+gh api "repos/$REPO/pulls/$PR/comments"
+gh api "repos/$REPO/commits/$SHA/check-runs"
+```
+
+If any prints `Unknown JSON field:`, `HTTP 4xx`, or `Could not
+resolve to a Repository`, fix the query and re-dry-run. Specifically,
+don't substitute `gh pr view --json reviewThreads` for the dedicated
+`pulls/$PR/comments` REST endpoint — `reviewThreads` exists on the
+GraphQL `pullRequest` type but is *not* exposed by `gh pr view
+--json`, and the resulting `Unknown JSON field` error is exactly the
+silent-stuck failure mode this section warns about. See
+`github-hygiene-gh-cli-gotchas` for the full `--json`-field
+inventory.
+
 ## Alternative architectures (noted, not prescribed)
 
 The polling Monitor above is the right default for an interactive
