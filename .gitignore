@@ -3,3 +3,6 @@
 /result-*
 /skills/*/result
 /skills/*/result-*
+
+# Local worktree convention (see using-git-worktrees).
+/.worktrees/
