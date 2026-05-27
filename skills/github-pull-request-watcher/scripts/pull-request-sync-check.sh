@@ -6,13 +6,17 @@
 #
 # Ships as part of the `github-pull-request-watcher` skill at
 # `<install-root>/github-pull-request-watcher/scripts/pull-request-sync-check.sh`.
-# Wire into `~/.claude/settings.json` under `hooks.PostToolUse`:
+# `$CLAUDE_SKILLS_DIR` below is a placeholder — Claude Code does
+# not set it automatically; export it (or substitute the literal
+# path) to either `~/.claude/skills` (user-level install) or
+# `<project>/.claude/skills` (project-level install) before wiring
+# this hook into `settings.json`:
 #
 #   {
 #     "matcher": "Bash",
 #     "hooks": [{
 #       "type": "command",
-#       "command": "bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
+#       "command": "bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
 #       "timeout": 15
 #     }]
 #   }

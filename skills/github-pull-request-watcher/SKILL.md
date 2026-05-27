@@ -45,6 +45,20 @@ push happens.
 Active. Loading triggers the arming of a Monitor on the current PR
 state. If there's no relevant PR for the current branch, no-op.
 
+## Path convention
+
+`$CLAUDE_SKILLS_DIR/<skill-name>/...` in the example commands below
+refers to your skills install root. Claude Code does **not** set
+`$CLAUDE_SKILLS_DIR` automatically — resolve it to either
+`~/.claude/skills` (user-level install) or `<project>/.claude/skills`
+(project-level install), depending on where this skill lives. Either
+`export CLAUDE_SKILLS_DIR=…` in the shell before running the example
+commands, or substitute the literal path. The `settings.json` hook
+snippet at the end of this skill uses the same placeholder — `sh -c`
+expands env vars from the parent process, so an unexported var
+expands to empty and the path breaks; export it before saving the
+config, or substitute the literal path.
+
 ## Reactions per event type
 
 - **Check green** — surface 🟢 in the next reply (see
@@ -84,7 +98,7 @@ shipped as `scripts/pull-request-monitor.sh` alongside this skill;
 arm the `Monitor` tool with `persistent: true` and invoke it:
 
 ```bash
-bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-monitor.sh
+bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-monitor.sh
 ```
 
 All flags are optional and auto-detect from the current branch /
@@ -143,7 +157,7 @@ The script's `--dry-run` flag runs every distinct gh invocation it
 contains exactly once with stderr **intact**, then exits:
 
 ```bash
-bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-monitor.sh --dry-run
+bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-monitor.sh --dry-run
 ```
 
 If any prints `Unknown JSON field:`, `HTTP 4xx`, or `Could not
@@ -225,8 +239,8 @@ Behaviour contract:
 - Never exits non-zero. Blocking would be hostile; the agent just
   needs the nudge.
 
-To wire it up, add this to `~/.claude/settings.json` (assumes
-skills are installed at `~/.claude/skills/`):
+To wire it up, add this to your Claude Code `settings.json`
+(substitute `$CLAUDE_SKILLS_DIR` per the path convention above):
 
 ```json
 "hooks": {
@@ -236,7 +250,7 @@ skills are installed at `~/.claude/skills/`):
       "hooks": [
         {
           "type": "command",
-          "command": "bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
+          "command": "bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
           "timeout": 15
         }
       ]
