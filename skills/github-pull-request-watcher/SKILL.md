@@ -79,81 +79,54 @@ state. If there's no relevant PR for the current branch, no-op.
 ## One Monitor, one loop, multiple sources
 
 Poll the check-runs, issue-comments, and PR-state endpoints in a
-single loop and emit each delta as a recognizable line:
+single loop and emit each delta as a recognizable line. The loop is
+shipped as `scripts/pull-request-monitor.sh` alongside this skill;
+arm the `Monitor` tool with `persistent: true` and invoke it:
 
 ```bash
-PR=<num>; REPO=<owner>/<repo>; SHA=<head-sha>
-USER=$(gh api user --jq .login)
-prev_checks=""; max_issue=0; max_review=0; prev_state=""
-
-# Shared jq filter for both comment sources — emits one line per
-# new comment, flagging self-comments distinctly.
-fmt_comments='.[] | select(.id > $cutoff)
-  | "COMMENT-\(if .user.login==$user then "SELF" else .user.login end): \(.body | gsub("\n"; " "))"'
-
-while :; do
-  # Check completions — guard against transient empty fetch.
-  cur=$(gh api "repos/$REPO/commits/$SHA/check-runs" 2>/dev/null \
-    | jq -r '.check_runs[]? | select(.status=="completed") | "\(.name): \(.conclusion)"' | sort)
-  if [ -n "$cur" ]; then
-    comm -13 <(echo "$prev_checks") <(echo "$cur") | awk 'NF { print "CHECK " $0 }'
-    prev_checks=$cur
-  fi
-
-  # Issue-level comments (Conversation tab) — fetch once, reuse.
-  issue=$(gh api "repos/$REPO/issues/$PR/comments" 2>/dev/null)
-  if [ -n "$issue" ] && [ "$issue" != "[]" ]; then
-    jq -r --arg user "$USER" --argjson cutoff "$max_issue" "$fmt_comments" <<<"$issue"
-    max_issue=$(jq '[.[].id, 0] | max' <<<"$issue")
-  fi
-
-  # Inline review-thread comments (Files Changed tab) — same shape.
-  review=$(gh api "repos/$REPO/pulls/$PR/comments" 2>/dev/null)
-  if [ -n "$review" ] && [ "$review" != "[]" ]; then
-    jq -r --arg user "$USER" --argjson cutoff "$max_review" "$fmt_comments" <<<"$review"
-    max_review=$(jq '[.[].id, 0] | max' <<<"$review")
-  fi
-
-  # PR state + review decision
-  state=$(gh pr view "$PR" --repo "$REPO" --json state,reviewDecision 2>/dev/null \
-    --jq '"STATE \(.state) REVIEW \(.reviewDecision | if . == null or . == "" then "none" else . end)"')
-  if [ -n "$state" ] && [ "$state" != "$prev_state" ]; then
-    echo "$state"
-    prev_state=$state
-  fi
-  case "$state" in *MERGED*|*CLOSED*) break ;; esac
-
-  sleep 30
-done
+bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-monitor.sh
 ```
 
-Run via `Monitor` with `persistent: true`; a fixed timeout fires
-spuriously on PRs that sit for hours. `state` is the right JSON
-accessor — `merged` isn't a valid field (see
-`github-hygiene-gh-cli-gotchas`). Both comment endpoints are fetched exactly
-once per iteration: the shared `fmt_comments` jq filter is
-parameterized via `--arg` and `--argjson` so issue and inline-review
-comments flow through the same emit logic without duplication. The
-`reviewDecision` fallback uses an explicit `null`-and-`""` check
-rather than jq's `//` operator: GitHub returns `""` (empty string),
-not `null`, when no review has been submitted, and `//` only catches
-null / false — `(.reviewDecision // "none")` would emit nothing
-instead of `none` for unreviewed PRs.
+All flags are optional and auto-detect from the current branch /
+HEAD: `--pr <num>` (from `gh pr view --json number`), `--repo
+<owner/repo>` (from `gh repo view --json nameWithOwner`), `--sha
+<sha>` (from `git rev-parse HEAD`), `--interval <seconds>` (default
+30). Pass them explicitly to watch a PR other than the one on the
+current branch.
+
+`persistent: true` matters because a fixed Monitor timeout fires
+spuriously on PRs that sit for hours. Each line of output is a
+single recognizable event: `CHECK <name>: <conclusion>` on check
+completions, `COMMENT-<login>: <body>` (or `COMMENT-SELF` when the
+comment was posted by the session-running user), and `STATE <state>
+REVIEW <decision>` on PR-state transitions. The loop breaks when
+state reaches `MERGED` or `CLOSED`.
+
+Two design notes worth knowing — both load-bearing for the silent-
+stuck failure mode below:
+
+- `state` is the right `--json` accessor; `merged` isn't a valid
+  field (see `github-hygiene-gh-cli-gotchas`).
+- The `reviewDecision` fallback uses an explicit `null`-and-`""`
+  check rather than jq's `//` operator: GitHub returns `""` (empty
+  string), not `null`, when no review has been submitted, and `//`
+  only catches null / false — `(.reviewDecision // "none")` would
+  emit nothing instead of `none` for unreviewed PRs.
 
 ## Guard against transient empty fetches
 
-Each poll guards with `if [ -n "$cur" ]; then …; fi` (and analogous
-for the comment fetches): a brief `gh api` failure or rate-limit
-hiccup returns an empty body, which would otherwise (a) regress
+The script guards every fetch with `if [ -n "$cur" ]; then …; fi` (and
+analogous for the comment fetches): a brief `gh api` failure or rate-
+limit hiccup returns an empty body, which would otherwise (a) regress
 `prev_checks` to empty and re-emit every check on the next successful
-fetch, (b) regress `max_issue` / `max_review` to `0` and re-emit
-every existing comment, and (c) cause `comm -13` of a non-empty
-`prev_checks` against an empty `cur` to print one empty line that
+fetch, (b) regress `max_issue` / `max_review` to `0` and re-emit every
+existing comment, and (c) cause `comm -13` of a non-empty `prev_checks`
+against an empty `cur` to print one empty line that a naive
 `sed 's/^/CHECK /'` would render as a bare `CHECK` event. The
 `awk 'NF { print … }'` (instead of `sed`) is defence in depth — even
 if the guard fails, empty lines never get a prefix.
 
-## Dry-run every gh invocation before passing the script to `Monitor`
+## Dry-run before arming `Monitor`
 
 The empty-fetch guard above protects against *intermittent* failures
 (network hiccup, rate-limit ping). It does **not** protect against
@@ -166,26 +139,22 @@ break. The watcher looks "armed" but is brain-dead — and the failure
 mode is silent enough that the user is often the one who notices,
 not the agent.
 
-Before handing the script to `Monitor`, run every distinct gh
-invocation it contains exactly once with stderr **intact**, and
-confirm each prints the expected shape:
+The script's `--dry-run` flag runs every distinct gh invocation it
+contains exactly once with stderr **intact**, then exits:
 
 ```bash
-gh pr view "$PR" --repo "$REPO" --json state,reviewDecision
-gh api "repos/$REPO/issues/$PR/comments"
-gh api "repos/$REPO/pulls/$PR/comments"
-gh api "repos/$REPO/commits/$SHA/check-runs"
+bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-monitor.sh --dry-run
 ```
 
 If any prints `Unknown JSON field:`, `HTTP 4xx`, or `Could not
-resolve to a Repository`, fix the query and re-dry-run. Specifically,
-don't substitute `gh pr view --json reviewThreads` for the dedicated
-`pulls/$PR/comments` REST endpoint — `reviewThreads` exists on the
-GraphQL `pullRequest` type but is *not* exposed by `gh pr view
---json`, and the resulting `Unknown JSON field` error is exactly the
-silent-stuck failure mode this section warns about. See
-`github-hygiene-gh-cli-gotchas` for the full `--json`-field
-inventory.
+resolve to a Repository`, fix the query and re-dry-run before
+arming the Monitor. Specifically, don't substitute `gh pr view
+--json reviewThreads` for the dedicated `pulls/$PR/comments` REST
+endpoint — `reviewThreads` exists on the GraphQL `pullRequest` type
+but is *not* exposed by `gh pr view --json`, and the resulting
+`Unknown JSON field` error is exactly the silent-stuck failure mode
+this section warns about. See `github-hygiene-gh-cli-gotchas` for
+the full `--json`-field inventory.
 
 ## Alternative architectures (noted, not prescribed)
 
