@@ -3,12 +3,18 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-skills.url = "github:nhooey/flake-skills";
+    # Validate against the install-scope-required branch end-to-end
+    # before that PR is merged. Switch back to the bare
+    # `github:nhooey/flake-skills` ref once Phase 1 lands.
+    flake-skills.url = "github:nhooey/flake-skills/install-scope-required";
     flake-skills.inputs.nixpkgs.follows = "nixpkgs";
+    skills-nix.url = "github:nhooey/skills-nix";
+    skills-nix.inputs.nixpkgs.follows = "nixpkgs";
+    skills-nix.inputs.flake-skills.follows = "flake-skills";
   };
 
   outputs =
-    { nixpkgs, flake-skills, ... }@inputs:
+    { nixpkgs, flake-skills, skills-nix, ... }@inputs:
     let
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
@@ -109,9 +115,37 @@
       packPackages = forSystems (
         system: nixpkgs.lib.mapAttrs (packName: skills: mkEnv system packName skills) packs
       );
+
+      # devShell that auto-installs project-scope skills on `nix
+      # develop`. Picks up every local git-* / github-* skill from this
+      # flake, plus the two nix-* skills relevant to this repo from
+      # skills-nix. We invoke each flake's `install` *program* directly
+      # rather than `nix run ${flake}#install`, because the latter
+      # re-evaluates the referenced flake using its own flake.lock —
+      # which sidesteps the `follows` we set up above. By contrast, the
+      # `.apps.<system>.install.program` paths come out of the
+      # `follows`-aware evaluation here, so skills-nix's install binary
+      # is built against the same flake-skills we are.
+      devShells = forSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          baseInstall = base.apps.${system}.install.program;
+          skillsNixInstall = skills-nix.apps.${system}.install.program;
+        in
+        {
+          default = pkgs.mkShell {
+            shellHook = ''
+              ${baseInstall} --scope=project
+              ${skillsNixInstall} --scope=project nix-flakes nix-garnix-ci
+            '';
+          };
+        }
+      );
     in
     base
     // {
       packages = nixpkgs.lib.recursiveUpdate base.packages packPackages;
+      inherit devShells;
     };
 }

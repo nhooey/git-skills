@@ -7,26 +7,27 @@
         ]
       },
       "locked": {
-        "lastModified": 1779380349,
-        "narHash": "sha256-tIDeK978Vq86f5zNtuvBs4l+XUldJqYZrqZscLNOyK4=",
+        "lastModified": 1779894800,
+        "narHash": "sha256-iiBlIdeUtLtlvs9Ep0gWINNP9LSaVUD9Gaqc0uEoGUc=",
         "owner": "nhooey",
         "repo": "flake-skills",
-        "rev": "0c5e2e1ceddd28c4c93b87d3ad288826ab625c72",
+        "rev": "79428f1ac849c4336f73d9292eb52e0a157c320d",
         "type": "github"
       },
       "original": {
         "owner": "nhooey",
+        "ref": "install-scope-required",
         "repo": "flake-skills",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1778443072,
-        "narHash": "sha256-zi7/fsqM/kFdNuED//4WOCUtezGtKKqRNORjMvfwjnA=",
+        "lastModified": 1779560665,
+        "narHash": "sha256-tpyBcxPpcQb8ukyNF7DoCwfSY3VPsxHoYwj00Cayv5o=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "da5ad661ba4e5ef59ba743f0d112cbc30e474f32",
+        "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
         "type": "github"
       },
       "original": {
@@ -39,7 +40,31 @@
     "root": {
       "inputs": {
         "flake-skills": "flake-skills",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "skills-nix": "skills-nix"
+      }
+    },
+    "skills-nix": {
+      "inputs": {
+        "flake-skills": [
+          "flake-skills"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779879632,
+        "narHash": "sha256-6M+WOVkzWtidi2Zi9pYqygXLKZQDNKWae25GTXId0Y4=",
+        "owner": "nhooey",
+        "repo": "skills-nix",
+        "rev": "d15ad749ae7106eda4bb6892012616867e1222fb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nhooey",
+        "repo": "skills-nix",
+        "type": "github"
       }
     }
   },

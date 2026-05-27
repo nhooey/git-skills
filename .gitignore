@@ -6,3 +6,6 @@
 
 # Local worktree convention (see using-git-worktrees).
 /.worktrees/
+
+# Project-scope skill installs from `nix develop`'s shellHook.
+/.claude/skills/
