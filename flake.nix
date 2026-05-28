@@ -3,24 +3,40 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-skills.url = "github:nhooey/flake-skills";
-    flake-skills.inputs.nixpkgs.follows = "nixpkgs";
-    skills-nix.url = "github:nhooey/skills-nix";
-    skills-nix.inputs.nixpkgs.follows = "nixpkgs";
-    skills-nix.inputs.flake-skills.follows = "flake-skills";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    systems.url = "github:nix-systems/default";
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    flake-skills = {
+      url = "github:nhooey/flake-skills";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    skills-nix = {
+      url = "github:nhooey/skills-nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-skills.follows = "flake-skills";
+      };
+    };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, flake-skills, skills-nix, ... }@inputs:
+    { nixpkgs, flake-parts, flake-skills, skills-nix, ... }@inputs:
     let
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
         packagePrefix = "agent-skill-";
       };
-
-      systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forSystems = nixpkgs.lib.genAttrs systems;
 
       packs = {
         # All 11 git-* skills.
@@ -108,41 +124,53 @@
           name = packName;
           skills = builtins.map (n: base.packages.${system}."agent-skill-${n}") skillNames;
         };
-
-      packPackages = forSystems (
-        system: nixpkgs.lib.mapAttrs (packName: skills: mkEnv system packName skills) packs
-      );
-
-      # devShell that auto-installs project-scope skills on `nix
-      # develop`. Picks up every local git-* / github-* skill from this
-      # flake, plus the two nix-* skills relevant to this repo from
-      # skills-nix. We invoke each flake's `install` *program* directly
-      # rather than `nix run ${flake}#install`, because the latter
-      # re-evaluates the referenced flake using its own flake.lock —
-      # which sidesteps the `follows` we set up above. By contrast, the
-      # `.apps.<system>.install.program` paths come out of the
-      # `follows`-aware evaluation here, so skills-nix's install binary
-      # is built against the same flake-skills we are.
-      devShells = forSystems (
-        system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          baseInstall = base.apps.${system}.install.program;
-          skillsNixInstall = skills-nix.apps.${system}.install.program;
-        in
+    in
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = import inputs.systems;
+      imports = [
+        inputs.devshell.flakeModule
+        inputs.treefmt-nix.flakeModule
+      ];
+      perSystem =
+        { system, ... }:
         {
-          default = pkgs.mkShell {
-            shellHook = ''
-              ${baseInstall} --scope=project
-              ${skillsNixInstall} --scope=project nix-flakes nix-garnix-ci
+          packages =
+            base.packages.${system}
+            // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs;
+
+          apps = base.apps.${system};
+
+          # devShell that auto-installs project-scope skills on `nix
+          # develop`. Picks up every local git-* / github-* skill from
+          # this flake, plus the two nix-* skills relevant to this repo
+          # from skills-nix. We invoke each flake's `install` *program*
+          # directly rather than `nix run ${flake}#install`, because the
+          # latter re-evaluates the referenced flake using its own
+          # flake.lock — which sidesteps the `follows` we set up above.
+          # By contrast, the `.apps.<system>.install.program` paths come
+          # out of the `follows`-aware evaluation here, so skills-nix's
+          # install binary is built against the same flake-skills we
+          # are.
+          devshells.default = {
+            name = "skills-git";
+            motd = ''
+              {bold}{14}🚀 Entering skills-git dev shell{reset}
+              Run {bold}menu{reset} to list available commands.
+            '';
+            devshell.startup.install-skills.text = ''
+              ${base.apps.${system}.install.program} --scope=project
+              ${skills-nix.apps.${system}.install.program} --scope=project nix-flakes nix-garnix-ci
             '';
           };
-        }
-      );
-    in
-    base
-    // {
-      packages = nixpkgs.lib.recursiveUpdate base.packages packPackages;
-      inherit devShells;
+
+          treefmt = {
+            projectRootFile = "flake.nix";
+            programs = {
+              nixfmt.enable = true;
+              shfmt.enable = true;
+              yamlfmt.enable = true;
+            };
+          };
+        };
     };
 }
