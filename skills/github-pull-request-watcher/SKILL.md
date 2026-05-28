@@ -1,12 +1,20 @@
 ---
 name: github-pull-request-watcher
 description: |
-  After pushing to a branch with an open or imminent PR, arm a
-  background Monitor that polls check-runs, issue-comments, review-
-  thread comments, and PR state in a single loop, emitting one line
-  per delta and reacting per event type (check red → read log,
-  comment from session-user → treat as instruction, merged → fire
-  cleanup prompt). Apply on every push to a PR branch.
+  MANDATORY after every push to a branch with an open or imminent PR:
+  immediately arm
+  `~/.claude/skills/github-pull-request-watcher/scripts/pull-request-monitor.sh`
+  as a background Monitor. This is non-negotiable — the description IS
+  the standing instruction; the user does not need to ask, and "they
+  only asked me to push" is not a valid skip reason. Skipping leaves
+  the agent blind to red CI, user comments posted as the review
+  surface (treated as chat instructions), and the merge event.
+
+  The Monitor polls check-runs, issue-comments, review-thread
+  comments, and PR state in a single loop, emitting one line per
+  delta and reacting per event type (check red → read log, comment
+  from session-user → treat as instruction, merged → fire cleanup
+  prompt).
 tags: [agent, workflow]
 allowed-tools:
   - Bash
@@ -271,6 +279,10 @@ itself has no Nix-specific assumptions.
 
 ## When to apply
 
-- Just pushed to a branch that has (or is about to have) an open PR.
-- Resuming a session where a PR was opened earlier.
-- Receiving a notification that a watched PR transitioned state.
+- Arm IMMEDIATELY after every push to a branch with an open or
+  imminent PR. No exceptions, including pushes the user explicitly
+  requested without asking for a watcher.
+- Arm on resuming a session where a PR was opened earlier and the
+  prior session ended without a watcher running.
+- Re-arm on receiving a notification that a watched PR transitioned
+  state (the previous loop may have terminated).
