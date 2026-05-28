@@ -96,7 +96,7 @@ config, or substitute the literal path.
   the override, re-fetch before any destructive op.
 - **Merged** — fire the cleanup prompt below.
 - **Closed without merge** — ask whether to reopen, delete the
-  branch, or leave it.
+  branch, or leave it (see "On close-without-merge" below).
 
 ## One Monitor, one loop, multiple sources
 
@@ -200,27 +200,56 @@ invocation. They're heavier to set up, and the agent can't bootstrap
 them mid-session, so don't reach for them unless they're already
 wired up — stick with the Monitor when running interactively.
 
-## On merge, prompt with `AskUserQuestion` (multi-select)
+## On merge, prompt the user
 
-Three cleanups, all default-checked:
+**Entity type:** multi-select (checkbox / multiple-selection; all
+options default-checked).
 
-- **Delete locally** — `git branch -d <branch>` (use `-d`; the
-  merged-only safety check is the point).
-- **Delete on remote** — `git push origin --delete <branch>`. Pre-
-  check with `git ls-remote --exit-code origin <branch>` and skip
-  the option entirely if the branch is already gone. But
-  `github-policy-auto-delete-merged-branches` is asynchronous — the pre-
-  check can pass and the branch can vanish in the window between the
-  prompt and the user's pick — so the actual `git push --delete`
-  must treat `error: unable to delete '<branch>': remote ref does
-  not exist` as success, not failure. The desired end-state has been
-  reached, just by another mechanism. A no-op question is noise; a
-  phantom failure on the cleanup is worse.
-- **Rebase local default** — `git checkout <default> && git pull
-  --rebase origin <default>`. Bail loudly on a dirty tree.
+**Question text** (literal start fixed; dynamic parts in `[brackets]`):
 
-`git-workflow-cleanup-merged-branches` covers the same cleanup from the local
-side; this rule fires it at the right moment.
+> PR `[#N]` merged into `[base-branch]`. Cleanup actions?
+
+**Option text** (literal start fixed; dynamic parts in `[brackets]`):
+
+- `Delete local branch [branch-name]` — `git branch -d <branch>`
+  (use `-d`; the merged-only safety check is the point).
+- `Delete remote branch [branch-name]` — `git push origin --delete
+  <branch>`. Pre-check with `git ls-remote --exit-code origin
+  <branch>` and skip the option entirely if the branch is already
+  gone. But `github-policy-auto-delete-merged-branches` is
+  asynchronous — the pre-check can pass and the branch can vanish in
+  the window between the prompt and the user's pick — so the actual
+  `git push --delete` must treat `error: unable to delete
+  '<branch>': remote ref does not exist` as success, not failure.
+  The desired end-state has been reached, just by another mechanism.
+  A no-op question is noise; a phantom failure on the cleanup is
+  worse.
+- `Rebase local [default-branch] from origin` — `git checkout
+  <default> && git pull --rebase origin <default>`. Bail loudly on
+  a dirty tree.
+
+The literal prefixes (`PR ... merged into`, `Delete local branch`,
+`Delete remote branch`, `Rebase local`) are fixed so the prompt is
+recognisable across PRs and any pre-selection by prior answer stays
+deterministic. Only the bracketed segments vary.
+
+`git-workflow-cleanup-merged-branches` covers the same cleanup from
+the local side; this rule fires it at the right moment.
+
+## On close-without-merge, prompt the user
+
+**Entity type:** single-select (radio / multiple-choice; the three
+follow-up paths are mutually exclusive).
+
+**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+
+> PR `[#N]` was closed without merging. What now?
+
+**Option text** (literal start fixed; dynamic parts in `[brackets]`):
+
+- `Reopen PR [#N] — gh pr reopen`
+- `Delete branch [branch-name] locally and on remote`
+- `Leave branch [branch-name] alone`
 
 ## Companion hook: `pull-request-sync-check.sh`
 

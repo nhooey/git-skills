@@ -104,13 +104,21 @@ body per `github-hygiene-pull-request-mirrors-commit`.
 ## Question script
 
 Use these exact questions (via `AskUserQuestion` or equivalent) so the
-user gets a consistent prompt across sessions and repos. The
+user gets a consistent prompt across sessions and repos. The literal
+start of each question and each option is fixed — only the bracketed
+dynamic parts (current branch, recommended option) vary — so identical
+prompts surface identically across sessions and re-asks. The
 recommended option is marked; pick whichever the `gh pr list` probe
 suggests, or fall back to "Ask each time" when in doubt.
 
-**Q1 — Primary mode (ask once per repo per session):**
+**Q1 — Primary mode (ask once per repo per session).**
 
-> Which Git push workflow do you want to use for this repo?
+**Entity type:** single-select (radio / multiple-choice; exactly one
+mode applies per repo).
+
+**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+
+> Which Git push workflow do you want to use for this repo? (recommended: `[Mode N]`)
 >
 > - **Mode 1 — Direct to main:** This repo has never had a PR opened;
 >   just push commits straight to the main branch. (Recommend if
@@ -121,11 +129,16 @@ suggests, or fall back to "Ask each time" when in doubt.
 > - **Mode 3 — Ask each time:** Prompt before every push.
 
 **Q2 — On-branch follow-up (ask only if Mode 1 was picked AND the user
-is on a feature branch):**
+is on a feature branch).**
+
+**Entity type:** single-select (radio / multiple-choice; one on-branch
+default applies per repo).
+
+**Question text** (literal start fixed; dynamic part in `[brackets]`):
 
 > In Mode 1 (no PRs ever opened — just push to main), what should
-> happen when you're sitting on a feature branch with new commits and
-> ask Claude to push?
+> happen when you're on feature branch `[branch-name]` with new commits
+> and ask Claude to push?
 >
 > - **Push the branch only:** Push the current branch to its remote
 >   (creating an upstream if needed). Don't touch main. The branch
@@ -141,10 +154,15 @@ is on a feature branch):**
 >   each time anyway.
 
 **Q3 — On-branch follow-up (ask only if Mode 2 was picked AND the user
-is on a feature branch):**
+is on a feature branch).**
+
+**Entity type:** single-select (radio / multiple-choice; one on-branch
+default applies per repo).
+
+**Question text** (literal start fixed; dynamic part in `[brackets]`):
 
 > In Mode 2 (PRs always — never push to main), what should happen when
-> you're on a feature branch and ask Claude to push?
+> you're on feature branch `[branch-name]` and ask Claude to push?
 >
 > - **Push branch + open PR:** Push the branch and, if no PR is open
 >   for it yet, open one with `gh pr create`. If a PR already exists,

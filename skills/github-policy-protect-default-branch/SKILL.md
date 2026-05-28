@@ -113,9 +113,25 @@ If the repo has been unprotected for a while, expect cleanup:
    gh api "repos/<owner>/<repo>/branches?protected=false&per_page=100" \
      --jq '.[].name' | head -50
    ```
-   Don't bulk-delete without asking. Use `AskUserQuestion` to confirm
-   before pruning branches the current session didn't create — some
-   teams keep release branches around.
+   Don't bulk-delete without asking — some teams keep release branches
+   around. Ask the user before pruning branches the current session
+   didn't create:
+
+   **Entity type:** multi-select (one option per branch the user can
+   individually check or uncheck).
+
+   **Question text** (literal start fixed; dynamic part in `[brackets]`):
+
+   > Prune these stale remote branches in `[owner/repo]`?
+
+   **Option text** (one per branch; literal start fixed):
+
+   - `Delete remote branch [branch-name]`
+
+   The literal prefixes (`Prune these stale remote branches in` and
+   `Delete remote branch`) are fixed so the prompt is recognisable
+   across sessions and the pre-selection by prior answer remains
+   deterministic. Only the bracketed segments vary.
 3. **Watch for direct-push patterns.** Once the PR rule is on, any
    contributor whose habit was `git push origin main` will hit a wall.
    Mention the change in an announcement issue/PR.
