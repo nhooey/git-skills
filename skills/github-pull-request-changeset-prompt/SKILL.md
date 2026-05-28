@@ -45,11 +45,50 @@ change-set lands in the work tree.
 ## Split into three questions (4-option cap)
 
 `AskUserQuestion` caps each question at 4 options, so split into
-three multi-select questions:
+three multi-select questions. Every question and every option starts
+with a fixed literal prefix; only the bracketed segments (current
+branch, current PR number, file count) vary, so the same prompt
+re-surfaces identically across iterations and pre-selection by the
+prior answer is deterministic.
 
-- **Local actions** — Stage, Commit, Amend.
-- **Push actions** — Push, Force, Open Pull Request.
-- **Follow-up** — Re-derive PR name + title, Monitor + react.
+**Entity type (all three sub-questions):** multi-select (checkbox /
+multiple-selection; the user may pick zero or more options per
+sub-question).
+
+**Q1 — Local actions.**
+
+**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+
+> Local actions for the change-set on branch `[branch-name]` (`[N] files`)?
+
+**Option text** (literal start fixed):
+
+- `Stage — git add the changed files`
+- `Commit — new commit`
+- `Amend — fold into the last commit`
+
+**Q2 — Push actions.**
+
+**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+
+> Push the change-set on branch `[branch-name]`?
+
+**Option text** (literal start fixed):
+
+- `Push — regular git push`
+- `Force — git push --force-with-lease`
+- `Open Pull Request — gh pr create`
+
+**Q3 — Follow-up.**
+
+**Question text** (literal start fixed; dynamic part in `[brackets]`):
+
+> PR follow-up for `[PR #N | new PR]` on branch `[branch-name]`?
+
+**Option text** (literal start fixed):
+
+- `Re-derive PR name + title — PATCH from HEAD commit`
+- `Monitor + react — arm github-pull-request-watcher`
 
 ## Mutually exclusive pairs
 

@@ -34,15 +34,30 @@ the right cleanup.
 
 For example, from `git branch --merged main` or `git branch -r --merged
 origin/main` showing branches whose tips are reachable from main, flag
-them to the user and ask before cleaning up:
-
-> Found N local branches and M remote branches already merged into main:
-> [list]. Want me to delete them? (y/n, or pick which ones)
-
-Use `AskUserQuestion` for the prompt — never auto-delete branches the
-user didn't explicitly ask you to clean up in this session, even if Git
-reports them as merged. Some teams keep merged branches around as
+them to the user and ask before cleaning up. Never auto-delete branches
+the user didn't explicitly ask you to clean up in this session, even if
+Git reports them as merged. Some teams keep merged branches around as
 release markers or for historical reasons.
+
+### Question to ask
+
+**Entity type:** multi-select (one option per branch the user can
+individually check or uncheck; "All" and "None" convenience options
+allowed).
+
+**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+
+> Delete these branches already merged into `[base-branch]`?
+
+**Option text** (one per branch; literal start fixed per category):
+
+- `Delete local branch [branch-name]`
+- `Delete remote branch [branch-name]`
+
+The literal prefix (`Delete these branches already merged into` /
+`Delete local branch` / `Delete remote branch`) is fixed so the
+question is recognisable across sessions and pre-selection by prior
+answers stays deterministic. Only the bracketed segments vary.
 
 ## Useful detection commands
 
