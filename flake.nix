@@ -3,35 +3,51 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    systems.url = "github:nix-systems/default";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    systems.url = "github:nix-systems/default";
     devshell = {
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-    flake-skills = {
-      url = "github:nhooey/flake-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    skills-nix = {
-      url = "github:nhooey/skills-nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-skills.follows = "flake-skills";
-      };
     };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # `flake-skills` is the builder library, not a skill — it turns skill
+    # directories into installable flakes and aggregates them.
+    flake-skills = {
+      url = "github:nhooey/flake-skills";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Skills installed only for authoring this repo (nix-*, humanizer,
+    # skill-creator, superpowers), in their own flake so readers don't
+    # confuse them with the skills this flake outputs. See
+    # ./authoring-skills/flake.nix.
+    authoring-skills = {
+      url = "path:./authoring-skills";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-skills.follows = "flake-skills";
+      };
+    };
   };
 
   outputs =
-    { nixpkgs, flake-parts, flake-skills, skills-nix, ... }@inputs:
+    {
+      nixpkgs,
+      flake-parts,
+      flake-skills,
+      ...
+    }@inputs:
     let
+      # The skills this repo outputs: every skill under ./skills built into
+      # per-skill packages (consumed by `packs`/`mkEnv` below) plus the base
+      # install/preview apps. Authoring-only skills live in a separate flake
+      # — see the `authoring-skills` input.
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
@@ -140,17 +156,9 @@
 
           apps = base.apps.${system};
 
-          # devShell that auto-installs project-scope skills on `nix
-          # develop`. Picks up every local git-* / github-* skill from
-          # this flake, plus the two nix-* skills relevant to this repo
-          # from skills-nix. We invoke each flake's `install` *program*
-          # directly rather than `nix run ${flake}#install`, because the
-          # latter re-evaluates the referenced flake using its own
-          # flake.lock — which sidesteps the `follows` we set up above.
-          # By contrast, the `.apps.<system>.install.program` paths come
-          # out of the `follows`-aware evaluation here, so skills-nix's
-          # install binary is built against the same flake-skills we
-          # are.
+          # Auto-install skills at project scope on `nix develop`: this
+          # repo's own skills (dogfooded), then the authoring-only tools
+          # from the separate authoring-skills flake.
           devshells.default = {
             name = "skills-git";
             motd = ''
@@ -159,7 +167,7 @@
             '';
             devshell.startup.install-skills.text = ''
               ${base.apps.${system}.install.program} --scope=project
-              ${skills-nix.apps.${system}.install.program} --scope=project nix-flakes nix-garnix-ci
+              ${inputs.authoring-skills.installScript system}
             '';
           };
 
