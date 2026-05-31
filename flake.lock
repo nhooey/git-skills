@@ -16,29 +16,6 @@
         "type": "github"
       }
     },
-    "authoring-skills": {
-      "inputs": {
-        "flake-skills": [
-          "flake-skills"
-        ],
-        "humanizer": "humanizer",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "skill-creator": "skill-creator",
-        "skills-nix": "skills-nix",
-        "superpowers": "superpowers"
-      },
-      "locked": {
-        "path": "./authoring-skills",
-        "type": "path"
-      },
-      "original": {
-        "path": "./authoring-skills",
-        "type": "path"
-      },
-      "parent": []
-    },
     "devshell": {
       "inputs": {
         "nixpkgs": [
@@ -86,11 +63,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780255983,
-        "narHash": "sha256-klncXxXe0oj3gkzRHpNqKeCnZIkyjCWPD9wGzdtNrDo=",
+        "lastModified": 1780258389,
+        "narHash": "sha256-GV+ObTX+8fYPmOb15dFEKIYqcJefBZehqVphTgTuNVk=",
         "owner": "nhooey",
         "repo": "flake-skills",
-        "rev": "6a8342d8151bb20e803aa2a60824174de03ccfd2",
+        "rev": "e2032f9c0b35e007ee0a6034e6a800bf48282008",
         "type": "github"
       },
       "original": {
@@ -102,12 +79,12 @@
     "humanizer": {
       "inputs": {
         "flake-skills": [
-          "authoring-skills",
+          "skills-authoring",
           "flake-skills"
         ],
         "humanizer-src": "humanizer-src",
         "nixpkgs": [
-          "authoring-skills",
+          "skills-authoring",
           "nixpkgs"
         ]
       },
@@ -161,11 +138,11 @@
     },
     "root": {
       "inputs": {
-        "authoring-skills": "authoring-skills",
         "devshell": "devshell",
         "flake-parts": "flake-parts",
         "flake-skills": "flake-skills",
         "nixpkgs": "nixpkgs",
+        "skills-authoring": "skills-authoring",
         "systems": "systems",
         "treefmt-nix": "treefmt-nix"
       }
@@ -174,11 +151,11 @@
       "inputs": {
         "anthropics-skills-src": "anthropics-skills-src",
         "flake-skills": [
-          "authoring-skills",
+          "skills-authoring",
           "flake-skills"
         ],
         "nixpkgs": [
-          "authoring-skills",
+          "skills-authoring",
           "nixpkgs"
         ]
       },
@@ -198,14 +175,37 @@
         "type": "github"
       }
     },
+    "skills-authoring": {
+      "inputs": {
+        "flake-skills": [
+          "flake-skills"
+        ],
+        "humanizer": "humanizer",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "skill-creator": "skill-creator",
+        "skills-nix": "skills-nix",
+        "superpowers": "superpowers"
+      },
+      "locked": {
+        "path": "./skills-authoring",
+        "type": "path"
+      },
+      "original": {
+        "path": "./skills-authoring",
+        "type": "path"
+      },
+      "parent": []
+    },
     "skills-nix": {
       "inputs": {
         "flake-skills": [
-          "authoring-skills",
+          "skills-authoring",
           "flake-skills"
         ],
         "nixpkgs": [
-          "authoring-skills",
+          "skills-authoring",
           "nixpkgs"
         ]
       },
@@ -226,11 +226,11 @@
     "superpowers": {
       "inputs": {
         "flake-skills": [
-          "authoring-skills",
+          "skills-authoring",
           "flake-skills"
         ],
         "nixpkgs": [
-          "authoring-skills",
+          "skills-authoring",
           "nixpkgs"
         ],
         "superpowers-src": "superpowers-src"
@@ -289,11 +289,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1775636079,
-        "narHash": "sha256-pc20NRoMdiar8oPQceQT47UUZMBTiMdUuWrYu2obUP0=",
+        "lastModified": 1780220602,
+        "narHash": "sha256-eynAfOmbmxJnkp7YewvCEbShNnnYJ9gLLqkzsYtBPeM=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "790751ff7fd3801feeaf96d7dc416a8d581265ba",
+        "rev": "db947814a175b7ca6ded66e21383d938df01c227",
         "type": "github"
       },
       "original": {
