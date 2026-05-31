@@ -59,6 +59,13 @@
       # cherry-picks; `prefix` namespaces the pack to avoid name clashes.
       agg = flake-skills.lib.mkAggregateSkillsFlake {
         inherit nixpkgs;
+        # Distinct ownership name so the declarative `reconcile` sweep is
+        # scoped to *these* authoring skills. The parent skills-git flake
+        # installs its own base skills into the same project-scope dir under
+        # the default `agent-skills-all` appName; a different name here keeps
+        # each reconcile owning only its own slice (an entry the lock
+        # attributes to another appName is left alone).
+        name = "skills-git-authoring";
         packagePrefix = "agent-skill-";
         sources = [
           {
@@ -81,9 +88,11 @@
       };
     in
     {
-      # The sole consumed output: `system -> string`, the newline-joined
-      # install commands for these authoring skills. The parent flake drops
-      # it into its dev shell startup.
-      inherit (agg) installScript;
+      # The new aggregate interface. The parent flake consumes
+      # `reconcileScript` (`system -> string`, a one-liner that converges the
+      # project-scope skills dir to exactly this union) in its dev shell
+      # startup. `packages` / `apps` are surfaced for `nix eval`/`nix run`
+      # inspection of the cherry-picked set.
+      inherit (agg) packages apps reconcileScript;
     };
 }

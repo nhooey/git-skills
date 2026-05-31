@@ -156,9 +156,13 @@
 
           apps = base.apps.${system};
 
-          # Auto-install skills at project scope on `nix develop`: this
+          # Auto-reconcile skills at project scope on `nix develop`: this
           # repo's own skills (dogfooded), then the authoring-only tools
-          # from the separate authoring-skills flake.
+          # from the separate authoring-skills flake. `reconcile` is
+          # declarative — each call converges the target to exactly its
+          # declared set and sweeps only the strays its own appName owns, so
+          # the two coexist (base = `agent-skills-all`, authoring =
+          # `skills-git-authoring`) without clobbering each other.
           devshells.default = {
             name = "skills-git";
             motd = ''
@@ -166,8 +170,8 @@
               Run {bold}menu{reset} to list available commands.
             '';
             devshell.startup.install-skills.text = ''
-              ${base.apps.${system}.install.program} --scope=project
-              ${inputs.authoring-skills.installScript system}
+              ${base.apps.${system}.reconcile.program} --scope=project
+              ${inputs.authoring-skills.reconcileScript system}
             '';
           };
 
