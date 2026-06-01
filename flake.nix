@@ -26,9 +26,9 @@
     # Skills installed only for authoring this repo (nix-*, humanizer,
     # skill-creator, superpowers), in their own flake so readers don't
     # confuse them with the skills this flake outputs. See
-    # ./authoring-skills/flake.nix.
-    authoring-skills = {
-      url = "path:./authoring-skills";
+    # ./skills-authoring/flake.nix.
+    skills-authoring = {
+      url = "path:./skills-authoring";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-skills.follows = "flake-skills";
@@ -47,7 +47,7 @@
       # The skills this repo outputs: every skill under ./skills built into
       # per-skill packages (consumed by `packs`/`mkEnv` below) plus the base
       # install/preview apps. Authoring-only skills live in a separate flake
-      # — see the `authoring-skills` input.
+      # — see the `skills-authoring` input.
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
@@ -158,7 +158,7 @@
 
           # Auto-reconcile skills at project scope on `nix develop`: this
           # repo's own skills (dogfooded), then the authoring-only tools
-          # from the separate authoring-skills flake. `reconcile` is
+          # from the separate skills-authoring flake. `reconcile` is
           # declarative — each call converges the target to exactly its
           # declared set and sweeps only the strays its own appName owns, so
           # the two coexist (base = `agent-skills-all`, authoring =
@@ -171,7 +171,7 @@
             '';
             devshell.startup.install-skills.text = ''
               ${base.apps.${system}.reconcile.program} --scope=project
-              ${inputs.authoring-skills.reconcileScript system}
+              ${inputs.skills-authoring.reconcileScript system}
             '';
           };
 
