@@ -125,20 +125,22 @@
     "humanizer": {
       "inputs": {
         "flake-skills": [
+          "skillspkgs-authoring",
           "flake-skills"
         ],
         "humanizer-src": "humanizer-src",
         "nixpkgs": [
+          "skillspkgs-authoring",
           "nixpkgs"
         ]
       },
       "locked": {
         "dir": "pkgs/humanizer",
-        "lastModified": 1780412305,
-        "narHash": "sha256-lBB82R54LWB8iNKlNHPgAmqTc9zjm+V9/BQGHC2FuBE=",
+        "lastModified": 1780422651,
+        "narHash": "sha256-eurrcyASbFi4kqeBFYNSIxkeCjlI39L0Xqz2FYuld+c=",
         "owner": "nhooey",
         "repo": "skillspkgs",
-        "rev": "ad0ac233d76c5189528a34f85c51da2be037c9f1",
+        "rev": "9c79a870e24957609fe97fcfffdd2ba06f36cc92",
         "type": "github"
       },
       "original": {
@@ -185,11 +187,8 @@
         "devshell": "devshell",
         "flake-parts": "flake-parts",
         "flake-skills": "flake-skills",
-        "humanizer": "humanizer",
         "nixpkgs": "nixpkgs",
-        "skill-creator": "skill-creator",
-        "skills-nix": "skills-nix",
-        "superpowers": "superpowers",
+        "skillspkgs-authoring": "skillspkgs-authoring",
         "systems": "systems_3",
         "treefmt-nix": "treefmt-nix_2"
       }
@@ -198,19 +197,21 @@
       "inputs": {
         "anthropics-skills-src": "anthropics-skills-src",
         "flake-skills": [
+          "skillspkgs-authoring",
           "flake-skills"
         ],
         "nixpkgs": [
+          "skillspkgs-authoring",
           "nixpkgs"
         ]
       },
       "locked": {
         "dir": "pkgs/skill-creator",
-        "lastModified": 1780412305,
-        "narHash": "sha256-lBB82R54LWB8iNKlNHPgAmqTc9zjm+V9/BQGHC2FuBE=",
+        "lastModified": 1780422651,
+        "narHash": "sha256-eurrcyASbFi4kqeBFYNSIxkeCjlI39L0Xqz2FYuld+c=",
         "owner": "nhooey",
         "repo": "skillspkgs",
-        "rev": "ad0ac233d76c5189528a34f85c51da2be037c9f1",
+        "rev": "9c79a870e24957609fe97fcfffdd2ba06f36cc92",
         "type": "github"
       },
       "original": {
@@ -223,19 +224,20 @@
     "skills-nix": {
       "inputs": {
         "flake-skills": [
+          "skillspkgs-authoring",
           "flake-skills"
         ],
         "nixpkgs": [
+          "skillspkgs-authoring",
           "nixpkgs"
-        ],
-        "systems": "systems_2"
+        ]
       },
       "locked": {
-        "lastModified": 1780422378,
-        "narHash": "sha256-ss8Yk67B9B2WT0XRZoNLQ3mGtuXqZLpe63k2PUH1PT4=",
+        "lastModified": 1779953558,
+        "narHash": "sha256-0A3eXvvvzJyW7KhDtPGk8WzcIyGPL0yxHhB/HpUv3Nc=",
         "owner": "nhooey",
         "repo": "skills-nix",
-        "rev": "2d4e437bc6e9b48076671fe4ed37ce8748e0adb4",
+        "rev": "e6492f5436e10dc36d057147e15cba579d15df8a",
         "type": "github"
       },
       "original": {
@@ -244,23 +246,55 @@
         "type": "github"
       }
     },
-    "superpowers": {
+    "skillspkgs-authoring": {
       "inputs": {
         "flake-skills": [
           "flake-skills"
         ],
+        "humanizer": "humanizer",
         "nixpkgs": [
+          "nixpkgs"
+        ],
+        "skill-creator": "skill-creator",
+        "skills-nix": "skills-nix",
+        "superpowers": "superpowers",
+        "systems": "systems_2"
+      },
+      "locked": {
+        "dir": "sources/combinations",
+        "lastModified": 1780427625,
+        "narHash": "sha256-B9JWPXZ1+EutAj0OGQp6KNUGuf2dzP5Ua8vFn6NgJfo=",
+        "owner": "nhooey",
+        "repo": "skillspkgs",
+        "rev": "b5b4e4d36f0e2bfc49eee31ffb9cca54d69c803a",
+        "type": "github"
+      },
+      "original": {
+        "dir": "sources/combinations",
+        "owner": "nhooey",
+        "repo": "skillspkgs",
+        "type": "github"
+      }
+    },
+    "superpowers": {
+      "inputs": {
+        "flake-skills": [
+          "skillspkgs-authoring",
+          "flake-skills"
+        ],
+        "nixpkgs": [
+          "skillspkgs-authoring",
           "nixpkgs"
         ],
         "superpowers-src": "superpowers-src"
       },
       "locked": {
         "dir": "pkgs/superpowers",
-        "lastModified": 1780412305,
-        "narHash": "sha256-lBB82R54LWB8iNKlNHPgAmqTc9zjm+V9/BQGHC2FuBE=",
+        "lastModified": 1780422651,
+        "narHash": "sha256-eurrcyASbFi4kqeBFYNSIxkeCjlI39L0Xqz2FYuld+c=",
         "owner": "nhooey",
         "repo": "skillspkgs",
-        "rev": "ad0ac233d76c5189528a34f85c51da2be037c9f1",
+        "rev": "9c79a870e24957609fe97fcfffdd2ba06f36cc92",
         "type": "github"
       },
       "original": {
