@@ -1,6 +1,10 @@
 {
   description = "skills-git authoring skills: third-party Claude Code skills installed into the skills-git dev shell for authoring this repo — deliberately kept separate from the skills this repo outputs.";
 
+  # Standalone `?dir=skills-authoring` face only. The parent skills-git flake
+  # never reads this — it plain-`import`s ./default.nix (see that file's header),
+  # passing the same source inputs lifted into its own flake. These inputs +
+  # flake.lock pin the aggregate for direct `?dir=` use.
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     # `flake-skills` is the builder library, not a skill — it provides
@@ -52,47 +56,25 @@
       superpowers,
       ...
     }:
-    let
-      # No `skillsDir`: this flake outputs no skills of its own, it only
-      # aggregates external sources so the parent flake can install them.
-      # A source with no `skills` installs all of it; `skills = [ ... ]`
-      # cherry-picks; `prefix` namespaces the pack to avoid name clashes.
-      agg = flake-skills.lib.mkAggregateSkillsFlake {
-        inherit nixpkgs;
-        # Distinct ownership name so the declarative `reconcile` sweep is
-        # scoped to *these* authoring skills. The parent skills-git flake
-        # installs its own base skills into the same project-scope dir under
-        # the default `agent-skills-all` appName; a different name here keeps
-        # each reconcile owning only its own slice (an entry the lock
-        # attributes to another appName is left alone).
-        name = "skills-git-authoring";
-        packagePrefix = "agent-skill-";
-        sources = [
-          {
-            source = skills-nix;
-            skills = [
-              "nix-flakes"
-              "nix-garnix-ci"
-            ];
-          }
-          { source = humanizer; }
-          {
-            source = skill-creator;
-            prefix = "anthropic";
-          }
-          {
-            source = superpowers;
-            prefix = "superpowers";
-          }
-        ];
-      };
-    in
     {
-      # The new aggregate interface. The parent flake consumes
-      # `reconcileScript` (`system -> string`, a one-liner that converges the
-      # project-scope skills dir to exactly this union) in its dev shell
-      # startup. `packages` / `apps` are surfaced for `nix eval`/`nix run`
-      # inspection of the cherry-picked set.
-      inherit (agg) packages apps reconcileScript;
+      # The new aggregate interface. The parent flake consumes `reconcileScript`
+      # (`system -> string`, a one-liner that converges the project-scope skills
+      # dir to exactly this union) in its dev shell startup. `packages` / `apps`
+      # are surfaced for `nix eval`/`nix run` inspection of the cherry-picked set.
+      inherit
+        (import ./default.nix {
+          inherit
+            nixpkgs
+            flake-skills
+            skills-nix
+            humanizer
+            skill-creator
+            superpowers
+            ;
+        })
+        packages
+        apps
+        reconcileScript
+        ;
     };
 }

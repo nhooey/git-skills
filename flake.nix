@@ -23,12 +23,35 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Skills installed only for authoring this repo (nix-*, humanizer,
-    # skill-creator, superpowers), in their own flake so readers don't
-    # confuse them with the skills this flake outputs. See
-    # ./skills-authoring/flake.nix.
-    skills-authoring = {
-      url = "path:./skills-authoring";
+    # Sources for the authoring-only skill set installed into this repo's dev
+    # shell (nix-*, humanizer, skill-creator, superpowers). Aggregated as plain
+    # Nix via ./skills-authoring/default.nix — lifted here as direct inputs (all
+    # `github:` refs, no `path:`) so skills-git stays Garnix-safe when consumed
+    # transitively. The sibling ./skills-authoring/flake.nix is the standalone
+    # `?dir=skills-authoring` face.
+    skills-nix = {
+      url = "github:nhooey/skills-nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-skills.follows = "flake-skills";
+      };
+    };
+    humanizer = {
+      url = "github:nhooey/skillspkgs?dir=pkgs/humanizer";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-skills.follows = "flake-skills";
+      };
+    };
+    skill-creator = {
+      url = "github:nhooey/skillspkgs?dir=pkgs/skill-creator";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-skills.follows = "flake-skills";
+      };
+    };
+    superpowers = {
+      url = "github:nhooey/skillspkgs?dir=pkgs/superpowers";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-skills.follows = "flake-skills";
@@ -46,12 +69,25 @@
     let
       # The skills this repo outputs: every skill under ./skills built into
       # per-skill packages (consumed by `packs`/`mkEnv` below) plus the base
-      # install/preview apps. Authoring-only skills live in a separate flake
-      # — see the `skills-authoring` input.
+      # install/preview apps. Authoring-only skills are aggregated separately —
+      # see `authoring` below.
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
         packagePrefix = "agent-skill-";
+      };
+
+      # Authoring-only skill aggregate, imported as plain Nix (no `path:` input)
+      # from its canonical module; consumed by the dev shell startup below.
+      authoring = import ./skills-authoring/default.nix {
+        inherit (inputs)
+          nixpkgs
+          flake-skills
+          skills-nix
+          humanizer
+          skill-creator
+          superpowers
+          ;
       };
 
       packs = {
@@ -165,7 +201,7 @@
 
           # Auto-reconcile skills at project scope on `nix develop`: this
           # repo's own skills (dogfooded) and the authoring-only tools from
-          # the separate skills-authoring flake, each in its own named startup
+          # the skills-authoring aggregate, each in its own named startup
           # hook (mirroring skillspkgs). Both are declarative + idempotent and
           # own disjoint reconcile appNames (base = `agent-skills-all`,
           # authoring = `skills-git-authoring`), so they coexist in one scope —
@@ -181,7 +217,7 @@
               ${base.reconcileScript system}
             '';
             devshell.startup.install-authoring-skills.text = ''
-              ${inputs.skills-authoring.reconcileScript system}
+              ${authoring.reconcileScript system}
             '';
           };
 
