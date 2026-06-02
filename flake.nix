@@ -157,20 +157,23 @@
           apps = base.apps.${system};
 
           # Auto-reconcile skills at project scope on `nix develop`: this
-          # repo's own skills (dogfooded), then the authoring-only tools
-          # from the separate skills-authoring flake. `reconcile` is
-          # declarative — each call converges the target to exactly its
-          # declared set and sweeps only the strays its own appName owns, so
-          # the two coexist (base = `agent-skills-all`, authoring =
-          # `skills-git-authoring`) without clobbering each other.
+          # repo's own skills (dogfooded) and the authoring-only tools from
+          # the separate skills-authoring flake, each in its own named startup
+          # hook (mirroring skillspkgs). Both are declarative + idempotent and
+          # own disjoint reconcile appNames (base = `agent-skills-all`,
+          # authoring = `skills-git-authoring`), so they coexist in one scope —
+          # each sweeps only its own strays — and re-entry won't clobber the
+          # other or other scopes.
           devshells.default = {
             name = "skills-git";
             motd = ''
               {bold}{14}🚀 Entering skills-git dev shell{reset}
               Run {bold}menu{reset} to list available commands.
             '';
-            devshell.startup.install-skills.text = ''
+            devshell.startup.install-git-skills.text = ''
               ${base.apps.${system}.reconcile.program} --scope=project
+            '';
+            devshell.startup.install-authoring-skills.text = ''
               ${inputs.skills-authoring.reconcileScript system}
             '';
           };
