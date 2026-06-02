@@ -2,11 +2,12 @@
 name: github-hygiene-pull-request-mirrors-commit
 description: |
   Keep each PR a thin wrapper over a single commit: title = subject,
-  body = body (unwrapped from 72-col to GFM-paragraph form via
-  `fmt -w 2500`). No `## Summary` / `## Test plan` / Claude-Code footer.
-  Re-sync the PR title and body via REST PATCH after any commit amend
-  — GitHub does not refresh them automatically. Apply when opening any
-  PR from an agent session, or amending a commit behind an open PR.
+  body = commit body, no `## Summary` / `## Test plan` / Claude-Code
+  footer. Open and re-sync PRs with the bundled
+  `scripts/create-or-update-pull-request.sh` — it mirrors the commit, reflows the
+  body to GFM paragraphs, and re-PATCHes an open PR after an amend
+  (GitHub never refreshes title/body itself). Apply when opening a PR
+  from an agent session, or amending a commit behind an open PR.
 tags: [workflow, style, team-stance]
 allowed-tools:
   - Bash
@@ -88,134 +89,44 @@ If a Conventional Commits subject is bumping into the cap because of a
 long `type(scope):` prefix, tighten the summary side rather than the
 scope; the scope carries the load-bearing classification.
 
-## Unwrap hard-wrapped lines before opening
+## Open or re-sync the PR with `scripts/create-or-update-pull-request.sh`
 
-Commit bodies are hard-wrapped at ~72 cols for `git log` readability,
-but GFM renders single newlines as hard breaks — so the PR description
-becomes jagged short lines instead of flowing paragraphs. Re-fill
-paragraphs to one long line each (blank-line breaks survive):
+Don't hand-build the `gh pr create` call — the bundled script does it, so the
+title and body always mirror the commit and the reflow can't be fumbled:
 
 ```bash
-gh pr create \
-  --title "$(git log -1 --pretty=%s)" \
-  --body "$(git log -1 --pretty=%b | fmt -w 2500)"
+scripts/create-or-update-pull-request.sh [--base <branch>] [--draft] [--repo <owner/repo>] [--verbatim]
 ```
 
-`fmt -w 2500` is the practical maximum — GNU `fmt` 9.7 rejects widths
-much above that with `Result too large`, and 2500 is already an order
-of magnitude past any realistic paragraph. `par` is a fancier
-alternative if installed; `awk 'BEGIN{RS="";ORS="\n\n"} {gsub(/\n/,"
-");print}'` has no width limit at all. **Avoid `gh pr create --fill`**
-for multi-paragraph bodies — it passes the message through verbatim,
-hard wraps and all.
+It sets the PR **title to the commit subject** and the **body to the commit
+body**, reflowed from 72-col wrap to GFM paragraphs (an `awk` paragraph-join:
+POSIX and, unlike `fmt`, never shadowed by a dev shell's `nix fmt` command),
+then verifies the body actually landed.
 
-**The unwrap is not optional just because you hand-build the payload.**
-`--fill` is the obvious trap, but constructing the body yourself
-reintroduces the same one: a heredoc, a `jq -n --arg body "$(…)"`, or
-`gh api … --input -` with a JSON body all preserve every `\n`
-verbatim, so a 72-col commit body goes in jagged exactly as if you'd
-used `--fill`. The reflow (`fmt -w 2500`, `par`, or the `awk`
-one-liner) must run on the body text *before* it is captured into the
-variable / heredoc / JSON — there is no rendering surface between
-`jq --arg` and GitHub that will re-fill it for you. If you reach for
-`jq -n --arg body` to "be safe with quoting," you've picked the one
-route that quietly keeps the wrap.
+**It also re-syncs.** GitHub derives a PR's title/body from the commit *once*,
+at creation; a later `git commit --amend` + force-push refreshes the diff but
+leaves the title and body frozen. The script auto-detects an existing open PR
+for the head branch and PATCHes it instead of opening a new one — so just
+**re-run it after every amend**. The `pull-request-sync-check.sh` PostToolUse
+hook (shipped by `github-pull-request-watcher`) nudges you when HEAD has drifted
+from the open PR; re-running the script is the fix. (`gh api` quoting traps —
+`-f` vs `-F` etc. — see `github-hygiene-gh-cli-gotchas`.)
 
-## Re-sync the PR after any commit amend
+## When the body uses GFM structure, pass `--verbatim`
 
-Amending (or rebasing) rewrites the commit message, but it does **not**
-update an already-open PR. GitHub derives the PR title and body from
-the commit message exactly once, at PR-creation time:
+The reflow joins every line within a paragraph into one line, which mangles
+three GFM constructs: fenced/indented **code blocks** (unwrapped into prose),
+**`##` headings with no blank line below** (`## Changes` runs into the next
+line), and **bullets with hanging-indent continuations** (split at the indent).
 
-- **Single-commit branch:** title from the commit subject, body from
-  the commit message body.
-- **Multi-commit branch:** title from the branch name, body left
-  empty.
+Two ways to stay clean:
 
-After that point the PR title and body are independent text. A later
-`git commit --amend` + force-push refreshes the diff and the commits
-tab but leaves the title and description frozen at their original
-wording. If you reworded the commit, the PR page now misrepresents
-what it ships.
-
-So whenever you amend a commit on a branch that already has an open
-PR, also bring the PR into line with what GitHub *would* derive from
-the amended message on a fresh PR. PATCH both fields after every amend
-(also the fix for `--fill` drift, an early body edit, or a
-template-opened PR):
-
-```bash
-gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
-  -f title="$(git log -1 --pretty=%s)" \
-  -f body="$(git log -1 --pretty=%b | fmt -w 2500)"
-```
-
-`--pretty=%b` (lowercase) strips the subject line — it belongs in
-`title`. `%B` (uppercase) would double-print it. `-f` vs `-F`, and
-shell substitution vs `body=@path`: see `github-hygiene-gh-cli-gotchas`.
-
-## How to detect there's an open PR for the current branch
-
-The re-sync rule above assumes the agent already knows a PR exists.
-Two ways to detect:
-
-1. **Active probe** — before any `git commit --amend` on a feature
-   branch, run:
-   ```bash
-   gh pr list --head "$(git branch --show-current)" --state open \
-     --json number,title,body --jq '.[0] // empty'
-   ```
-   Empty output → no open PR, no PATCH needed. Non-empty → grab
-   `.number` and PATCH after the amend.
-
-2. **Hook-driven nudge** — the `pull-request-sync-check.sh`
-   PostToolUse hook shipped by `github-pull-request-watcher` (wired
-   into `~/.claude/settings.json`) runs the same probe automatically
-   on every `git commit --amend` and `git push`, and emits a system
-   reminder if HEAD's commit message has diverged from the PR's
-   title or body. Treat the reminder as authoritative and run the
-   PATCH it suggests. See `github-pull-request-watcher`'s "Companion
-   hook" section for wiring instructions.
-
-The active probe is the right discipline; the hook is the safety net
-for when the discipline lapses.
-
-## Caveat: `fmt` reflows by paragraph and breaks on three GFM constructs
-
-`fmt -w 2500` joins all lines within a paragraph (text between blank
-lines) into one long line. That works for plain prose but breaks when
-the commit body uses GFM block structure:
-
-- **Fenced and indented code blocks** are unwrapped along with prose.
-- **`##` headings without a blank line below them** flow into the
-  next line — `## Changes\n- First bullet` becomes `## Changes -
-  First bullet`.
-- **Bullets with hanging-indent continuations** get split at the
-  indent change — `fmt` treats the 2-space-indented continuation as a
-  separate paragraph from the bullet's 0-indented `- ` start, so a
-  multi-line bullet renders as two short lines instead of one
-  flowing one.
-
-Two reliable workarounds:
-
-- **(a) Plain narrative prose in the commit body.** No headings, no
-  bullets. `fmt -w 2500` reflows it cleanly. Best for short / focused
-  commits.
-- **(b) GFM-shape from the start.** Blank line after every `##`
-  heading, each bullet on a single long line (no hard-wrap inside the
-  bullet), then *skip* `fmt` and pass the body through verbatim:
-  ```bash
-  gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
-    -f title="$(git log -1 --pretty=%s)" \
-    -f body="$(git log -1 --pretty=%b)"
-  ```
-  Costs slightly longer lines in `git log` (a 100-char bullet is
-  harmless; terminals wrap dynamically) but renders identically on
-  both surfaces.
-
-Pick (a) by default; reach for (b) when the body genuinely needs
-structure (e.g., a refactor touching several files that benefits from
-headed sections).
+- **(a) Plain prose** in the commit body — no headings or bullets — which the
+  default reflow handles. Best for short, focused commits.
+- **(b) GFM-shape from the start** — a blank line after every `##`, each bullet
+  on one long line — then run the script with `--verbatim` to skip the reflow
+  and send the body as-is. Reach for this when the change genuinely needs headed
+  sections.
 
 ## Mark "computer words" and code segments for GFM
 
@@ -267,9 +178,9 @@ global — no qualification needed.
 
 ## When to apply
 
-- About to open a PR with `gh pr create`.
-- Just amended a commit on a branch that has an open PR — PATCH the
-  title and body.
+- About to open a PR — run `scripts/create-or-update-pull-request.sh`.
+- Just amended a commit on a branch that has an open PR — re-run the
+  script to re-sync the title and body.
 - Reviewing a PR description that has `## Summary` / `## Test plan`
   blocks not present in the commit message — propose moving them into
   the commit body or removing them.
