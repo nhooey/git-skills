@@ -23,14 +23,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # The authoring-only skill set installed into this repo's dev shell (nix-*,
-    # humanizer, anthropic skill-creator, superpowers) — consumed as skillspkgs'
-    # single curated `authoring` combination instead of re-aggregating the four
-    # sources here. Pulled via the `?dir=sources/combinations` leaf face, whose
-    # inputs are all independently-fetchable `github:` refs (no `path:`), so it
-    # stays Garnix-safe when skills-git is consumed transitively, and adds no
-    # skills-git⇄skillspkgs cycle (the sub-flake has no skills-git input).
-    skillspkgs-authoring = {
+    # skillspkgs' curated combinations, providing the `authoring` set installed into this repo's dev shell.
+    skillspkgs-combinations = {
       url = "github:nhooey/skillspkgs?dir=sources/combinations";
       inputs = {
         nixpkgs.follows = "nixpkgs";
@@ -51,7 +45,7 @@
       # per-skill packages (consumed by `packs`/`mkEnv` below) plus the base
       # install/preview apps. The authoring-only dev-shell skills come from
       # skillspkgs' curated `authoring` combination — see the
-      # `skillspkgs-authoring` input above.
+      # `skillspkgs-combinations` input above.
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
@@ -184,7 +178,7 @@
               ${base.reconcileScript system}
             '';
             devshell.startup.install-authoring-skills.text = ''
-              ${inputs.skillspkgs-authoring.combinations.authoring.${system}.reconcileScript}
+              ${inputs.skillspkgs-combinations.combinations.authoring.${system}.reconcileScript}
             '';
           };
 
