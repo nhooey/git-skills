@@ -125,12 +125,12 @@
     "humanizer": {
       "inputs": {
         "flake-skills": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "flake-skills"
         ],
         "humanizer-src": "humanizer-src",
         "nixpkgs": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "nixpkgs"
         ]
       },
@@ -188,7 +188,7 @@
         "flake-parts": "flake-parts",
         "flake-skills": "flake-skills",
         "nixpkgs": "nixpkgs",
-        "skillspkgs-authoring": "skillspkgs-authoring",
+        "skillspkgs-combinations": "skillspkgs-combinations",
         "systems": "systems_3",
         "treefmt-nix": "treefmt-nix_2"
       }
@@ -197,11 +197,11 @@
       "inputs": {
         "anthropics-skills-src": "anthropics-skills-src",
         "flake-skills": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "flake-skills"
         ],
         "nixpkgs": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "nixpkgs"
         ]
       },
@@ -224,11 +224,11 @@
     "skills-nix": {
       "inputs": {
         "flake-skills": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "flake-skills"
         ],
         "nixpkgs": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "nixpkgs"
         ]
       },
@@ -246,7 +246,7 @@
         "type": "github"
       }
     },
-    "skillspkgs-authoring": {
+    "skillspkgs-combinations": {
       "inputs": {
         "flake-skills": [
           "flake-skills"
@@ -279,11 +279,11 @@
     "superpowers": {
       "inputs": {
         "flake-skills": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "flake-skills"
         ],
         "nixpkgs": [
-          "skillspkgs-authoring",
+          "skillspkgs-combinations",
           "nixpkgs"
         ],
         "superpowers-src": "superpowers-src"
