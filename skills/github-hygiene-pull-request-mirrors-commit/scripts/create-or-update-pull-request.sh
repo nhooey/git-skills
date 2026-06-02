@@ -55,9 +55,14 @@ else
 fi
 
 [ -n "$head" ] || head=$(git rev-parse --abbrev-ref HEAD)
+# The `gh pr` subcommands below take the repo via the `-R`/`--repo` flag, but
+# `gh repo view` takes it as a POSITIONAL arg (it has no `--repo` flag — passing
+# one errors `unknown flag: --repo`). Keep the two forms separate.
 repo_args=()
 [ -n "$repo" ] && repo_args=(--repo "$repo")
-slug=$(gh repo view "${repo_args[@]}" --json nameWithOwner --jq .nameWithOwner)
+repo_pos=()
+[ -n "$repo" ] && repo_pos=("$repo")
+slug=$(gh repo view "${repo_pos[@]}" --json nameWithOwner --jq .nameWithOwner)
 
 num=$(gh pr list "${repo_args[@]}" --head "$head" --state open --json number --jq '.[0].number // empty')
 if [ -n "$num" ]; then
