@@ -53,6 +53,46 @@ Example for a PR with all checks green, ready to merge:
 🟢 https://github.com/owner/repo/pull/123 — **PR #123: Document the agent PR lifecycle**
 ```
 
+## A set of PRs — run the table script, don't hand-align
+
+The status line above is for a *single* PR mentioned in prose. For a **set**
+of PRs (a session summary, an audit, "list the open PRs"), do **not**
+hand-format a table — by-hand alignment drifts the instant a title or repo
+name is longer than you guessed, and you end up re-padding it every follow-up.
+Run the bundled script instead:
+
+```
+scripts/pull-request-table.sh [--repo OWNER/REPO]... [gh pr list flags]
+```
+
+It prints one line per PR, every column padded to the widest value **in the
+filtered result set**, so the table lines up regardless of which PRs match:
+
+```
+<status> <check> <repo>  #<num>  <title>  <url>
+```
+
+- `--repo` may be repeated to span repositories; every other flag is forwarded
+  verbatim to `gh pr list` (`--state merged|open|all`, `--author @me`,
+  `--search`, `--label`, `--limit`). With no `--repo`, the current repo is used.
+- **`<status>`** uses the same circle vocabulary as the status line
+  (🟣/🟢/🟡/🔴/⚪), recomputed from live PR + check state.
+- **`<check>`** is the checks-status icon, colored by state: ✅ passed ·
+  🟠 running · 🔴 failed · ⚫ none — folded from each PR's `statusCheckRollup`.
+
+Example — a session's merged work across three repos:
+
+```
+scripts/pull-request-table.sh \
+  --repo nhooey/skillspkgs --repo nhooey/flake-skills --repo nhooey/skills-git \
+  --state merged --limit 10
+```
+
+Because the widths come from the rows actually returned, narrowing the filter
+(one repo, `--author @me`) tightens the table automatically — there are no
+hardcoded column widths to keep in sync, which is the whole reason to prefer
+the script over a hand-built table.
+
 ## Emit this every time the PR comes up
 
 On `gh pr create`, every Monitor event, every citation by number ("PR
