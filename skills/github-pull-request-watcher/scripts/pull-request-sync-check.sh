@@ -35,16 +35,16 @@ payload=$(cat)
 command -v jq >/dev/null 2>&1 || exit 0
 
 cmd=$(jq -r '.tool_input.command // ""' <<<"$payload" 2>/dev/null) || exit 0
-cwd=$(jq -r '.cwd // ""'                 <<<"$payload" 2>/dev/null) || exit 0
+cwd=$(jq -r '.cwd // ""' <<<"$payload" 2>/dev/null) || exit 0
 
 case "$cmd" in
-  *"git commit"*"--amend"*) ;;
-  *"git push"*)             ;;
-  *) exit 0 ;;
+*"git commit"*"--amend"*) ;;
+*"git push"*) ;;
+*) exit 0 ;;
 esac
 
 [ -d "$cwd" ] || exit 0
-cd "$cwd"    || exit 0
+cd "$cwd" || exit 0
 
 branch=$(git symbolic-ref --short -q HEAD) || exit 0
 [ -n "$branch" ] || exit 0
@@ -52,11 +52,11 @@ branch=$(git symbolic-ref --short -q HEAD) || exit 0
 command -v gh >/dev/null 2>&1 || exit 0
 
 pr=$(gh pr list --head "$branch" --state open \
-       --json number,title,body --jq '.[0] // empty' 2>/dev/null)
+  --json number,title,body --jq '.[0] // empty' 2>/dev/null)
 [ -n "$pr" ] || exit 0
 
-pr_num=$(jq -r '.number'      <<<"$pr")
-pr_title=$(jq -r '.title'     <<<"$pr")
+pr_num=$(jq -r '.number' <<<"$pr")
+pr_title=$(jq -r '.title' <<<"$pr")
 pr_body=$(jq -r '.body // ""' <<<"$pr" | tr -d '\r')
 
 commit_subject=$(git log -1 --pretty=%s)
@@ -66,7 +66,7 @@ commit_body_raw=$(git log -1 --pretty=%b)
 # sensitivity (PR body authored via `fmt -w 2500` vs raw 72-col
 # commit body should compare equal if the words are identical).
 normalize() { tr -s '[:space:]' ' ' | sed -e 's/^ //' -e 's/ $//'; }
-pr_body_norm=$(printf '%s' "$pr_body"             | normalize)
+pr_body_norm=$(printf '%s' "$pr_body" | normalize)
 commit_body_norm=$(printf '%s' "$commit_body_raw" | normalize)
 
 if [ "$pr_title" = "$commit_subject" ] && [ "$pr_body_norm" = "$commit_body_norm" ]; then
@@ -87,7 +87,8 @@ diff_summary=$(
   }
 )
 
-msg=$(cat <<EOF
+msg=$(
+  cat <<EOF
 PR #${pr_num} on branch \`${branch}\` is out of sync with HEAD's commit message. Re-sync per \`github-hygiene-pull-request-mirrors-commit\`:
 
   gh api --method PATCH "/repos/${repo}/pulls/${pr_num}" \\
