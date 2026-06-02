@@ -38,29 +38,57 @@ usage() {
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --pr)       pr=$2;       shift 2 ;;
-    --repo)     repo=$2;     shift 2 ;;
-    --sha)      sha=$2;      shift 2 ;;
-    --interval) interval=$2; shift 2 ;;
-    --dry-run)  dry_run=1;   shift ;;
-    -h|--help)  usage; exit 0 ;;
-    *) echo "unknown flag: $1" >&2; usage >&2; exit 2 ;;
+  --pr)
+    pr=$2
+    shift 2
+    ;;
+  --repo)
+    repo=$2
+    shift 2
+    ;;
+  --sha)
+    sha=$2
+    shift 2
+    ;;
+  --interval)
+    interval=$2
+    shift 2
+    ;;
+  --dry-run)
+    dry_run=1
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "unknown flag: $1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
 done
 
 if [ -z "$repo" ]; then
   repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner) || {
-    echo "could not auto-detect --repo (gh repo view failed)" >&2; exit 2; }
+    echo "could not auto-detect --repo (gh repo view failed)" >&2
+    exit 2
+  }
 fi
 
 if [ -z "$pr" ]; then
   pr=$(gh pr view --json number --jq .number) || {
-    echo "could not auto-detect --pr (no open PR on current branch?)" >&2; exit 2; }
+    echo "could not auto-detect --pr (no open PR on current branch?)" >&2
+    exit 2
+  }
 fi
 
 if [ -z "$sha" ]; then
   sha=$(git rev-parse HEAD) || {
-    echo "could not auto-detect --sha (git rev-parse HEAD failed)" >&2; exit 2; }
+    echo "could not auto-detect --sha (git rev-parse HEAD failed)" >&2
+    exit 2
+  }
 fi
 
 if [ "$dry_run" -eq 1 ]; then
@@ -79,7 +107,10 @@ if [ "$dry_run" -eq 1 ]; then
 fi
 
 user=$(gh api user --jq .login)
-prev_checks=""; max_issue=0; max_review=0; prev_state=""
+prev_checks=""
+max_issue=0
+max_review=0
+prev_state=""
 
 # Shared jq filter for both comment sources — emits one line per new
 # comment, flagging self-comments distinctly.
@@ -88,8 +119,8 @@ fmt_comments='.[] | select(.id > $cutoff)
 
 while :; do
   # Check completions — guard against transient empty fetch.
-  cur=$(gh api "repos/$repo/commits/$sha/check-runs" 2>/dev/null \
-    | jq -r '.check_runs[]? | select(.status=="completed") | "\(.name): \(.conclusion)"' | sort)
+  cur=$(gh api "repos/$repo/commits/$sha/check-runs" 2>/dev/null |
+    jq -r '.check_runs[]? | select(.status=="completed") | "\(.name): \(.conclusion)"' | sort)
   if [ -n "$cur" ]; then
     comm -13 <(echo "$prev_checks") <(echo "$cur") | awk 'NF { print "CHECK " $0 }'
     prev_checks=$cur
@@ -110,13 +141,13 @@ while :; do
   fi
 
   # PR state + review decision.
-  state=$(gh pr view "$pr" --repo "$repo" --json state,reviewDecision 2>/dev/null \
-    --jq '"STATE \(.state) REVIEW \(.reviewDecision | if . == null or . == "" then "none" else . end)"')
+  state=$(gh pr view "$pr" --repo "$repo" --json state,reviewDecision \
+    --jq '"STATE \(.state) REVIEW \(.reviewDecision | if . == null or . == "" then "none" else . end)"' 2>/dev/null)
   if [ -n "$state" ] && [ "$state" != "$prev_state" ]; then
     echo "$state"
     prev_state=$state
   fi
-  case "$state" in *MERGED*|*CLOSED*) break ;; esac
+  case "$state" in *MERGED* | *CLOSED*) break ;; esac
 
   sleep "$interval"
 done

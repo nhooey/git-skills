@@ -147,6 +147,13 @@
         inputs.devshell.flakeModule
         inputs.treefmt-nix.flakeModule
       ];
+
+      # Expose the declarative reconcile one-liner (system -> shell snippet at
+      # --scope=project) so consumers like skillspkgs' dev shell can install
+      # this pack with the same idiom the aggregate flakes use, instead of
+      # reaching into apps.reconcile.program and appending the scope flag.
+      flake.reconcileScript = base.reconcileScript;
+
       perSystem =
         { system, ... }:
         {
@@ -171,7 +178,7 @@
               Run {bold}menu{reset} to list available commands.
             '';
             devshell.startup.install-git-skills.text = ''
-              ${base.apps.${system}.reconcile.program} --scope=project
+              ${base.reconcileScript system}
             '';
             devshell.startup.install-authoring-skills.text = ''
               ${inputs.skills-authoring.reconcileScript system}
