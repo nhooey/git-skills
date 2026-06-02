@@ -23,35 +23,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Sources for the authoring-only skill set installed into this repo's dev
-    # shell (nix-*, humanizer, skill-creator, superpowers). Aggregated as plain
-    # Nix via ./skills-authoring/default.nix — lifted here as direct inputs (all
-    # `github:` refs, no `path:`) so skills-git stays Garnix-safe when consumed
-    # transitively. The sibling ./skills-authoring/flake.nix is the standalone
-    # `?dir=skills-authoring` face.
-    skills-nix = {
-      url = "github:nhooey/skills-nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-skills.follows = "flake-skills";
-      };
-    };
-    humanizer = {
-      url = "github:nhooey/skillspkgs?dir=pkgs/humanizer";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-skills.follows = "flake-skills";
-      };
-    };
-    skill-creator = {
-      url = "github:nhooey/skillspkgs?dir=pkgs/skill-creator";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-skills.follows = "flake-skills";
-      };
-    };
-    superpowers = {
-      url = "github:nhooey/skillspkgs?dir=pkgs/superpowers";
+    # The authoring-only skill set installed into this repo's dev shell (nix-*,
+    # humanizer, anthropic skill-creator, superpowers) — consumed as skillspkgs'
+    # single curated `authoring` combination instead of re-aggregating the four
+    # sources here. Pulled via the `?dir=sources/combinations` leaf face, whose
+    # inputs are all independently-fetchable `github:` refs (no `path:`), so it
+    # stays Garnix-safe when skills-git is consumed transitively, and adds no
+    # skills-git⇄skillspkgs cycle (the sub-flake has no skills-git input).
+    skillspkgs-authoring = {
+      url = "github:nhooey/skillspkgs?dir=sources/combinations";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-skills.follows = "flake-skills";
@@ -69,25 +49,13 @@
     let
       # The skills this repo outputs: every skill under ./skills built into
       # per-skill packages (consumed by `packs`/`mkEnv` below) plus the base
-      # install/preview apps. Authoring-only skills are aggregated separately —
-      # see `authoring` below.
+      # install/preview apps. The authoring-only dev-shell skills come from
+      # skillspkgs' curated `authoring` combination — see the
+      # `skillspkgs-authoring` input above.
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         skillsDir = ./skills;
         packagePrefix = "agent-skill-";
-      };
-
-      # Authoring-only skill aggregate, imported as plain Nix (no `path:` input)
-      # from its canonical module; consumed by the dev shell startup below.
-      authoring = import ./skills-authoring/default.nix {
-        inherit (inputs)
-          nixpkgs
-          flake-skills
-          skills-nix
-          humanizer
-          skill-creator
-          superpowers
-          ;
       };
 
       packs = {
@@ -200,13 +168,12 @@
           apps = base.apps.${system};
 
           # Auto-reconcile skills at project scope on `nix develop`: this
-          # repo's own skills (dogfooded) and the authoring-only tools from
-          # the skills-authoring aggregate, each in its own named startup
-          # hook (mirroring skillspkgs). Both are declarative + idempotent and
-          # own disjoint reconcile appNames (base = `agent-skills-all`,
-          # authoring = `skills-git-authoring`), so they coexist in one scope —
-          # each sweeps only its own strays — and re-entry won't clobber the
-          # other or other scopes.
+          # repo's own skills (dogfooded) and skillspkgs' curated `authoring`
+          # combination, each in its own named startup hook. Both are
+          # declarative + idempotent and own disjoint reconcile appNames
+          # (base = `agent-skills-all`, authoring = `skillspkgs-authoring`), so
+          # they coexist in one scope — each sweeps only its own strays — and
+          # re-entry won't clobber the other or other scopes.
           devshells.default = {
             name = "skills-git";
             motd = ''
@@ -217,7 +184,7 @@
               ${base.reconcileScript system}
             '';
             devshell.startup.install-authoring-skills.text = ''
-              ${authoring.reconcileScript system}
+              ${inputs.skillspkgs-authoring.combinations.authoring.${system}.reconcileScript}
             '';
           };
 
