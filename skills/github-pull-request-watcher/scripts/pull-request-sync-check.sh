@@ -4,8 +4,6 @@
 # after a `git commit --amend` or `git push`. Never blocks; always
 # exits 0.
 #
-# Ships as part of the `github-pull-request-watcher` skill at
-# `<install-root>/github-pull-request-watcher/scripts/pull-request-sync-check.sh`.
 # `$CLAUDE_SKILLS_DIR` below is a placeholder — Claude Code does
 # not set it automatically; export it (or substitute the literal
 # path) to either `~/.claude/skills` (user-level install) or

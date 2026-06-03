@@ -3,8 +3,6 @@
 # delta on check-runs, issue comments, review-thread comments, and PR
 # state — then breaks when the PR transitions to MERGED or CLOSED.
 #
-# Ships as part of the `github-pull-request-watcher` skill at
-# `<install-root>/github-pull-request-watcher/scripts/pull-request-monitor.sh`.
 # Intended to be passed to the `Monitor` tool with `persistent: true`.
 #
 # Usage:
