@@ -27,6 +27,19 @@ in this exact format:
 Active. Loading shapes future replies that mention a PR; nothing is
 posted or emitted on load itself.
 
+## Where the bundled script installs
+
+This skill bundles one script, `pull-request-table.sh`. It installs in
+a `scripts/` directory alongside this `SKILL.md`, so its absolute path
+depends on the scope this skill was installed to:
+
+- **User scope:** `~/.claude/skills/github-pull-request-status-line/scripts/pull-request-table.sh`
+- **Project scope:** `<project-root>/.claude/skills/github-pull-request-status-line/scripts/pull-request-table.sh`
+
+Everywhere below the script is named by its filename alone; resolve
+`pull-request-table.sh` against whichever path above matches your
+install before running it.
+
 ## The status line components
 
 - **`<status>`** — colored circle reflecting live PR/check state.
@@ -62,7 +75,7 @@ name is longer than you guessed, and you end up re-padding it every follow-up.
 Run the bundled script instead:
 
 ```
-scripts/pull-request-table.sh [--repo OWNER/REPO]... [gh pr list flags]
+pull-request-table.sh [--repo OWNER/REPO]... [gh pr list flags]
 ```
 
 It prints one line per PR, every column padded to the widest value **in the
@@ -83,7 +96,7 @@ filtered result set**, so the table lines up regardless of which PRs match:
 Example — a session's merged work across three repos:
 
 ```
-scripts/pull-request-table.sh \
+pull-request-table.sh \
   --repo nhooey/skillspkgs --repo nhooey/flake-skills --repo nhooey/skills-git \
   --state merged --limit 10
 ```

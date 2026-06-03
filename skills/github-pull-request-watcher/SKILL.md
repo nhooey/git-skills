@@ -2,8 +2,7 @@
 name: github-pull-request-watcher
 description: |
   MANDATORY after every push to a branch with an open or imminent PR:
-  immediately arm
-  `~/.claude/skills/github-pull-request-watcher/scripts/pull-request-monitor.sh`
+  immediately arm `pull-request-monitor.sh`
   as a background Monitor. This is non-negotiable — the description IS
   the standing instruction; the user does not need to ask, and "they
   only asked me to push" is not a valid skip reason. Skipping leaves
@@ -41,8 +40,8 @@ PR has already landed. Arm both when both apply; they run in parallel
 on different event streams.
 
 Conversely, this watcher does **not** substitute for the
-`pull-request-sync-check.sh` PostToolUse hook shipped in this
-skill's `scripts/` directory (see "Companion hook" below): the
+`pull-request-sync-check.sh` PostToolUse hook shipped with this
+skill (see "Companion hook" below): the
 watcher arms only after a push and watches external events (CI,
 comments, merge), while the hook fires on local
 `git commit --amend` and catches title/body drift even before any
@@ -53,19 +52,23 @@ push happens.
 Active. Loading triggers the arming of a Monitor on the current PR
 state. If there's no relevant PR for the current branch, no-op.
 
-## Path convention
+## Where the bundled scripts install
 
-`$CLAUDE_SKILLS_DIR/<skill-name>/...` in the example commands below
-refers to your skills install root. Claude Code does **not** set
-`$CLAUDE_SKILLS_DIR` automatically — resolve it to either
-`~/.claude/skills` (user-level install) or `<project>/.claude/skills`
-(project-level install), depending on where this skill lives. Either
-`export CLAUDE_SKILLS_DIR=…` in the shell before running the example
-commands, or substitute the literal path. The `settings.json` hook
-snippet at the end of this skill uses the same placeholder — `sh -c`
-expands env vars from the parent process, so an unexported var
-expands to empty and the path breaks; export it before saving the
-config, or substitute the literal path.
+This skill bundles two scripts, `pull-request-monitor.sh` and
+`pull-request-sync-check.sh`. Both install in a `scripts/` directory
+alongside this `SKILL.md`, so their absolute paths depend on the scope
+this skill was installed to:
+
+- **User scope:** `~/.claude/skills/github-pull-request-watcher/scripts/<filename>`
+- **Project scope:** `<project-root>/.claude/skills/github-pull-request-watcher/scripts/<filename>`
+
+Everywhere below each script is named by its filename alone; resolve
+`pull-request-monitor.sh` or `pull-request-sync-check.sh` against
+whichever path above matches your install before running it. The one
+exception is the `settings.json` hook snippet at the end of this skill:
+a hook command runs outside any agent working directory, so it needs
+the absolute path spelled out — use the matching scope's path from the
+list above.
 
 ## Reactions per event type
 
@@ -102,11 +105,11 @@ config, or substitute the literal path.
 
 Poll the check-runs, issue-comments, and PR-state endpoints in a
 single loop and emit each delta as a recognizable line. The loop is
-shipped as `scripts/pull-request-monitor.sh` alongside this skill;
+shipped as `pull-request-monitor.sh` alongside this skill;
 arm the `Monitor` tool with `persistent: true` and invoke it:
 
 ```bash
-bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-monitor.sh
+bash pull-request-monitor.sh
 ```
 
 All flags are optional and auto-detect from the current branch /
@@ -165,7 +168,7 @@ The script's `--dry-run` flag runs every distinct gh invocation it
 contains exactly once with stderr **intact**, then exits:
 
 ```bash
-bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-monitor.sh --dry-run
+bash pull-request-monitor.sh --dry-run
 ```
 
 If any prints `Unknown JSON field:`, `HTTP 4xx`, or `Could not
@@ -253,8 +256,8 @@ follow-up paths are mutually exclusive).
 
 ## Companion hook: `pull-request-sync-check.sh`
 
-This skill ships a PostToolUse hook at
-`scripts/pull-request-sync-check.sh` that closes the local-amend
+This skill ships a PostToolUse hook, `pull-request-sync-check.sh`,
+that closes the local-amend
 gap the Monitor can't reach. The Monitor watches GitHub-side events
 after a push; the hook fires on the *local* `git commit --amend`
 and `git push` Bash calls and probes
@@ -276,8 +279,12 @@ Behaviour contract:
 - Never exits non-zero. Blocking would be hostile; the agent just
   needs the nudge.
 
-To wire it up, add this to your Claude Code `settings.json`
-(substitute `$CLAUDE_SKILLS_DIR` per the path convention above):
+To wire it up, add this to your Claude Code `settings.json`, using the
+absolute install path for your scope (see "Where the bundled scripts
+install" above) — a hook command runs outside any agent working
+directory, so the bare filename won't resolve here. The user-scope
+path is shown below; swap in the project-scope path if that's where
+this skill lives:
 
 ```json
 "hooks": {
@@ -287,7 +294,7 @@ To wire it up, add this to your Claude Code `settings.json`
       "hooks": [
         {
           "type": "command",
-          "command": "bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
+          "command": "bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
           "timeout": 15
         }
       ]
