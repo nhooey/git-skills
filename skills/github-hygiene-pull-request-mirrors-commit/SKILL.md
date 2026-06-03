@@ -4,7 +4,7 @@ description: |
   Keep each PR a thin wrapper over a single commit: title = subject,
   body = commit body, no `## Summary` / `## Test plan` / Claude-Code
   footer. Open and re-sync PRs with the bundled
-  `scripts/create-or-update-pull-request.sh` — it mirrors the commit, reflows the
+  `create-or-update-pull-request.sh` — it mirrors the commit, reflows the
   body to GFM paragraphs, and re-PATCHes an open PR after an amend
   (GitHub never refreshes title/body itself). Apply when opening a PR
   from an agent session, or amending a commit behind an open PR.
@@ -27,6 +27,19 @@ prose descriptions independent of the commits should skip this skill.
 Active when opening a PR or amending a commit behind one. Loading
 doesn't push or PATCH; it just makes you apply the rule the next time
 either happens.
+
+## Where the bundled script installs
+
+This skill bundles one script, `create-or-update-pull-request.sh`. It
+installs in a `scripts/` directory alongside this `SKILL.md`, so its
+absolute path depends on the scope this skill was installed to:
+
+- **User scope:** `~/.claude/skills/github-hygiene-pull-request-mirrors-commit/scripts/create-or-update-pull-request.sh`
+- **Project scope:** `<project-root>/.claude/skills/github-hygiene-pull-request-mirrors-commit/scripts/create-or-update-pull-request.sh`
+
+Everywhere below the script is named by its filename alone; resolve
+`create-or-update-pull-request.sh` against whichever path above matches
+your install before running it.
 
 ## The rule
 
@@ -89,13 +102,13 @@ If a Conventional Commits subject is bumping into the cap because of a
 long `type(scope):` prefix, tighten the summary side rather than the
 scope; the scope carries the load-bearing classification.
 
-## Open or re-sync the PR with `scripts/create-or-update-pull-request.sh`
+## Open or re-sync the PR with `create-or-update-pull-request.sh`
 
 Don't hand-build the `gh pr create` call — the bundled script does it, so the
 title and body always mirror the commit and the reflow can't be fumbled:
 
 ```bash
-scripts/create-or-update-pull-request.sh [--base <branch>] [--draft] [--repo <owner/repo>] [--verbatim]
+create-or-update-pull-request.sh [--base <branch>] [--draft] [--repo <owner/repo>] [--verbatim]
 ```
 
 It sets the PR **title to the commit subject** and the **body to the commit
@@ -178,7 +191,7 @@ global — no qualification needed.
 
 ## When to apply
 
-- About to open a PR — run `scripts/create-or-update-pull-request.sh`.
+- About to open a PR — run `create-or-update-pull-request.sh`.
 - Just amended a commit on a branch that has an open PR — re-run the
   script to re-sync the title and body.
 - Reviewing a PR description that has `## Summary` / `## Test plan`
