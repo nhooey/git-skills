@@ -13,6 +13,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
+      source = import ../../source.nix;
       skillName = "git-workflow-inspect-before-commit";
       packagePrefix = "agent-skill-";
       src = ./.;

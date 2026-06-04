@@ -13,6 +13,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
+      source = import ../../source.nix;
       skillName = "git-hygiene-commit-message-format";
       packagePrefix = "agent-skill-";
       src = ./.;

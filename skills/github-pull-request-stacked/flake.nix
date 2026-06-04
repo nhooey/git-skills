@@ -13,6 +13,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
+      source = import ../../source.nix;
       skillName = "github-pull-request-stacked";
       packagePrefix = "agent-skill-";
       src = ./.;
