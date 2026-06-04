@@ -48,6 +48,50 @@
         "type": "github"
       }
     },
+    "daymade": {
+      "inputs": {
+        "daymade-skills-src": "daymade-skills-src",
+        "flake-skills": [
+          "skillspkgs-combinations",
+          "flake-skills"
+        ],
+        "nixpkgs": [
+          "skillspkgs-combinations",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "dir": "pkgs/daymade",
+        "lastModified": 1780606768,
+        "narHash": "sha256-ECtSp03LzpnYqgwXryoCvdBfKOJLfiyzj0tYXxwrNrQ=",
+        "owner": "nhooey",
+        "repo": "skillspkgs",
+        "rev": "8677a86f04a7c94417bec3bedab2516d18fbe75d",
+        "type": "github"
+      },
+      "original": {
+        "dir": "pkgs/daymade",
+        "owner": "nhooey",
+        "repo": "skillspkgs",
+        "type": "github"
+      }
+    },
+    "daymade-skills-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780231637,
+        "narHash": "sha256-aK4v1uJnYPh/QU4dSyku7nVNkWWwpQJ6q7cWhuzyq8M=",
+        "owner": "daymade",
+        "repo": "claude-code-skills",
+        "rev": "c09bac375fcd116469a218ecdea50a43a97657a9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "daymade",
+        "repo": "claude-code-skills",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "nixpkgs": [
@@ -775,6 +819,7 @@
     },
     "skillspkgs-combinations_3": {
       "inputs": {
+        "daymade": "daymade",
         "flake-skills": [
           "flake-skills"
         ],
@@ -789,11 +834,11 @@
       },
       "locked": {
         "dir": "sources/combinations",
-        "lastModified": 1780495770,
-        "narHash": "sha256-Y/jBCJJmnaZ6DnnP8ZeBPbPHLg7Sao3fKx4b5S8DxnM=",
+        "lastModified": 1780606768,
+        "narHash": "sha256-ECtSp03LzpnYqgwXryoCvdBfKOJLfiyzj0tYXxwrNrQ=",
         "owner": "nhooey",
         "repo": "skillspkgs",
-        "rev": "a7648e7c56188c4d5ab59e48ae7185b9541f1fa2",
+        "rev": "8677a86f04a7c94417bec3bedab2516d18fbe75d",
         "type": "github"
       },
       "original": {
