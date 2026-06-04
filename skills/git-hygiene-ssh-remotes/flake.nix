@@ -13,6 +13,7 @@
     { nixpkgs, flake-skills, ... }:
     flake-skills.lib.mkSkillFlake {
       inherit nixpkgs;
+      source = import ../../source.nix;
       skillName = "git-hygiene-ssh-remotes";
       packagePrefix = "agent-skill-";
       src = ./.;

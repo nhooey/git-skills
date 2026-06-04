@@ -48,6 +48,7 @@
       # `skillspkgs-combinations` input above.
       base = flake-skills.lib.mkAllSkillsFlake {
         inherit nixpkgs;
+        source = import ./source.nix;
         skillsDir = ./skills;
         packagePrefix = "agent-skill-";
       };
@@ -145,12 +146,14 @@
       # `passthru.isFlakeSkillsEnv` + `flakeSkillsEnv` records that
       # `programs.flake-skills.skills` needs to expand the env back
       # into per-skill records on home-manager activation.
+      # A pack list is bare skill names; `base.bySkillName` indexes the
+      # per-skill drvs by that stable identity, independent of the key namespace.
       mkEnv =
         system: packName: skillNames:
         flake-skills.lib.mkSkillsEnv {
           pkgs = nixpkgs.legacyPackages.${system};
           name = packName;
-          skills = builtins.map (n: base.packages.${system}."agent-skill-${n}") skillNames;
+          skills = builtins.map (n: base.bySkillName.${system}.${n}) skillNames;
         };
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
