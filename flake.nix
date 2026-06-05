@@ -22,15 +22,6 @@
       url = "github:nhooey/agent-skill-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # skillspkgs' curated combinations, providing the `authoring` set installed into this repo's dev shell.
-    skillspkgs-combinations = {
-      url = "github:nhooey/skillspkgs?dir=sources/combinations";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        agent-skill-flake.follows = "agent-skill-flake";
-      };
-    };
   };
 
   outputs =
@@ -43,9 +34,7 @@
     let
       # The skills this repo outputs: every skill under ./skills built into
       # per-skill packages (consumed by `packs`/`mkEnv` below) plus the base
-      # install/preview apps. The authoring-only dev-shell skills come from
-      # skillspkgs' curated `authoring` combination — see the
-      # `skillspkgs-combinations` input above.
+      # install/preview apps.
       base = agent-skill-flake.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         source = import ./source.nix;
@@ -53,19 +42,11 @@
         packagePrefix = "agent-skill-";
       };
 
-      # The dev shell's full skill set as one combination: this repo's own
-      # skills (dogfooded) plus skillspkgs' `authoring` combination spliced in
-      # as a source. One reconcile hook converges the union under one owner.
-      devShellSkills = agent-skill-flake.lib.mkCombination {
-        inherit nixpkgs;
-        systems = import inputs.systems;
-        name = "git-skills-devshell";
-        packagePrefix = "agent-skill-";
-        sources = [
-          { source = base; }
-          { source = inputs.skillspkgs-combinations.combinations.authoring; }
-        ];
-      };
+      # Root-side wiring for the `skills-devshell/` sub-flake: the runtime
+      # `nix run "$PRJ_ROOT/skills-devshell#<app>"` snippets spliced into the
+      # dev shell below. The dev-shell skill set itself lives in that isolated
+      # sub-flake's lock, so the root stays free of dev-shell skill inputs.
+      devshellSkills = agent-skill-flake.lib.devshellSkillsHook { };
 
       packs = {
         # All 11 git-* skills.
@@ -178,19 +159,23 @@
 
           apps = base.apps.${system};
 
-          # Auto-reconcile skills at project scope on `nix develop`: this
-          # repo's own skills (dogfooded) plus skillspkgs' curated `authoring`
-          # combination, merged into one combination that a single reconcile
-          # hook converges — one owner, declarative + idempotent.
+          # Reconcile the dev-shell skill set at project scope on `nix
+          # develop`. The set is defined in the isolated `skills-devshell/`
+          # sub-flake and invoked here at RUNTIME (not a root input), so
+          # git-skills keeps zero dev-shell skill inputs while still dogfooding
+          # the skills. `reap-skills` (from the hook) removes the whole set in
+          # one command.
           devshells.default = {
             name = "git-skills";
             motd = ''
               {bold}{14}🚀 Entering git-skills dev shell{reset}
               Run {bold}menu{reset} to list available commands.
             '';
-            devshell.startup.install-skills.text = ''
-              ${devShellSkills.reconcileScript system}
-            '';
+            devshell.startup.install-skills.text = devshellSkills.startup;
+            # The `skills`-category commands (reap-skills, update-skills-devshell)
+            # carry no repo-specific data, so they come verbatim from
+            # `devshellSkills.commands`.
+            commands = devshellSkills.commands;
           };
 
           treefmt = {
