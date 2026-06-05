@@ -217,7 +217,7 @@ automatically and this skill applies the saved mode without prompting.
 ## Safety net
 
 The `pull-request-sync-check.sh` PostToolUse hook shipped by the
-`github-pull-request-watcher` skill (wired into
+`github-workflow-pull-request-watcher` skill (wired into
 `~/.claude/settings.json`) probes for an open PR on every
 `git commit --amend` and `git push`, and emits a system reminder if
 HEAD's commit message has diverged from the PR's title or body. This

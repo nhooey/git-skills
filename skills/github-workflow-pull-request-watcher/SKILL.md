@@ -1,5 +1,5 @@
 ---
-name: github-pull-request-watcher
+name: github-workflow-pull-request-watcher
 description: |
   MANDATORY after every push to a branch with an open or imminent PR:
   immediately arm `pull-request-monitor.sh`
@@ -21,7 +21,7 @@ allowed-tools:
   - Monitor
 ---
 
-# github-pull-request-watcher
+# github-workflow-pull-request-watcher
 
 After pushing to a branch with an open (or imminent) PR, arm a
 background watcher that emits on *every* PR event — check completions,
@@ -59,8 +59,8 @@ This skill bundles two scripts, `pull-request-monitor.sh` and
 alongside this `SKILL.md`, so their absolute paths depend on the scope
 this skill was installed to:
 
-- **User scope:** `~/.claude/skills/github-pull-request-watcher/scripts/<filename>`
-- **Project scope:** `<project-root>/.claude/skills/github-pull-request-watcher/scripts/<filename>`
+- **User scope:** `~/.claude/skills/github-workflow-pull-request-watcher/scripts/<filename>`
+- **Project scope:** `<project-root>/.claude/skills/github-workflow-pull-request-watcher/scripts/<filename>`
 
 Everywhere below each script is named by its filename alone; resolve
 `pull-request-monitor.sh` or `pull-request-sync-check.sh` against
@@ -73,7 +73,7 @@ list above.
 ## Reactions per event type
 
 - **Check green** — surface 🟢 in the next reply (see
-  `github-pull-request-status-line` for the format).
+  `github-workflow-pull-request-status-line` for the format).
 - **Check red** — read the log (`gh run view <id> --log`), propose a
   fix, surface 🔴.
 - **Comment from the session-running user** (identify with
@@ -82,7 +82,7 @@ list above.
   the conversation surface (often because they're on mobile or
   reviewing the diff side-by-side). Read it, do the work locally, and
   surface a *comment line* in your chat reply confirming what was
-  addressed (format defined in `github-pull-request-status-line`).
+  addressed (format defined in `github-workflow-pull-request-status-line`).
   **Don't post a reply on the PR itself** — that publishes under the
   user's identity, and the safety layer blocks it (rightly: the agent
   shouldn't speak as the user). The chat comment line is the
@@ -294,7 +294,7 @@ this skill lives:
       "hooks": [
         {
           "type": "command",
-          "command": "bash ~/.claude/skills/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
+          "command": "bash ~/.claude/skills/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh",
           "timeout": 15
         }
       ]
@@ -305,7 +305,7 @@ this skill lives:
 
 Nix users: the script ships via `agent-skill-flake` standard
 `installPhase` — the `scripts/` directory is auto-copied into
-`$out/share/claude-skills/github-pull-request-watcher/scripts/`.
+`$out/share/claude-skills/github-workflow-pull-request-watcher/scripts/`.
 The bash shebang plus standard tools (`jq`, `gh`, `git`, `tr`,
 `sed`, `diff`, `head`, `fmt`) resolve via the user's PATH at hook-
 exec time; no wrapper is needed in the typical case. If you want

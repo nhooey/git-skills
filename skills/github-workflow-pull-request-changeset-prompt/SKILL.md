@@ -1,5 +1,5 @@
 ---
-name: github-pull-request-changeset-prompt
+name: github-workflow-pull-request-changeset-prompt
 description: |
   After completing any change-set in the work tree, present a
   multi-select `AskUserQuestion` prompt (split into Local / Push /
@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# github-pull-request-changeset-prompt
+# github-workflow-pull-request-changeset-prompt
 
 Once you've made changes in the work tree, don't auto-decide whether
 to stage, commit, push, or follow up on the PR. Present a multi-select
@@ -40,7 +40,7 @@ change-set lands in the work tree.
   title and unwrapped body).
 - **Re-derive PR name + title** — re-PATCH title and body per
   `github-hygiene-pull-request-mirrors-commit`.
-- **Monitor + react** — arm or re-arm `github-pull-request-watcher`.
+- **Monitor + react** — arm or re-arm `github-workflow-pull-request-watcher`.
 
 ## Split into three questions (4-option cap)
 
@@ -88,7 +88,7 @@ sub-question).
 **Option text** (literal start fixed):
 
 - `Re-derive PR name + title — PATCH from HEAD commit`
-- `Monitor + react — arm github-pull-request-watcher`
+- `Monitor + react — arm github-workflow-pull-request-watcher`
 
 ## Mutually exclusive pairs
 

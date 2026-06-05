@@ -1,5 +1,5 @@
 {
-  description = "github-pull-request-watcher: Claude Code skill — background Monitor that polls PR check-runs/comments/state and reacts to each event";
+  description = "github-workflow-pull-request-watcher: Claude Code skill — background Monitor that polls PR check-runs/comments/state and reacts to each event";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
     agent-skill-flake.lib.mkSkillFlake {
       inherit nixpkgs;
       source = import ../../source.nix;
-      skillName = "github-pull-request-watcher";
+      skillName = "github-workflow-pull-request-watcher";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

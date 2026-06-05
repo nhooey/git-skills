@@ -121,7 +121,7 @@ at creation; a later `git commit --amend` + force-push refreshes the diff but
 leaves the title and body frozen. The script auto-detects an existing open PR
 for the head branch and PATCHes it instead of opening a new one — so just
 **re-run it after every amend**. The `pull-request-sync-check.sh` PostToolUse
-hook (shipped by `github-pull-request-watcher`) nudges you when HEAD has drifted
+hook (shipped by `github-workflow-pull-request-watcher`) nudges you when HEAD has drifted
 from the open PR; re-running the script is the fix. (`gh api` quoting traps —
 `-f` vs `-F` etc. — see `github-hygiene-gh-cli-gotchas`.)
 

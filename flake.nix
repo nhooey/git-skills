@@ -92,10 +92,10 @@
           "github-policy-codeowners"
           "github-policy-merge-commits-only"
           "github-policy-protect-default-branch"
-          "github-pull-request-changeset-prompt"
-          "github-pull-request-stacked"
-          "github-pull-request-status-line"
-          "github-pull-request-watcher"
+          "github-workflow-pull-request-changeset-prompt"
+          "github-workflow-pull-request-stacked"
+          "github-workflow-pull-request-status-line"
+          "github-workflow-pull-request-watcher"
         ];
 
         # All github-hygiene-* skills: PR-shape discipline + `gh` CLI gotchas.
@@ -112,12 +112,12 @@
           "github-policy-protect-default-branch"
         ];
 
-        # All github-pull-request-* skills: PR lifecycle / agent behavior.
-        agent-skills-github-pull-request = [
-          "github-pull-request-changeset-prompt"
-          "github-pull-request-stacked"
-          "github-pull-request-status-line"
-          "github-pull-request-watcher"
+        # All github-workflow-* skills: PR lifecycle / agent behavior.
+        agent-skills-github-workflow = [
+          "github-workflow-pull-request-changeset-prompt"
+          "github-workflow-pull-request-stacked"
+          "github-workflow-pull-request-status-line"
+          "github-workflow-pull-request-watcher"
         ];
       };
 
