@@ -18,7 +18,7 @@
 #
 # Examples:
 #   pull-request-table.sh --state open
-#   pull-request-table.sh --repo nhooey/skillspkgs --repo nhooey/skills-git --state merged --limit 20
+#   pull-request-table.sh --repo nhooey/skillspkgs --repo nhooey/git-skills --state merged --limit 20
 set -euo pipefail
 
 repos=()

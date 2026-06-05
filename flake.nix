@@ -1,5 +1,5 @@
 {
-  description = "skills-git: Claude Code skills marketplace as a Nix flake (git hygiene, GitHub repo settings, agent PR lifecycle)";
+  description = "git-skills: Claude Code skills marketplace as a Nix flake (git hygiene, GitHub repo settings, agent PR lifecycle)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -59,7 +59,7 @@
       devShellSkills = flake-skills.lib.mkCombination {
         inherit nixpkgs;
         systems = import inputs.systems;
-        name = "skills-git-devshell";
+        name = "git-skills-devshell";
         packagePrefix = "agent-skill-";
         sources = [
           { source = base; }
@@ -183,9 +183,9 @@
           # combination, merged into one combination that a single reconcile
           # hook converges — one owner, declarative + idempotent.
           devshells.default = {
-            name = "skills-git";
+            name = "git-skills";
             motd = ''
-              {bold}{14}🚀 Entering skills-git dev shell{reset}
+              {bold}{14}🚀 Entering git-skills dev shell{reset}
               Run {bold}menu{reset} to list available commands.
             '';
             devshell.startup.install-skills.text = ''
