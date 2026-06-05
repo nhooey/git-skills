@@ -303,7 +303,7 @@ this skill lives:
 }
 ```
 
-Nix users: the script ships via `flake-skills` standard
+Nix users: the script ships via `agent-skill-flake` standard
 `installPhase` — the `scripts/` directory is auto-copied into
 `$out/share/claude-skills/github-pull-request-watcher/scripts/`.
 The bash shebang plus standard tools (`jq`, `gh`, `git`, `tr`,

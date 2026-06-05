@@ -80,7 +80,7 @@ when debugging a watcher that suppresses stderr — the canonical
 empty `{}` and the loop polls a permanently-null state forever,
 never reaching its terminal-state break. The watcher looks armed
 but is brain-dead. Observed 2026-05-27 on a PR #24 watcher in
-`nhooey/skills-nix`: `--json …,reviewThreads` masked the merge
+`nhooey/nix-skills`: `--json …,reviewThreads` masked the merge
 event for ~10 minutes until the user pointed out the silence.
 
 Validate the field list up front, with stderr intact:
@@ -120,7 +120,7 @@ local tracking ref in one shot — useful as a one-off if
 ## `POST /repos/{owner}/{repo}/branches/{branch}/rename` auto-closes open PRs whose head is that branch
 
 GitHub's docs imply head refs follow the rename; in practice they
-don't. Observed 2026-05-13 on `nhooey/skills-nix`: four
+don't. Observed 2026-05-13 on `nhooey/nix-skills`: four
 `nhooey/2026-04-*` branches were renamed via `gh api -X POST
 .../rename`; the API succeeded, the branches were renamed, every open
 PR with the old head ref recorded a `head_ref_deleted` event and was

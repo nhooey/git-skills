@@ -97,7 +97,7 @@ Example — a session's merged work across three repos:
 
 ```
 pull-request-table.sh \
-  --repo nhooey/skillspkgs --repo nhooey/flake-skills --repo nhooey/git-skills \
+  --repo nhooey/skillspkgs --repo nhooey/agent-skill-flake --repo nhooey/git-skills \
   --state merged --limit 10
 ```
 
