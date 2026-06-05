@@ -16,10 +16,10 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # `flake-skills` is the builder library, not a skill — it turns skill
+    # `agent-skill-flake` is the builder library, not a skill — it turns skill
     # directories into installable flakes and aggregates them.
-    flake-skills = {
-      url = "github:nhooey/flake-skills";
+    agent-skill-flake = {
+      url = "github:nhooey/agent-skill-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -28,7 +28,7 @@
       url = "github:nhooey/skillspkgs?dir=sources/combinations";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-skills.follows = "flake-skills";
+        agent-skill-flake.follows = "agent-skill-flake";
       };
     };
   };
@@ -37,7 +37,7 @@
     {
       nixpkgs,
       flake-parts,
-      flake-skills,
+      agent-skill-flake,
       ...
     }@inputs:
     let
@@ -46,7 +46,7 @@
       # install/preview apps. The authoring-only dev-shell skills come from
       # skillspkgs' curated `authoring` combination — see the
       # `skillspkgs-combinations` input above.
-      base = flake-skills.lib.mkAllSkillsFlake {
+      base = agent-skill-flake.lib.mkAllSkillsFlake {
         inherit nixpkgs;
         source = import ./source.nix;
         skillsDir = ./skills;
@@ -56,7 +56,7 @@
       # The dev shell's full skill set as one combination: this repo's own
       # skills (dogfooded) plus skillspkgs' `authoring` combination spliced in
       # as a source. One reconcile hook converges the union under one owner.
-      devShellSkills = flake-skills.lib.mkCombination {
+      devShellSkills = agent-skill-flake.lib.mkCombination {
         inherit nixpkgs;
         systems = import inputs.systems;
         name = "git-skills-devshell";
@@ -140,17 +140,17 @@
         ];
       };
 
-      # Build a `flake-skills.lib.mkSkillsEnv` for one (packName,
+      # Build an `agent-skill-flake.lib.mkSkillsEnv` for one (packName,
       # skillNames) pair. The env keeps the same `nix run`/`nix build`
       # UX as a plain `symlinkJoin`, but also carries the
       # `passthru.isFlakeSkillsEnv` + `flakeSkillsEnv` records that
-      # `programs.flake-skills.skills` needs to expand the env back
+      # `programs.agent-skill-flake.skills` needs to expand the env back
       # into per-skill records on home-manager activation.
       # A pack list is bare skill names; `base.bySkillName` indexes the
       # per-skill drvs by that stable identity, independent of the key namespace.
       mkEnv =
         system: packName: skillNames:
-        flake-skills.lib.mkSkillsEnv {
+        agent-skill-flake.lib.mkSkillsEnv {
           pkgs = nixpkgs.legacyPackages.${system};
           name = packName;
           skills = builtins.map (n: base.bySkillName.${system}.${n}) skillNames;
