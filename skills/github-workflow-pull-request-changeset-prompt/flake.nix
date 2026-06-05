@@ -1,5 +1,5 @@
 {
-  description = "github-pull-request-stacked: Claude Code skill — submit dependent PRs on GitHub; covers repos you control (`gt submit --stack`, merge bottom-first, `gt sync`), upstream fork-only (draft + Depends-on), and upstream with topic-branch push grant";
+  description = "github-workflow-pull-request-changeset-prompt: Claude Code skill — multi-select AskUserQuestion after every change-set (Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
     agent-skill-flake.lib.mkSkillFlake {
       inherit nixpkgs;
       source = import ../../source.nix;
-      skillName = "github-pull-request-stacked";
+      skillName = "github-workflow-pull-request-changeset-prompt";
       packagePrefix = "agent-skill-";
       src = ./.;
     };

@@ -14,7 +14,7 @@
 #     "matcher": "Bash",
 #     "hooks": [{
 #       "type": "command",
-#       "command": "bash $CLAUDE_SKILLS_DIR/github-pull-request-watcher/scripts/pull-request-sync-check.sh",
+#       "command": "bash $CLAUDE_SKILLS_DIR/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh",
 #       "timeout": 15
 #     }]
 #   }
@@ -22,7 +22,7 @@
 # Background: skills/github-hygiene-pull-request-mirrors-commit
 # prescribes a PATCH to the pull request after any amend, but skill
 # loading is heuristic — this hook is the deterministic safety net.
-# Companion to the `github-pull-request-watcher` Monitor, which
+# Companion to the `github-workflow-pull-request-watcher` Monitor, which
 # watches *external* events (CI, comments, merge) post-push; this
 # hook catches local title/body drift even before any push.
 

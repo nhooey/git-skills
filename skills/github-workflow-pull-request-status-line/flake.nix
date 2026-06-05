@@ -1,5 +1,5 @@
 {
-  description = "github-pull-request-changeset-prompt: Claude Code skill — multi-select AskUserQuestion after every change-set (Stage/Commit/Amend/Push/Force/Open-PR/Re-derive/Monitor)";
+  description = "github-workflow-pull-request-status-line: Claude Code skill — surface PRs as `<status-circle> <url> — **PR #<num>: <title>**` with live state";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
     agent-skill-flake.lib.mkSkillFlake {
       inherit nixpkgs;
       source = import ../../source.nix;
-      skillName = "github-pull-request-changeset-prompt";
+      skillName = "github-workflow-pull-request-status-line";
       packagePrefix = "agent-skill-";
       src = ./.;
     };
