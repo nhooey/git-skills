@@ -1,6 +1,6 @@
-# skills-git
+# git-skills
 
-[![built with garnix](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fgarnix.io%2Fapi%2Fbadges%2Fnhooey%2Fskills-git)](https://garnix.io/repo/nhooey/skills-git)
+[![built with garnix](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fgarnix.io%2Fapi%2Fbadges%2Fnhooey%2Fgit-skills)](https://garnix.io/repo/nhooey/git-skills)
 
 A collection of small, opinionated [Agent Skills](https://www.anthropic.com/engineering/agent-skills) for Git and GitHub workflows, compatible with Claude Code, Codex, Gemini CLI, Cursor, and the `npx skills` / `gh skill` CLIs.
 
@@ -18,14 +18,14 @@ Each skill belongs to exactly one pack — the second segment of the name is the
 
 ```sh
 # via npx — installs all skills
-npx skills add nhooey/skills-git
+npx skills add nhooey/git-skills
 
 # via gh CLI extension
-gh skill install nhooey/skills-git
+gh skill install nhooey/git-skills
 
 # manually
-git clone https://github.com/nhooey/skills-git.git
-cp -r skills-git/skills/* ~/.claude/skills/
+git clone https://github.com/nhooey/git-skills.git
+cp -r git-skills/skills/* ~/.claude/skills/
 ```
 
 ### Install via Nix flake
@@ -36,17 +36,17 @@ The default `nix run` is a **read-only preview** — it lists what would be inst
 
 ```sh
 # Preview what would be installed (no side effects)
-nix run github:nhooey/skills-git
-nix run 'github:nhooey/skills-git?dir=skills/git-hygiene-push-force-safely'
+nix run github:nhooey/git-skills
+nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely'
 
 # Actually install
-nix run github:nhooey/skills-git#install                              # all skills
-nix run 'github:nhooey/skills-git?dir=skills/git-hygiene-push-force-safely#install'   # just one
+nix run github:nhooey/git-skills#install                              # all skills
+nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely#install'   # just one
 
 # Or build a derivation containing the skill files (no install side-effect)
-nix build github:nhooey/skills-git#all                  # every skill, symlinkJoined
-nix build github:nhooey/skills-git#git-hygiene-push-force-safely # one skill
-nix build github:nhooey/skills-git#agent-skills-git-all         # a curated subset (see below)
+nix build github:nhooey/git-skills#all                  # every skill, symlinkJoined
+nix build github:nhooey/git-skills#git-hygiene-push-force-safely # one skill
+nix build github:nhooey/git-skills#agent-skills-git-all         # a curated subset (see below)
 ```
 
 The installer copies into `$CLAUDE_SKILLS_DIR` if set, otherwise `~/.claude/skills/`. Existing skill directories with the same name are replaced.
@@ -71,8 +71,8 @@ Five prefix packs partition the 21 skills — each skill is a member of exactly 
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
-nix build github:nhooey/skills-git#agent-skills-git-hygiene
-nix run github:nhooey/skills-git#agent-skills-github-policy    # (no install, just build)
+nix build github:nhooey/git-skills#agent-skills-git-hygiene
+nix run github:nhooey/git-skills#agent-skills-github-policy    # (no install, just build)
 ```
 
 ## Skills in this repo
