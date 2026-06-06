@@ -11,11 +11,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1780748954,
-        "narHash": "sha256-4WKZWhu0FCcIjm5ud3J7D09BwjSTYB+ndEa/OG8Ixuk=",
+        "lastModified": 1780752077,
+        "narHash": "sha256-wKnS8wuZal3XKQgePTC13O1u6v+34CQPcQQh6DMlsEc=",
         "owner": "nhooey",
         "repo": "agent-skill-flake",
-        "rev": "4d08af2127467be8673d990f8f1da1eb63f424cf",
+        "rev": "ff9816f6d4dc8c8d236ff21b75baec822dc9d4ae",
         "type": "github"
       },
       "original": {
@@ -28,26 +28,6 @@
       "inputs": {
         "nixpkgs": [
           "agent-skill-flake",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1768818222,
-        "narHash": "sha256-460jc0+CZfyaO8+w8JNtlClB2n4ui1RbHfPTLkpwhU8=",
-        "owner": "numtide",
-        "repo": "devshell",
-        "rev": "255a2b1725a20d060f566e4755dbf571bbbb5f76",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "devshell",
-        "type": "github"
-      }
-    },
-    "devshell_2": {
-      "inputs": {
-        "nixpkgs": [
           "nixpkgs"
         ]
       },
@@ -125,7 +105,6 @@
     "root": {
       "inputs": {
         "agent-skill-flake": "agent-skill-flake",
-        "devshell": "devshell_2",
         "flake-parts": "flake-parts_2",
         "nixpkgs": "nixpkgs",
         "systems": "systems_2",
