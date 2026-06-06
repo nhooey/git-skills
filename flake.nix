@@ -42,7 +42,7 @@
 
       packs = {
         # All 11 git-* skills.
-        agent-skills-git-all = [
+        agent-skills-nhooey-git-all = [
           "git-hygiene-branch-naming"
           "git-hygiene-commit-message-format"
           "git-hygiene-conventional-commits"
@@ -58,7 +58,7 @@
 
         # All git-hygiene-* skills: rules-of-thumb (commit/branch style,
         # safe force-push, SSH-by-default).
-        agent-skills-git-hygiene = [
+        agent-skills-nhooey-git-hygiene = [
           "git-hygiene-branch-naming"
           "git-hygiene-commit-message-format"
           "git-hygiene-conventional-commits"
@@ -69,7 +69,7 @@
         ];
 
         # All git-workflow-* skills: interactive / multi-step procedures.
-        agent-skills-git-workflow = [
+        agent-skills-nhooey-git-workflow = [
           "git-workflow-cleanup-merged-branches"
           "git-workflow-curate-unpushed"
           "git-workflow-inspect-before-commit"
@@ -77,7 +77,7 @@
         ];
 
         # All 10 github-* skills (includes the agent-tagged trio).
-        agent-skills-github-all = [
+        agent-skills-nhooey-github-all = [
           "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
           "github-policy-auto-delete-merged-branches"
@@ -91,13 +91,13 @@
         ];
 
         # All github-hygiene-* skills: PR-shape discipline + `gh` CLI gotchas.
-        agent-skills-github-hygiene = [
+        agent-skills-nhooey-github-hygiene = [
           "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
         ];
 
         # All github-policy-* skills: one-time repo configuration.
-        agent-skills-github-policy = [
+        agent-skills-nhooey-github-policy = [
           "github-policy-auto-delete-merged-branches"
           "github-policy-codeowners"
           "github-policy-merge-commits-only"
@@ -105,7 +105,7 @@
         ];
 
         # All github-workflow-* skills: PR lifecycle / agent behavior.
-        agent-skills-github-workflow = [
+        agent-skills-nhooey-github-workflow = [
           "github-workflow-pull-request-changeset-prompt"
           "github-workflow-pull-request-stacked"
           "github-workflow-pull-request-status-line"
@@ -154,8 +154,18 @@
       perSystem =
         { system, ... }:
         {
+          # `base.packages` (mkAllSkillsFlake without a `name =`) carries a
+          # `default` alias and the owner-wide `agent-skills-nhooey-all`
+          # aggregate. That owner-`all` is unresolvable — no single repo holds
+          # all of nhooey's skills — and collides across every nhooey repo under
+          # skillspkgs / nur-packages' last-write-wins `//` merge, so strip both
+          # and expose only the `agent-skill-nhooey-*` per-skill keys plus the
+          # owner+topic packs below.
           packages =
-            base.packages.${system}
+            (builtins.removeAttrs base.packages.${system} [
+              "default"
+              "agent-skills-nhooey-all"
+            ])
             // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs;
 
           apps = base.apps.${system};
