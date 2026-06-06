@@ -32,8 +32,6 @@
       inherit nixpkgs;
       systems = import inputs.systems;
       name = "git-skills-devshell";
-      envName = "agent-skills-git-skills-devshell";
-      packagePrefix = "agent-skill-";
       sources = [
         { source = skillspkgs-combinations.combinations.authoring-with-git; }
       ];

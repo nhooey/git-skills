@@ -8,16 +8,14 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    devshell = {
-      url = "github:numtide/devshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # `agent-skill-flake` is the builder library, not a skill — it turns skill
-    # directories into installable flakes and aggregates them.
+    # directories into installable flakes and aggregates them, and also exports
+    # `flakeModules.devshellSkills` (which bundles numtide/devshell), so this
+    # flake needs no `devshell` input of its own.
     agent-skill-flake = {
       url = "github:nhooey/agent-skill-flake";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -41,12 +39,6 @@
         skillsDir = ./skills;
         packagePrefix = "agent-skill-";
       };
-
-      # Root-side wiring for the `skills-devshell/` sub-flake: the runtime
-      # `nix run "$PRJ_ROOT/skills-devshell#<app>"` snippets spliced into the
-      # dev shell below. The dev-shell skill set itself lives in that isolated
-      # sub-flake's lock, so the root stays free of dev-shell skill inputs.
-      devshellSkills = agent-skill-flake.lib.devshellSkillsHook { };
 
       packs = {
         # All 11 git-* skills.
@@ -140,9 +132,18 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
       imports = [
-        inputs.devshell.flakeModule
+        # Bundles numtide/devshell + the whole dev-shell skills convention (the
+        # stock motd, the install-skills startup that reconciles the runtime
+        # skills-devshell/ sub-flake, the ci/dev/maintenance command trio, and
+        # the reap-skills/update-skills-devshell pair). Configured via the
+        # `agent-skill-flake.devshellSkills` options block below.
+        inputs.agent-skill-flake.flakeModules.devshellSkills
         inputs.treefmt-nix.flakeModule
       ];
+
+      # git-skills keeps the stock banner ("🚀 Entering git-skills dev shell"),
+      # so only `name` is set — the module generates the motd from it.
+      agent-skill-flake.devshellSkills.name = "git-skills";
 
       # Expose the declarative reconcile one-liner (system -> shell snippet at
       # --scope=project) so consumers like skillspkgs' dev shell can install
@@ -159,24 +160,12 @@
 
           apps = base.apps.${system};
 
-          # Reconcile the dev-shell skill set at project scope on `nix
-          # develop`. The set is defined in the isolated `skills-devshell/`
-          # sub-flake and invoked here at RUNTIME (not a root input), so
-          # git-skills keeps zero dev-shell skill inputs while still dogfooding
-          # the skills. `reap-skills` (from the hook) removes the whole set in
-          # one command.
-          devshells.default = {
-            name = "git-skills";
-            motd = ''
-              {bold}{14}🚀 Entering git-skills dev shell{reset}
-              Run {bold}menu{reset} to list available commands.
-            '';
-            devshell.startup.install-skills.text = devshellSkills.startup;
-            # The `skills`-category commands (reap-skills, update-skills-devshell)
-            # carry no repo-specific data, so they come verbatim from
-            # `devshellSkills.commands`.
-            commands = devshellSkills.commands;
-          };
+          # The devShell (name, stock motd, install-skills startup, the
+          # ci/dev/maintenance command trio, and the reap-skills/
+          # update-skills-devshell skills commands) comes entirely from the
+          # devshellSkills module imported above. git-skills has no
+          # repo-specific dev-shell packages or commands to add, so there is no
+          # `devshells.default` block here.
 
           treefmt = {
             projectRootFile = "flake.nix";
