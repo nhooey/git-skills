@@ -36,8 +36,13 @@ you'll flip this toggle.
 
 ```bash
 gh api -X PATCH "repos/<owner>/<repo>" \
-  -f delete_branch_on_merge=true
+  -F delete_branch_on_merge=true
 ```
+
+Use `-F` (typed field), not `-f` — `-f` sends the JSON *string* `"true"`,
+while this setting wants a real boolean. GitHub's repo-settings endpoint
+happens to coerce the string today, but relying on that is the exact trap
+`github-hygiene-gh-cli-gotchas` warns about, so send the right type.
 
 ## Verify
 
