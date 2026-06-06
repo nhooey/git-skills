@@ -6,7 +6,7 @@ description: |
   -p` for mixed changes), and review the cached diff (`git diff --cached`)
   for secrets, debug logging, and unintended formatting churn. Apply
   whenever about to `git commit`.
-tags: [workflow]
+tags: [workflow, safety]
 allowed-tools:
   - Bash
   - Read

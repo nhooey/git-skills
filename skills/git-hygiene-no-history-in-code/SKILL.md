@@ -1,11 +1,11 @@
 ---
 name: git-hygiene-no-history-in-code
 description: |
-  Don't embed diachronic notes ("added in v3.2", "TODO remove after Q4
-  migration", "this used to do X") in source. That context belongs in
-  the commit message that introduced or changed the code. Apply when
-  about to add any historical/migration-related comment, or when
-  reviewing existing ones.
+  Don't embed historical "this changed" notes ("added in v3.2", "TODO
+  remove after Q4 migration", "this used to do X") in source. That
+  context belongs in the commit message that introduced or changed the
+  code. Apply when about to add any historical/migration-related
+  comment, or when reviewing existing ones.
 tags: [style]
 allowed-tools:
   - Read
