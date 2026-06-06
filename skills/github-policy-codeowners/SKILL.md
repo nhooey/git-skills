@@ -50,11 +50,43 @@ Once `.github/CODEOWNERS` is in place, update the ruleset created by
 owner of the changed paths:
 
 ```bash
-# Fetch the existing ruleset.
-gh api "repos/<owner>/<repo>/rulesets" --jq '.[] | select(.name=="protect-default-branch") | .id'
+# Find the ruleset's id.
+RULESET_ID=$(gh api "repos/<owner>/<repo>/rulesets" \
+  --jq '.[] | select(.name=="protect-default-branch") | .id')
 
-# Update the pull_request rule's parameters via the ruleset's update endpoint.
-# (Edit the rules array to add require_code_owner_review: true to the pull_request rule.)
+# Re-send the full rules array with require_code_owner_review added to the
+# pull_request rule. PUT replaces the entire rules array — any rule you omit
+# is dropped — so include every rule the ruleset already had.
+gh api -X PUT "repos/<owner>/<repo>/rulesets/$RULESET_ID" --input - <<'JSON'
+{
+  "rules": [
+    { "type": "pull_request",
+      "parameters": {
+        "require_code_owner_review": true,
+        "required_approving_review_count": 1
+      }
+    },
+    { "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [ { "context": "ci" } ]
+      }
+    },
+    { "type": "non_fast_forward" },
+    { "type": "deletion" }
+  ]
+}
+JSON
+```
+
+`require_code_owner_review` lives in the `pull_request` rule's
+`parameters`. The bare `{ "type": "pull_request" }` rule in
+`github-policy-protect-default-branch` has no `parameters` block — this is
+where you add one. Verify the codeowners path mapping itself before
+relying on enforcement:
+
+```bash
+gh api "repos/<owner>/<repo>/codeowners/errors"   # → empty errors array = valid
 ```
 
 ## When to apply

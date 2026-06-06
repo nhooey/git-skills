@@ -77,9 +77,12 @@ sub-question).
 
 - `Push — regular git push`
 - `Force — git push --force-with-lease`
-- `Open Pull Request — gh pr create`
 
-**Q3 — Follow-up.**
+**Q3 — PR follow-up.**
+
+Opening a PR is a follow-up on a pushed branch, not a push itself, so it
+lives here next to the other PR-level actions — and it keeps the
+mutually-exclusive Open-PR / Re-derive pair in one sub-question.
 
 **Question text** (literal start fixed; dynamic part in `[brackets]`):
 
@@ -87,6 +90,7 @@ sub-question).
 
 **Option text** (literal start fixed):
 
+- `Open Pull Request — gh pr create`
 - `Re-derive PR name + title — PATCH from HEAD commit`
 - `Monitor + react — arm github-workflow-pull-request-watcher`
 

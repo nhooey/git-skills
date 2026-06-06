@@ -95,9 +95,9 @@ One section per pack. The three skills tagged `agent` (only meaningful when an L
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [git-workflow-cleanup-merged-branches](skills/git-workflow-cleanup-merged-branches) | workflow, interactive | Delete merged branches; ask before bulk-cleaning stragglers. |
+| [git-workflow-cleanup-merged-branches](skills/git-workflow-cleanup-merged-branches) | workflow, interactive, safety | Delete merged branches; ask before bulk-cleaning stragglers. |
 | [git-workflow-curate-unpushed](skills/git-workflow-curate-unpushed) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
-| [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
+| [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow, safety | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
 | [git-workflow-push-mode](skills/git-workflow-push-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
 
 ### `github-hygiene-*` — PR-shape discipline + `gh` gotchas

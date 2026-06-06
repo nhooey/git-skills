@@ -93,6 +93,12 @@ deletion. `~DEFAULT_BRANCH` is GitHub's symbolic ref for "whatever the
 default branch is right now" — it follows along if you rename
 `master` → `main` later.
 
+The empty `"bypass_actors": []` is what applies the rules to admins too:
+under the Rulesets API there is no separate `enforce_admins` flag (that
+was the legacy branch-protection API) — anyone not listed as a bypass
+actor is held to the rules. To grant a deliberate break-glass exception,
+add an entry here rather than leaving admins unprotected by default.
+
 ## Verify
 
 In the UI: **Settings → Rules → Rulesets**. Or:

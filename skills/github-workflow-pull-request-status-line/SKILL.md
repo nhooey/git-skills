@@ -49,7 +49,9 @@ install before running it.
   - 🟢 checks passed, mergeable
   - 🔴 at least one check failed
   - 🟣 merged (matches GitHub's own merged-PR color)
-  - ⚪ closed without merge
+  - ⚪ closed without merge, or still a draft (the bundled
+    `pull-request-table.sh` folds both into ⚪ — a draft isn't ready to
+    judge on check state yet, so it gets the neutral dot)
 - **`PR #<num>:`** goes inside the bold span. The number is what
   users grep for when several PRs are open.
 - **`<PR title>`** — the literal PR title. Wrap the whole `PR #<num>:
