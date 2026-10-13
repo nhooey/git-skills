@@ -50,6 +50,11 @@ git restore --staged -p      # unstage by hunk
 git restore --staged <path>  # unstage a file
 ```
 
+Never stage with `git add -A`, `git add --all`, `git add .` or
+`git commit -a`; always name the paths. Repos often hold untracked
+working files (plans, agent config, scratch notes) that must stay out of
+commits.
+
 The 1-2-sentence test (step 3) is the forcing function for whether to
 split: if you can't describe the staged change in 1-2 sentences (what +
 why), the commit is mixed; unstage some hunks and write a separate
