@@ -11,6 +11,13 @@ tags: [workflow, style]
 allowed-tools:
   - Bash
   - Read
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_SKILL_DIR}/scripts/detect-noise-commits.sh"
+          timeout: 15
 ---
 
 # git-workflow-curate-unpushed
@@ -76,6 +83,34 @@ Once a commit has been pushed and others may have pulled it, this rule
 flips — rewriting pushed history is a coordination problem (see
 `git-hygiene-push-force-safely` for the safety mechanism, and
 `github-hygiene-pull-request-mirrors-commit` for re-syncing the PR after the rewrite).
+
+## Deterministic safety net: the `detect-noise-commits.sh` hook
+
+Spotting noise-subject commits is the mechanical half of step 1, so this
+skill ships it as a `PreToolUse` hook — `scripts/detect-noise-commits.sh`,
+wired in the frontmatter. On any `git push` Bash call, the hook lists the
+unpushed commits (`@{push}..HEAD`, falling back to `@{upstream}..HEAD`)
+and flags subjects that look like throwaway fixups — `fixup!`/`squash!`
+leftovers, "fix typo", "oops", "wip", "actually fix it", "make it
+compile", and similar — then emits a non-blocking `systemMessage`
+suggesting a squash or amend-forward before the push lands. It never
+blocks (always exits 0): squashing is a judgment call, and a commit that
+is genuinely a separate concern should stay standalone.
+
+It is silent when there is nothing to push, no upstream is configured
+yet, or the subjects are all clean — so it only speaks up when there is
+real noise to curate. The decision of *what* to squash, and where to
+preserve the lesson, stays with you; the hook only surfaces the
+candidates.
+
+Two caveats worth knowing:
+
+- **Skill-frontmatter hooks only fire while the skill is active.** The
+  hook registers when this skill is loaded, so it must already be in
+  context before the push for it to fire.
+- The command resolves the script through `${CLAUDE_SKILL_DIR}`, which
+  Claude Code exports for the active skill, so it works regardless of
+  the working directory the hook runs in.
 
 ## When to apply
 
