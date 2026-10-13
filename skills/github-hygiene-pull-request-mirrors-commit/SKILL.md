@@ -48,8 +48,8 @@ commit body (trailers included). Match that:
 
 - **One commit per PR.** Squash or amend locally before opening.
 - **Title = subject, body = body.** No `## Summary` block, no `## Test
-  plan` checklist, no "Generated with Claude Code" footer — nothing
-  GitHub wouldn't prefill from the commit.
+  plan` checklist — nothing GitHub wouldn't prefill from the commit,
+  apart from the attribution lines described below.
 
 Anything in the PR description that isn't in the commit message becomes
 orphaned state — invisible to `git log`, `git blame`, `git show`,
@@ -71,13 +71,12 @@ template. That template ships boilerplate that this skill rejects:
   the test approach is the most interesting decision), or (c) the
   team has a checked-in PR template that requires it. For a normal
   one-or-two-file change, a Test plan is busywork.
-- ❌ `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
-  footer. Not load-bearing on the change; adds noise to PR pages and
-  `git log`.
-- ❌ `Co-Authored-By: Claude <model> <noreply@anthropic.com>` trailer
-  on commits. Only include when the user explicitly wants attribution
-  for the AI assist. The change stands on its own; the model version
-  is ephemeral and rotating it through commit history adds no value.
+
+Attribution to Claude Code is kept: end the PR description with the
+`🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+footer and the commit with the `Co-Authored-By: Claude …` trailer, as
+the session's attribution instructions give them. The footer is the
+one line the PR description has that the commit body doesn't.
 
 **Default to terse.** A PR that fixes a typo gets a one-line
 description (or none — the title is enough). A PR that adds a new rule
@@ -88,6 +87,12 @@ risk lives*, not because the template said so.
 If the user wants the structured template (e.g., their team requires
 Summary/Test-plan blocks), they will say so. Until then, write what
 `git-hygiene-commit-message-format` would write.
+
+That includes its "What to cut" list. With the body mirrored, the PR
+description has no separate room for an audit or alternatives
+walkthrough: keep the one path-not-taken a reviewer would otherwise
+ask about, and cut diff paraphrase and test inventories just as the
+commit body does.
 
 ## Subject length: GitHub truncates at ~72 chars
 
