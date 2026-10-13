@@ -10,6 +10,13 @@ tags: [workflow]
 allowed-tools:
   - Bash
   - Read
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_SKILL_DIR}/scripts/inspect-staged-diff.sh"
+          timeout: 15
 ---
 
 # git-workflow-inspect-before-commit
@@ -80,6 +87,36 @@ it does.
 
 If any of these surface a problem, fix and re-stage. Don't commit "and
 clean it up next time" — next time is harder.
+
+## Deterministic safety net: the `inspect-staged-diff.sh` hook
+
+The first two failure modes above (secrets and debug logging) are
+pattern-matchable, so this skill ships them as a `PreToolUse` hook —
+`scripts/inspect-staged-diff.sh`, wired in the frontmatter — instead of
+relying on the agent to remember the scan. On any `git commit` Bash
+call, the hook inspects the diff that is about to be committed (the
+index, or `git diff HEAD` for a `-a` commit), scans the **added** lines
+for hard-coded credentials (private keys, `AKIA…` ids,
+`password`/`secret`/`token`/`api_key` literals, `.env` files) and debug
+logging (`console.log`, `debugger`, `binding.pry`, `dbg!`, …), and emits
+a non-blocking `systemMessage` listing what it found. It never blocks
+(always exits 0) — the three-step review above is still yours to run;
+the hook just catches the mechanical cases when heuristic skill-loading
+would have missed them.
+
+The third failure mode — unrelated formatting churn — is a judgment
+call, not a regex, so it stays a manual review step.
+
+Two caveats worth knowing:
+
+- **Skill-frontmatter hooks only fire while the skill is active.** The
+  hook registers when this skill is loaded, so for it to catch a commit
+  the skill must already be in context. Loading it before you commit
+  (which the description triggers) is what arms it.
+- The command resolves the script through `${CLAUDE_SKILL_DIR}`, which
+  Claude Code exports for the active skill, so it works regardless of
+  the working directory the hook runs in — the bare relative path from
+  the docs' example would resolve against the project cwd, not here.
 
 ## When to apply
 
