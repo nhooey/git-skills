@@ -41,8 +41,9 @@
       };
 
       packs = {
-        # All 11 git-* skills.
+        # All 12 git-* skills.
         agent-skills-nhooey-git-all = [
+          "git-hygiene-avoid-sweeping-operations"
           "git-hygiene-branch-naming"
           "git-hygiene-commit-message-format"
           "git-hygiene-conventional-commits"
@@ -57,8 +58,9 @@
         ];
 
         # All git-hygiene-* skills: rules-of-thumb (commit/branch style,
-        # safe force-push, SSH-by-default).
+        # safe force-push, no sweeping commands, SSH-by-default).
         agent-skills-nhooey-git-hygiene = [
+          "git-hygiene-avoid-sweeping-operations"
           "git-hygiene-branch-naming"
           "git-hygiene-commit-message-format"
           "git-hygiene-conventional-commits"
