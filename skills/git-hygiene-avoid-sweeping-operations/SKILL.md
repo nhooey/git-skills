@@ -63,6 +63,14 @@ similar, show them what it will touch first (`git status`,
 would be lost, and run it only once they've seen that. An instruction to
 "clean up" or "start fresh" is not a request for a sweep; name the paths.
 
+## Enforcement
+
+This repo also ships a [CC Safety Net](https://github.com/kenryu42/claude-code-safety-net)
+rulebook, `.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json`,
+that blocks most of the commands above before they run. A block reason
+tagged `[git-avoid-sweeping-operations/<rule>]` comes from it; take the
+alternative it names rather than working around it.
+
 ## Why the refusing variants
 
 `-d` over `-D`, `--keep` over `--hard`, `--force-with-lease` over
