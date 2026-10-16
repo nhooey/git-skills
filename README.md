@@ -12,6 +12,20 @@ Each rule lives in its own skill so you can pick and choose. Skills are grouped 
 
 Each skill belongs to exactly one pack — the second segment of the name is the pack. Skills that only make sense when an LLM is driving the session carry the `agent` tag (see [Tag vocabulary](#tag-vocabulary)); filter by tag, not by name prefix.
 
+
+## CC Safety Net rulebook
+
+[`.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json`](.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json)
+enforces `git-hygiene-avoid-sweeping-operations` with
+[CC Safety Net](https://github.com/kenryu42/claude-code-safety-net): it blocks
+`git add -A`, `git commit -a`, a bare `git stash`, `git push --all`,
+`--no-verify`, `git config --global` and similar, on top of CC Safety Net's
+built-in git rules. Its test fixtures run with `cc-safety-net rule verify`.
+
+```bash
+cc-safety-net rule add nhooey/git-skills --only git-avoid-sweeping-operations --global
+```
+
 ## Install
 
 ```sh
