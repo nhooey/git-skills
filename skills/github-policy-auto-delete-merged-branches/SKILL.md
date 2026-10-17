@@ -73,3 +73,12 @@ that's their cleanup.
 - Auditing an existing repo where merged branches accumulate.
 - Companion to `github-policy-protect-default-branch` — apply both at repo
   setup time.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-policy-protect-default-branch`: the companion default-branch ruleset to apply at the same repo-setup time.
