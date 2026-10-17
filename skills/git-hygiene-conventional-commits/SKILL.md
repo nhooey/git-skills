@@ -58,3 +58,12 @@ allowing the subject past 72.
 - Writing a commit in a repo that uses CC.
 - Reviewing a PR's commit subject in such a repo.
 - Onboarding a new repo where the team wants CC adopted.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-hygiene-commit-message-format`: the base subject and body rules (72-char budget, why over what) that the CC prefix has to fit inside.

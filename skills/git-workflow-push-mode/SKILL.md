@@ -248,3 +248,13 @@ know is to ask once.
   — always stop and ask, regardless of saved mode.
 - User explicitly says "switch modes" — update the saved memory
   before applying.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-hygiene-pull-request-mirrors-commit`: re-syncing an existing PR's title and body after you amend or reword the commit.
+- `github-workflow-pull-request-watcher`: ships the `pull-request-sync-check.sh` safety-net hook that flags a PR whose title or body has drifted from HEAD.
