@@ -37,10 +37,10 @@ three flavors keyed on who controls the merge button:
   §A, plus the branch-prefix requirement.
 
 Each PR in the stack is still a single-commit PR — this skill is
-compatible with [`github-hygiene-pull-request-mirrors-commit`](../github-hygiene-pull-request-mirrors-commit),
+compatible with `github-hygiene-pull-request-mirrors-commit`,
 which governs the title/body/commit relationship for any one PR in the
 chain. And every restack force-pushes to a branch, so
-[`git-hygiene-push-force-safely`](../git-hygiene-push-force-safely) applies — `gt` uses
+`git-hygiene-push-force-safely` applies — `gt` uses
 `--force-with-lease` by default.
 
 ## Common setup
@@ -97,11 +97,11 @@ Repeat for PR #2, then #3.
 
 **Merge-strategy interaction.** `gt sync` detects merged PRs by SHA
 when the repo uses merge commits (see
-[`github-policy-merge-commits-only`](../github-policy-merge-commits-only)) and by
+`github-policy-merge-commits-only`) and by
 patch-id when it uses squash merge. Both work cleanly; rebase-merge
 also works but is the noisiest of the three for stacking — prefer
 merge-commits-only or squash. With
-[`github-policy-auto-delete-merged-branches`](../github-policy-auto-delete-merged-branches)
+`github-policy-auto-delete-merged-branches`
 enabled, the remote head branches vanish on merge and `gt sync` will
 clean up the local copies.
 
