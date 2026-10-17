@@ -6,7 +6,7 @@ Each rule lives in its own skill so you can pick and choose. Skills are grouped 
 
 - `git-hygiene-*` — local style rules (commit format, branch naming, `.gitignore`, force-push safety, SSH remotes)
 - `git-workflow-*` — interactive / multi-step procedures (inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice)
-- `github-hygiene-*` — PR-shape discipline + `gh` CLI gotchas
+- `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` CLI gotchas
 - `github-policy-*` — one-time repo configuration (branch ruleset, codeowners, auto-delete, merge-commits-only)
 - `github-workflow-*` — PR lifecycle including the agent-driven watcher / status-line / changeset-prompt, and a user's activity on a repo
 
@@ -69,17 +69,17 @@ Each skill derivation produces `$out/share/claude-skills/<name>/` containing `SK
 
 Curated subsets exposed as flake packages. Build a pack the same way as a single skill.
 
-Five prefix packs partition the 22 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
+Five prefix packs partition the 24 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
 
 | Pack | Contents | Why |
 | --- | --- | --- |
 | `agent-skills-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no-history-in-code, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
 | `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice. |
 | `agent-skills-git-all` | All 12 `git-*` skills | Everything local. |
-| `agent-skills-github-hygiene` | All 2 `github-hygiene-*` skills | PR-mirrors-commit discipline + `gh` CLI gotchas. |
+| `agent-skills-github-hygiene` | All 3 `github-hygiene-*` skills | PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
 | `agent-skills-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
 | `agent-skills-github-workflow` | All 5 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; a user's activity on a repo. |
-| `agent-skills-github-all` | All 11 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-github-all` | All 12 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
@@ -113,12 +113,13 @@ One section per pack. The three skills tagged `agent` (only meaningful when an L
 | [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow, safety | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
 | [git-workflow-push-mode](skills/git-workflow-push-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
 
-### `github-hygiene-*` — PR-shape discipline + `gh` gotchas
+### `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` gotchas
 
 | Name | Tags | What |
 | --- | --- | --- |
 | [github-hygiene-gh-cli-gotchas](skills/github-hygiene-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
 | [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
+| [github-hygiene-refer-to-issues-and-pull-requests](skills/github-hygiene-refer-to-issues-and-pull-requests) | style | Name issues/PRs as `#N "title…"` (or `owner/repo#N "title…"`) and commits as short SHA + subject, linked; branches only in parentheses after their PR. |
 
 ### `github-policy-*` — one-time repo configuration
 
