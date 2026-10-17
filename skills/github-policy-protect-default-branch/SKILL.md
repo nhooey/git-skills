@@ -143,3 +143,13 @@ If the repo has been unprotected for a while, expect cleanup:
 - Adding a second contributor (also see `github-policy-codeowners`).
 - Renaming the default branch — confirm `~DEFAULT_BRANCH` still
   matches your ruleset's target.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-workflow-cleanup-merged-branches`: the local cleanup of merged branches found while auditing an existing repo.
+- `github-policy-codeowners`: adds CODEOWNERS and code-owner review to this ruleset once a second contributor joins.

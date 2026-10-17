@@ -175,3 +175,12 @@ reported.
 - Every prose citation of a PR by number.
 - Before and after any operation that changes the PR (push, label,
   merge).
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-workflow-pull-request-watcher`: the Monitor whose every event is surfaced with this status line and comment-block format.

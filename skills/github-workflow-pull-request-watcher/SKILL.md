@@ -322,3 +322,16 @@ itself has no Nix-specific assumptions.
   prior session ended without a watcher running.
 - Re-arm on receiving a notification that a watched PR transitioned
   state (the previous loop may have terminated).
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-workflow-cleanup-merged-branches`: the local branch cleanup the on-merge prompt offers.
+- `github-hygiene-gh-cli-gotchas`: `gh pr view --json` field limits and other traps that break a watcher silently.
+- `github-hygiene-pull-request-mirrors-commit`: re-syncing the PR's title and body, which the companion sync-check hook nudges you to do.
+- `github-policy-auto-delete-merged-branches`: GitHub's delete-on-merge setting, which decides whether the remote branch is already gone on merge.
+- `github-workflow-pull-request-status-line`: the status line and comment-block format used to report each Monitor event.

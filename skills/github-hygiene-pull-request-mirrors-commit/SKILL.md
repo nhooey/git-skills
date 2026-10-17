@@ -197,3 +197,14 @@ global — no qualification needed.
 - Reviewing a PR description that has `## Summary` / `## Test plan`
   blocks not present in the commit message — propose moving them into
   the commit body or removing them.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-hygiene-commit-message-format`: the commit message rules (72-char subject, why-focused body) that the PR title and body inherit.
+- `github-hygiene-gh-cli-gotchas`: `gh` CLI traps, such as `gh pr edit` exiting 1 without applying, that the bundled script works around.
+- `github-workflow-pull-request-watcher`: ships the hook that nudges you when HEAD has drifted from an open PR's title and body.
