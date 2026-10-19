@@ -61,11 +61,35 @@ answers stays deterministic. Only the bracketed segments vary.
 
 ## Useful detection commands
 
+The deterministic part — fetch-prune, then list local and remote
+branches already merged into the base, excluding the base and the
+current branch — is bundled as `scripts/detect-merged-branches.sh`. Run
+it to populate the question above; it prints one `LOCAL\t<branch>` or
+`REMOTE\torigin/<branch>` line per merged branch (empty output means
+nothing to clean up):
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/detect-merged-branches.sh" [base-branch]
+```
+
+The base branch is inferred from `origin/HEAD` (falling back to `main`,
+then `master`) when omitted. The raw commands it wraps, for reference:
+
 ```bash
 git fetch --prune origin
 git branch --merged main | grep -v '^\*\|^  main$\|^  master$'
 git branch -r --merged origin/main | grep -v 'origin/HEAD\|origin/main\|origin/master'
 ```
+
+**Why this is a script and not a hook.** Deleting a branch needs the
+user's per-branch confirmation (the AskUserQuestion above) — some teams
+keep merged branches as release markers — and there is no single tool
+call that cleanly marks "a merge just happened" to hang a hook on
+(merges land via `gh`, the web UI, or a fast-forward). So this skill
+ships detection as a script the agent runs, not as an auto-firing hook.
+The post-merge *moment* is instead covered by the
+`github-workflow-pull-request-watcher` Monitor, which fires the cleanup
+prompt on the `MERGED` event.
 
 ## When to apply
 

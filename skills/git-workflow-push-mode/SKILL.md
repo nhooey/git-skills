@@ -37,15 +37,33 @@ Active workflow:
 4. For the rest of this session and all future sessions in this repo,
    apply the saved mode silently.
 
-A reasonable detection probe to inform the question:
+A detection probe to inform the question is bundled as
+`scripts/detect-push-mode.sh`. It reports whether the repo has any PR
+history, the current branch and its open-PR status, and a recommended
+default mode, as `KEY=value` lines:
 
 ```bash
-gh pr list --state all --limit 1 --json number --jq 'length'
+bash "${CLAUDE_SKILL_DIR}/scripts/detect-push-mode.sh"
+# pr_history=yes|no|unknown
+# branch=<current>|DETACHED
+# open_pr=<number>|none|unknown
+# recommended_mode=1|2
 ```
 
-`0` means no PRs have ever been opened (mode 1 is plausible default).
-`1` means the repo has used PRs at least once (mode 2 is plausible
-default).
+It wraps `gh pr list --state all --limit 1 --json number --jq 'length'`:
+`0` means no PRs have ever been opened (`recommended_mode=1`), `>=1`
+means the repo has used PRs at least once (`recommended_mode=2`). When
+`gh` is missing or a call fails it returns `unknown` and recommends
+Mode 2 (the safer default — never silently push to a repo that might use
+PRs).
+
+**Why this stays a probe and not a hook.** Which mode applies is a
+one-time user decision saved to project memory, and Mode 3 plus every
+anomalous state needs an interactive prompt — none of which a
+non-interactive hook can do. The probe gathers the facts; the agent (or
+the saved memory) makes the call. The one push-time hook in this
+workflow is the watcher's `pull-request-sync-check.sh`, covered under
+"Safety net" below.
 
 ## The three modes
 
