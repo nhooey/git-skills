@@ -46,7 +46,7 @@ name what you act on.
 | `git checkout .`, `git checkout -- .`, `git restore .` | every unstaged edit, with no undo | `git diff <path>`, then `git restore <path>` for the paths you changed |
 | `git reset --hard` | every staged and unstaged change, with no undo | `git reset --keep <commit>`, which refuses if local changes would be lost |
 | `git clean -f`, `-fd`, `-fdx` | every untracked file (`-x`: ignored too, like `.env` and local config) | `git clean -n` to list, then `rm` the named paths you created |
-| `git branch -D` | a branch's unmerged commits | `git branch -d`, which refuses unless merged; see `git-workflow-cleanup-merged-branches` for bulk deletes |
+| `git branch -D` | a branch's unmerged commits | `git branch -d`, which refuses unless merged; see `git-workflow-tidy-branches` for bulk deletes |
 | `git push --force` | the remote's commits you haven't fetched | `git push --force-with-lease`; see `git-hygiene-push-force-safely` |
 | `git push --all`, `--mirror`, `--tags` | every local branch or tag, scratch ones included | `git push origin <branch>`, `git push origin <tag>` |
 | `git checkout <branch>`, `git switch` in a shared checkout | the branch under every other process using that tree | `git worktree add .worktrees/<name> -b <branch>` |

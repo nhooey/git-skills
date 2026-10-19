@@ -1,5 +1,5 @@
 {
-  description = "git-workflow-cleanup-merged-branches: Claude Code skill — delete local/remote merged branches; ask before bulk-pruning";
+  description = "git-workflow-tidy-branches: Claude Code skill — report and apply branch cleanups: delete merged branches, rebase clean ones onto the base, flag the rest";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
     agent-skill-flake.lib.mkSkillFlake {
       inherit nixpkgs;
       source = import ../../source.nix;
-      skillName = "git-workflow-cleanup-merged-branches";
+      skillName = "git-workflow-tidy-branches";
       packagePrefix = "agent-skill-";
       src = ./.;
     };
