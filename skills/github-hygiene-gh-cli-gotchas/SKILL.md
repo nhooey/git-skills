@@ -1,15 +1,18 @@
 ---
 name: github-hygiene-gh-cli-gotchas
 description: |
-  Known traps in the `gh` CLI for PR workflows: `gh pr edit` exits 1
+  Known traps in the `gh` CLI for issue and PR workflows: `gh pr edit` exits 1
   on a Projects-classic deprecation warning without applying the edit
   (workaround: REST PATCH); `gh pr view --json` accepts a narrower set
   of fields than the GraphQL `pullRequest` type, so `merged` and
   `reviewThreads` (among others) error out — and the failure is
   invisible under `2>/dev/null` watchers; GitHub blocks self-approval;
   the `branches/<branch>/rename` API auto-closes open PRs whose head
-  is that branch. Passive reference — load when using `gh` for non-
-  trivial PR operations.
+  is that branch; `gh issue edit`/`gh pr edit --body-file` and a REST
+  PATCH replace the whole body with no conflict check, erasing edits
+  made since you fetched it (bundled `safe-body-edit.sh` checks and
+  merges first). Passive reference — load when using `gh` for non-
+  trivial issue or PR operations.
 tags: [reference]
 allowed-tools:
   - Bash
@@ -18,7 +21,7 @@ allowed-tools:
 
 # github-hygiene-gh-cli-gotchas
 
-Four failure modes worth knowing before they cost a debugging detour.
+Five failure modes worth knowing before they cost a debugging detour.
 All observed against `gh` 2.85+ and the current GitHub REST API.
 
 ## How to load this skill
@@ -56,6 +59,41 @@ Use `-f` (`--raw-field`), not `-F` (`--field`), for prose fields:
 number `42`. Prefer shell substitution (`$(cat …)`, `$(git log -1
 --pretty=%b)`) over `--field body=@path` — no stale `/tmp` file, no
 race with a parallel agent.
+
+## Body edits replace the whole text, with no conflict check
+
+`gh issue edit --body-file`, `gh pr edit --body-file` and a REST `PATCH`
+of `body` all overwrite the body. GitHub has no compare-and-swap for
+it: no version or `If-Match` precondition. If someone else edited the
+body after you fetched it, such as a maintainer ticking a tracking
+issue's checklist, saving your draft erases their edit, and nothing
+warns either of you. Observed 2026-10-19 on jlesquembre/clj-nix#198,
+a tracking issue whose maintainer ticks boxes as he merges: a redraft
+saved over it was safe only because it started from his latest edit.
+
+Before saving a body that anyone else edits, re-fetch it and compare it
+with the copy your draft started from. If it changed, three-way merge
+their changes into your draft and review the result before saving.
+The bundled `safe-body-edit.sh` does both, and saves only when the live
+body still matches:
+
+```bash
+gh api repos/<owner>/<repo>/issues/<num> --jq .body > base.md   # the copy you draft from
+cp base.md new.md   # ...edit new.md...
+safe-body-edit.sh <owner>/<repo> <num> base.md new.md
+```
+
+- It works for PRs too: the issues endpoint serves a PR's body.
+- It PATCHes through REST, so the `gh pr edit` trap below doesn't apply.
+- On a change it writes `new.md.merged` and saves nothing. Adjacent
+  checklist lines changed on both sides come out as a conflict, never
+  as a silent pick.
+- A small race is left: an edit that lands between its check and its
+  save is still lost. Keep the gap short by running it right after the
+  review, not before.
+
+For a one-line change, such as ticking one task-list box, edit that
+line in the browser instead of resending the whole body.
 
 ## `gh pr view --json` rejects field names that aren't on its allow-list
 
@@ -159,8 +197,17 @@ API on any branch, run `gh pr list --state open --json
 headRefName,number` and stop if any open PR has that branch as its
 head.
 
+## Where the bundled script installs
+
+`safe-body-edit.sh` installs in a `scripts/` directory alongside this
+`SKILL.md`:
+
+- **User scope:** `~/.claude/skills/github-hygiene-gh-cli-gotchas/scripts/safe-body-edit.sh`
+- **Project scope:** `<project-root>/.claude/skills/github-hygiene-gh-cli-gotchas/scripts/safe-body-edit.sh`
+
 ## When to apply
 
+- About to save an issue or PR body that someone else may have edited.
 - About to use `gh pr edit` for a body or title update.
 - Writing a PR watcher that needs the merged/closed state.
 - Approving a PR you authored (you can't).
