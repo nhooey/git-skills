@@ -95,3 +95,12 @@ gh api "repos/<owner>/<repo>/codeowners/errors"   # → empty errors array = val
 - Auditing an existing repo's review requirements.
 - After applying `github-policy-protect-default-branch`, when you're ready
   to require code-owner review.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-policy-protect-default-branch`: the default-branch ruleset whose `require_code_owner_review` flag this skill flips.

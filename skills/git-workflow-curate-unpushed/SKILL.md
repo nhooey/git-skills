@@ -118,3 +118,13 @@ Two caveats worth knowing:
 - Just made a follow-up change to an unpushed commit (amend, don't
   stack).
 - About to do `git commit -m "fix typo"` — stop, amend forward instead.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-hygiene-push-force-safely`: push with `--force-with-lease` when curating rewrites commits that were already pushed.
+- `github-hygiene-pull-request-mirrors-commit`: re-sync an open PR's title and body after a rewrite changes the commit message.

@@ -146,3 +146,14 @@ here, also…" paragraph (P5 → folded to a clause inside P3).
 - About to write a commit message.
 - About to amend an existing commit message.
 - Reviewing someone else's commit message in a PR.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-hygiene-conventional-commits`: the `type(scope): subject` prefix to pair with this format when the repo has adopted Conventional Commits.
+- `git-workflow-curate-unpushed`: splitting or squashing commits before push, when a message is hard to write because the commit does too much.
+- `github-hygiene-pull-request-mirrors-commit`: the PR title and body mirror this commit message, so its 72-char subject and body rules carry over to the PR.

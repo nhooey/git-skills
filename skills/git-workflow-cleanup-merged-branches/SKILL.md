@@ -97,3 +97,12 @@ prompt on the `MERGED` event.
 - `git branch --merged main` shows stragglers — ask before bulk-delete.
 - About to push, and you've been merging from main locally — fetch
   with `--prune` to drop tracking refs whose remote branches are gone.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-policy-auto-delete-merged-branches`: makes GitHub delete the remote head branch on merge, leaving only the local copy to clean up.

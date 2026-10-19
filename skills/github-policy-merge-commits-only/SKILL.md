@@ -70,3 +70,13 @@ exclusive; pick one.
 - Auditing an existing repo for merge strategy.
 - After enabling `github-policy-protect-default-branch`, double-check that
   `required_linear_history` is NOT in the ruleset.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-workflow-curate-unpushed`: curating per-commit history before push, which is what makes keeping it in merge commits worthwhile.
+- `github-policy-protect-default-branch`: the default-branch ruleset, which must not include `required_linear_history` alongside merge commits.

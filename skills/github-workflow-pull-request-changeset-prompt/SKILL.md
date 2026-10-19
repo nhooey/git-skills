@@ -123,3 +123,14 @@ answer is a hint, not a binding default.
 - Finished any change-set in the work tree.
 - About to push/commit and unsure which subset of operations the
   user wants this iteration.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-hygiene-push-force-safely`: how the Force option pushes, with `--force-with-lease`.
+- `github-hygiene-pull-request-mirrors-commit`: how the Open Pull Request and Re-derive PR name + title options create or re-sync the PR from the commit.
+- `github-workflow-pull-request-watcher`: the Monitor that the Monitor + react option arms or re-arms.

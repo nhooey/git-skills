@@ -165,3 +165,12 @@ head.
 - Writing a PR watcher that needs the merged/closed state.
 - Approving a PR you authored (you can't).
 - Renaming a branch that has an open PR against it.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-policy-auto-delete-merged-branches`: enables GitHub's delete-on-merge setting, which makes `gh pr merge --delete-branch` unnecessary.
