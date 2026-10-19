@@ -128,7 +128,11 @@ for the head branch and PATCHes it instead of opening a new one — so just
 **re-run it after every amend**. The `pull-request-sync-check.sh` PostToolUse
 hook (shipped by `github-workflow-pull-request-watcher`) nudges you when HEAD has drifted
 from the open PR; re-running the script is the fix. (`gh api` quoting traps —
-`-f` vs `-F` etc. — see `github-hygiene-gh-cli-gotchas`.)
+`-f` vs `-F` etc. — see `github-hygiene-gh-cli-gotchas`.) The re-sync
+overwrites the whole body, so if a reviewer or maintainer may have edited
+the PR description, check first with `safe-body-edit.sh` from
+`github-hygiene-gh-cli-gotchas`, and fold their edit into the commit
+message too.
 
 ## When the body uses GFM structure, pass `--verbatim`
 
