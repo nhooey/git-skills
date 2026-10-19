@@ -6,7 +6,9 @@ description: |
   🟡/🟢/🔴/🟣/⚪ reflecting live PR + check state. Also defines a
   three-line comment-block format (🔲/✅ + 🗣 + 🤖) for surfacing
   reacted-to PR comments without posting them publicly. Apply on
-  every PR creation, every Monitor event, every PR citation.
+  every PR creation and every Monitor event. Replies that mention PRs
+  or issues open with a linked References section (owner/repo: #num
+  title) and refer to them briefly inline.
 tags: [agent, style]
 allowed-tools:
   - Bash
@@ -108,15 +110,28 @@ Because the widths come from the rows actually returned, narrowing the filter
 hardcoded column widths to keep in sync, which is the whole reason to prefer
 the script over a hand-built table.
 
-## Emit this every time the PR comes up
+## References section at the top of the reply
 
-On `gh pr create`, every Monitor event, every citation by number ("PR
-#9 …"), every user question about it, and before/after any operation
-that changes it (push, force-push, comment, label, merge). Recompute
-the status circle from live state each time — a stale 🟡 on a PR that
-has actually gone red is worse than no circle. The line is cheap;
-skipping it loses the user across several open PRs or hides state
-transitions you reacted to in prose without resurfacing the link.
+When a reply mentions any PR or issue, open it with a **References**
+list, one entry per entity, each part linked to its own page:
+
+```
+<status> [<owner>](…)/[<repo>](…): [#<num> <title>](…)
+```
+
+Example:
+
+```
+- 🔴 [jlesquembre](https://github.com/jlesquembre)/[clj-nix](https://github.com/jlesquembre/clj-nix): [#181 Update babashka version](https://github.com/jlesquembre/clj-nix/pull/181)
+```
+
+Keep the status circle, recomputed from live state each time: a stale
+🟡 on a PR that has gone red is worse than no circle. Issues use 🟢
+open, 🟣 closed as completed, ⚪ closed as not planned. In the body,
+mention each entity just enough to tell it apart: `#181` when one repo
+is involved, `babashka #2194` when several are; the user can look up
+the rest in the references. The single-PR status line and the table
+script still apply to PR creation, Monitor events and PR sets.
 
 ## Comment block — three lines, indented under the PR line
 
@@ -174,6 +189,6 @@ reported.
 
 - Creating a PR (output the line immediately after `gh pr create`).
 - Every Monitor event from `github-workflow-pull-request-watcher`.
-- Every prose citation of a PR by number.
+- Every reply that mentions a PR or issue (References section).
 - Before and after any operation that changes the PR (push, label,
   merge).
