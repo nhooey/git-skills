@@ -12,6 +12,20 @@ Each rule lives in its own skill so you can pick and choose. Skills are grouped 
 
 Each skill belongs to exactly one pack — the second segment of the name is the pack. Skills that only make sense when an LLM is driving the session carry the `agent` tag (see [Tag vocabulary](#tag-vocabulary)); filter by tag, not by name prefix.
 
+
+## CC Safety Net rulebook
+
+[`.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json`](.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json)
+enforces `git-hygiene-avoid-sweeping-operations` with
+[CC Safety Net](https://github.com/kenryu42/claude-code-safety-net): it blocks
+`git add -A`, `git commit -a`, a bare `git stash`, `git push --all`,
+`--no-verify`, `git config --global` and similar, on top of CC Safety Net's
+built-in git rules. Its test fixtures run with `cc-safety-net rule verify`.
+
+```bash
+cc-safety-net rule add nhooey/git-skills --only git-avoid-sweeping-operations --global
+```
+
 ## Install
 
 ```sh
@@ -55,13 +69,13 @@ Each skill derivation produces `$out/share/claude-skills/<name>/` containing `SK
 
 Curated subsets exposed as flake packages. Build a pack the same way as a single skill.
 
-Five prefix packs partition the 21 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
+Five prefix packs partition the 22 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
 
 | Pack | Contents | Why |
 | --- | --- | --- |
-| `agent-skills-git-hygiene` | All 7 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no-history-in-code, conventional commits, safe force-push, SSH remotes. |
+| `agent-skills-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no-history-in-code, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
 | `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice. |
-| `agent-skills-git-all` | All 11 `git-*` skills | Everything local. |
+| `agent-skills-git-all` | All 12 `git-*` skills | Everything local. |
 | `agent-skills-github-hygiene` | All 2 `github-hygiene-*` skills | PR-mirrors-commit discipline + `gh` CLI gotchas. |
 | `agent-skills-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
 | `agent-skills-github-workflow` | All 4 `github-workflow-pull-request-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher. |
@@ -81,6 +95,7 @@ One section per pack. The three skills tagged `agent` (only meaningful when an L
 
 | Name | Tags | What |
 | --- | --- | --- |
+| [git-hygiene-avoid-sweeping-operations](skills/git-hygiene-avoid-sweeping-operations) | safety | Name the paths and refs you act on: no `git add -A`, `git reset --hard`, `git clean -f`, bare `git stash`, `git branch -D` and similar. |
 | [git-hygiene-branch-naming](skills/git-hygiene-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
 | [git-hygiene-commit-message-format](skills/git-hygiene-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what. |
 | [git-hygiene-conventional-commits](skills/git-hygiene-conventional-commits) | style, team-stance | `type(scope): subject` Conventional Commits format. |
