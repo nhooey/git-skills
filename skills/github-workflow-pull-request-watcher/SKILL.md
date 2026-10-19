@@ -235,7 +235,7 @@ The literal prefixes (`PR ... merged into`, `Delete local branch`,
 recognisable across PRs and any pre-selection by prior answer stays
 deterministic. Only the bracketed segments vary.
 
-`git-workflow-cleanup-merged-branches` covers the same cleanup from
+`git-workflow-tidy-branches` covers the same cleanup from
 the local side; this rule fires it at the right moment.
 
 ## On close-without-merge, prompt the user
@@ -329,7 +329,7 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
-- `git-workflow-cleanup-merged-branches`: the local branch cleanup the on-merge prompt offers.
+- `git-workflow-tidy-branches`: the local branch cleanup the on-merge prompt offers.
 - `github-hygiene-gh-cli-gotchas`: `gh pr view --json` field limits and other traps that break a watcher silently.
 - `github-hygiene-pull-request-mirrors-commit`: re-syncing the PR's title and body, which the companion sync-check hook nudges you to do.
 - `github-policy-auto-delete-merged-branches`: GitHub's delete-on-merge setting, which decides whether the remote branch is already gone on merge.

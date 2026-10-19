@@ -5,7 +5,7 @@ A collection of small, opinionated [Agent Skills](https://www.anthropic.com/engi
 Each rule lives in its own skill so you can pick and choose. Skills are grouped by lexical prefix:
 
 - `git-hygiene-*` — local style rules (commit format, branch naming, `.gitignore`, force-push safety, SSH remotes)
-- `git-workflow-*` — interactive / multi-step procedures (inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice)
+- `git-workflow-*` — interactive / multi-step procedures (inspect-before-commit, curate unpushed history, branch tidying, push-mode choice)
 - `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` CLI gotchas
 - `github-policy-*` — one-time repo configuration (branch ruleset, codeowners, auto-delete, merge-commits-only)
 - `github-workflow-*` — PR lifecycle including the agent-driven watcher / status-line / changeset-prompt, browser drafting with a rendered preview, and a user's activity on a repo
@@ -74,7 +74,7 @@ Five prefix packs partition the 25 skills — each skill is a member of exactly 
 | Pack | Contents | Why |
 | --- | --- | --- |
 | `agent-skills-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no-history-in-code, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
-| `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice. |
+| `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, branch tidying, push-mode choice. |
 | `agent-skills-git-all` | All 12 `git-*` skills | Everything local. |
 | `agent-skills-github-hygiene` | All 3 `github-hygiene-*` skills | PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
 | `agent-skills-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
@@ -108,10 +108,10 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 
 | Name | Tags | What |
 | --- | --- | --- |
-| [git-workflow-cleanup-merged-branches](skills/git-workflow-cleanup-merged-branches) | workflow, interactive, safety | Delete merged branches; ask before bulk-cleaning stragglers. |
 | [git-workflow-curate-unpushed](skills/git-workflow-curate-unpushed) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
 | [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow, safety | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
 | [git-workflow-push-mode](skills/git-workflow-push-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
+| [git-workflow-tidy-branches](skills/git-workflow-tidy-branches) | workflow, interactive, safety | Report, then apply: delete merged branches (squash merges included), rebase branches that replay cleanly onto the base, flag stacks, conflicts and diverged copies. |
 
 ### `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` gotchas
 

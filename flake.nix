@@ -51,10 +51,10 @@
           "git-hygiene-no-history-in-code"
           "git-hygiene-push-force-safely"
           "git-hygiene-ssh-remotes"
-          "git-workflow-cleanup-merged-branches"
           "git-workflow-curate-unpushed"
           "git-workflow-inspect-before-commit"
           "git-workflow-push-mode"
+          "git-workflow-tidy-branches"
         ];
 
         # All git-hygiene-* skills: rules-of-thumb (commit/branch style,
@@ -72,10 +72,10 @@
 
         # All git-workflow-* skills: interactive / multi-step procedures.
         agent-skills-nhooey-git-workflow = [
-          "git-workflow-cleanup-merged-branches"
           "git-workflow-curate-unpushed"
           "git-workflow-inspect-before-commit"
           "git-workflow-push-mode"
+          "git-workflow-tidy-branches"
         ];
 
         # All 13 github-* skills (includes the agent-tagged ones).

@@ -113,7 +113,7 @@ If the repo has been unprotected for a while, expect cleanup:
 
 1. **Audit local clones.** Run `git fetch --prune` to drop tracking
    refs whose remote branches have already been deleted. See
-   `git-workflow-cleanup-merged-branches` for the local cleanup workflow.
+   `git-workflow-tidy-branches` for the local cleanup workflow.
 2. **Survey stale remote branches.** Many will already be merged:
    ```bash
    gh api "repos/<owner>/<repo>/branches?protected=false&per_page=100" \
@@ -157,5 +157,5 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
-- `git-workflow-cleanup-merged-branches`: the local cleanup of merged branches found while auditing an existing repo.
+- `git-workflow-tidy-branches`: the local cleanup of merged branches found while auditing an existing repo.
 - `github-policy-codeowners`: adds CODEOWNERS and code-owner review to this ruleset once a second contributor joins.
