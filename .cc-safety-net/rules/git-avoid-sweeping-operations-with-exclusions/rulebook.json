@@ -1,0 +1,45 @@
+{
+  "rulebook_version": 2,
+  "name": "git-avoid-sweeping-operations-with-exclusions",
+  "version": "1.0.0",
+  "description": "Blocks git commands that act on everything they can reach, where the safe forms have to be carved out with exclude_args: a bare `git stash`, and `git config --global` or `--system` writes. Companion to the git-avoid-sweeping-operations rulebook, which holds the subcommand-plus-flag rules in version 1 format. The why and the alternatives live in the git-hygiene-avoid-sweeping-operations skill. Gaps: a value-taking global option such as `git -C <dir>` hides the subcommand, so `git -C repo stash` and `git -C repo config --global ...` aren't caught.",
+  "author": "nhooey/git-skills",
+  "allowed_commands": ["git"],
+  "rules": [
+    {
+      "name": "stash-sweep",
+      "command": "git",
+      "match": {
+        "command_path": ["stash"],
+        "exclude_args": ["--", "list", "show", "pop", "apply", "branch", "drop", "clear", "create", "store"]
+      },
+      "reason": "Stashes every change in the tree, others' included. Run `git stash push -- <paths>`, or use a separate worktree.",
+      "intent": "use_alternative"
+    },
+    {
+      "name": "config-global-write",
+      "command": "git",
+      "match": {
+        "command_path": ["config"],
+        "any_args": ["--global", "--system"],
+        "exclude_args": ["--get", "--get-all", "--get-regexp", "--list", "-l", "--show-origin", "get", "list"]
+      },
+      "reason": "Changes git settings for every repo on the machine. Use `git config --local`, or ask the user first.",
+      "intent": "manual_only"
+    }
+  ],
+  "tests": [
+    { "command": "git stash", "expect": "blocked", "rule": "stash-sweep" },
+    { "command": "git stash -u", "expect": "blocked", "rule": "stash-sweep" },
+    { "command": "git stash -ku", "expect": "blocked", "rule": "stash-sweep" },
+    { "command": "git stash push -m wip", "expect": "blocked", "rule": "stash-sweep" },
+    { "command": "git stash push -- src/main.rs", "expect": "allowed" },
+    { "command": "git stash list", "expect": "allowed" },
+    { "command": "git stash pop", "expect": "allowed" },
+    { "command": "git config --global user.name Someone", "expect": "blocked", "rule": "config-global-write" },
+    { "command": "git config --system core.editor vim", "expect": "blocked", "rule": "config-global-write" },
+    { "command": "git config --global --get user.name", "expect": "allowed" },
+    { "command": "git config --global -l", "expect": "allowed" },
+    { "command": "git config --local core.hooksPath .githooks", "expect": "allowed" }
+  ]
+}
