@@ -78,7 +78,7 @@
           "git-workflow-push-mode"
         ];
 
-        # All 10 github-* skills (includes the agent-tagged trio).
+        # All 11 github-* skills (includes the agent-tagged ones).
         agent-skills-nhooey-github-all = [
           "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
@@ -90,6 +90,7 @@
           "github-workflow-pull-request-stacked"
           "github-workflow-pull-request-status-line"
           "github-workflow-pull-request-watcher"
+          "github-workflow-repo-activity"
         ];
 
         # All github-hygiene-* skills: PR-shape discipline + `gh` CLI gotchas.
@@ -106,12 +107,14 @@
           "github-policy-protect-default-branch"
         ];
 
-        # All github-workflow-* skills: PR lifecycle / agent behavior.
+        # All github-workflow-* skills: PR lifecycle, repo activity / agent
+        # behavior.
         agent-skills-nhooey-github-workflow = [
           "github-workflow-pull-request-changeset-prompt"
           "github-workflow-pull-request-stacked"
           "github-workflow-pull-request-status-line"
           "github-workflow-pull-request-watcher"
+          "github-workflow-repo-activity"
         ];
       };
 

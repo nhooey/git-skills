@@ -8,7 +8,7 @@ Each rule lives in its own skill so you can pick and choose. Skills are grouped 
 - `git-workflow-*` — interactive / multi-step procedures (inspect-before-commit, curate unpushed history, post-merge cleanup, push-mode choice)
 - `github-hygiene-*` — PR-shape discipline + `gh` CLI gotchas
 - `github-policy-*` — one-time repo configuration (branch ruleset, codeowners, auto-delete, merge-commits-only)
-- `github-workflow-pull-request-*` — PR lifecycle including the agent-driven watcher / status-line / changeset-prompt
+- `github-workflow-*` — PR lifecycle including the agent-driven watcher / status-line / changeset-prompt, and a user's activity on a repo
 
 Each skill belongs to exactly one pack — the second segment of the name is the pack. Skills that only make sense when an LLM is driving the session carry the `agent` tag (see [Tag vocabulary](#tag-vocabulary)); filter by tag, not by name prefix.
 
@@ -78,8 +78,8 @@ Five prefix packs partition the 22 skills — each skill is a member of exactly 
 | `agent-skills-git-all` | All 12 `git-*` skills | Everything local. |
 | `agent-skills-github-hygiene` | All 2 `github-hygiene-*` skills | PR-mirrors-commit discipline + `gh` CLI gotchas. |
 | `agent-skills-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
-| `agent-skills-github-workflow` | All 4 `github-workflow-pull-request-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher. |
-| `agent-skills-github-all` | All 10 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-github-workflow` | All 5 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; a user's activity on a repo. |
+| `agent-skills-github-all` | All 11 `github-*` skills (including the three `agent`-tagged ones) | Everything GitHub. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
@@ -89,7 +89,7 @@ nix run github:nhooey/git-skills#agent-skills-github-policy    # (no install, ju
 
 ## Skills in this repo
 
-One section per pack. The three skills tagged `agent` (only meaningful when an LLM is driving) live under `github-workflow-pull-request-*`; filter by tag if a human reads this without an agent.
+One section per pack. The three skills tagged `agent` (only meaningful when an LLM is driving) live under `github-workflow-*`; filter by tag if a human reads this without an agent.
 
 ### `git-hygiene-*` — local style rules
 
@@ -129,7 +129,7 @@ One section per pack. The three skills tagged `agent` (only meaningful when an L
 | [github-policy-merge-commits-only](skills/github-policy-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
 | [github-policy-protect-default-branch](skills/github-policy-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
 
-### `github-workflow-pull-request-*` — PR lifecycle (includes agent-tagged trio)
+### `github-workflow-*` — PR lifecycle and repo activity (includes agent-tagged trio)
 
 | Name | Tags | What |
 | --- | --- | --- |
@@ -137,6 +137,7 @@ One section per pack. The three skills tagged `agent` (only meaningful when an L
 | [github-workflow-pull-request-stacked](skills/github-workflow-pull-request-stacked) | workflow, team-stance, reference | Submit dependent PRs on GitHub. Repo you control: `gt submit --stack`, merge bottom-first, `gt sync`. Upstream fork-only: draft + `Depends on`. Upstream with topic-branch push grant: full `gt submit --stack`. |
 | [github-workflow-pull-request-status-line](skills/github-workflow-pull-request-status-line) | agent, style | Surface PRs as `<status-circle> <url> — **PR #<num>: <title>**` with live state. |
 | [github-workflow-pull-request-watcher](skills/github-workflow-pull-request-watcher) | agent, workflow | Background Monitor polling PR check-runs/comments/state; one reaction per event type. |
+| [github-workflow-repo-activity](skills/github-workflow-repo-activity) | workflow, reference | `github-repo-activity.py`: one user's comments, reviews, merges, pushes and branches on a repo since a time, from the endpoints of record, not the Events API. |
 
 ## Tag vocabulary
 
