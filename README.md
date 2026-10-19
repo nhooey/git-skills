@@ -97,7 +97,7 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | --- | --- | --- |
 | [git-hygiene-avoid-sweeping-operations](skills/git-hygiene-avoid-sweeping-operations) | safety | Name the paths and refs you act on: no `git add -A`, `git reset --hard`, `git clean -f`, bare `git stash`, `git branch -D` and similar. |
 | [git-hygiene-branch-naming](skills/git-hygiene-branch-naming) | style | Long, descriptive, dash-separated, autocomplete-friendly names. |
-| [git-hygiene-commit-message-format](skills/git-hygiene-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what. |
+| [git-hygiene-commit-message-format](skills/git-hygiene-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what; body optional except for breaking, security, migration and revert commits. |
 | [git-hygiene-conventional-commits](skills/git-hygiene-conventional-commits) | style, team-stance | `type(scope): subject` Conventional Commits format. |
 | [git-hygiene-gitignore](skills/git-hygiene-gitignore) | style | Anchor paths, keep personal preferences in `~/.gitignore_global`, compress patterns safely. |
 | [git-hygiene-no-history-in-code](skills/git-hygiene-no-history-in-code) | style | Don't embed "added in v3.2" notes in source — put them in commit messages. |
