@@ -30,14 +30,13 @@ wait passively for the merge: by the time it lands, the user has often
 been pinging the agent through other channels (a comment on the PR, a
 review, a red CI run).
 
-A narrower CI-watching Monitor (e.g. one armed by a
-`claude-code-garnix-ci`-style skill against the pushed SHA's check-
-runs) does **not** substitute for this watcher — it watches a strict
-subset of the surface and never emits on `MERGED` or `CLOSED`. An
-agent that arms only the CI watcher and then tries to amend + force-
-push will discover, too late and against a deleted branch, that the
-PR has already landed. Arm both when both apply; they run in parallel
-on different event streams.
+A narrower CI-watching Monitor (e.g. one armed against the pushed
+SHA's check-runs) does **not** substitute for this watcher — it
+watches a strict subset of the surface and never emits on `MERGED` or
+`CLOSED`. An agent that arms only the CI watcher and then tries to
+amend + force-push will discover, too late and against a deleted
+branch, that the PR has already landed. Arm both when both apply; they
+run in parallel on different event streams.
 
 Conversely, this watcher does **not** substitute for the
 `pull-request-sync-check.sh` PostToolUse hook shipped with this
