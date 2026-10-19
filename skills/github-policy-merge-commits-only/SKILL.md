@@ -31,10 +31,15 @@ commit, even when fast-forward would be possible.
 
 ```bash
 gh api -X PATCH "repos/<owner>/<repo>" \
-  -f allow_merge_commit=true \
-  -f allow_squash_merge=false \
-  -f allow_rebase_merge=false
+  -F allow_merge_commit=true \
+  -F allow_squash_merge=false \
+  -F allow_rebase_merge=false
 ```
+
+Use `-F` (typed field), not `-f`: `-f` sends each value as the JSON
+*string* `"true"`/`"false"`, but these settings want real booleans.
+GitHub's repo-settings endpoint coerces the strings today, but leaning on
+that is exactly the footgun `github-hygiene-gh-cli-gotchas` documents.
 
 ## Why
 

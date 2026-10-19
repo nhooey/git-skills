@@ -1,8 +1,8 @@
 ---
 name: git-workflow-push-mode
 description: |
-  Before the first push to a repo, check project memory for a saved
-  push-mode preference. If none, ask the user once which push workflow
+  On the first push of any session to a repo, check project memory for a
+  saved push-mode preference. If none, ask the user once which push workflow
   applies — Mode 1 (direct to main), Mode 2 (PRs always, never push
   main), or Mode 3 (ask each time) — and save the answer as a project
   memory so future sessions don't re-ask. Includes a `gh pr list`

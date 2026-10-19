@@ -6,7 +6,7 @@ description: |
   prompt via AskUserQuestion before bulk-deleting — some teams keep
   merged branches as release markers. Apply post-merge or when
   `git branch --merged` shows stragglers.
-tags: [workflow, interactive]
+tags: [workflow, interactive, safety]
 allowed-tools:
   - Bash
   - Read
