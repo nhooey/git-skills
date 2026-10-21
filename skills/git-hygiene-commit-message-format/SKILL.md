@@ -3,9 +3,11 @@ name: git-hygiene-commit-message-format
 description: |
   Format commit messages with subject under 72 chars, blank line after the
   subject, body wrapped at 72 chars, and explain WHY rather than what.
-  Names the common drift modes to cut from the body (diff paraphrase,
-  test inventory, while-here paragraph, audit walkthrough) and caps the
-  body at ~4 paragraphs. Apply whenever writing or amending any commit
+  Skip the body when the subject says it all, but always write one for
+  breaking, security, migration and revert commits. Names the common
+  drift modes to cut from the body (diff paraphrase, test inventory,
+  while-here paragraph, audit walkthrough, narration filler) and caps
+  the body at ~4 paragraphs. Apply whenever writing or amending any commit
   message. Pair with git-hygiene-conventional-commits if the repo adopts
   that convention.
 tags: [style]
@@ -55,11 +57,27 @@ time a commit comes up.
   spaces, so wider lines wrap awkwardly in 80-column terminals.
 - **Use the body to explain why, not what.** The diff already shows what
   changed. Spend the body on motivation, alternatives considered,
-  landmines hit, and links to issues or discussions.
+  landmines hit, and links to issues or discussions. For a fix, the
+  previous behavior often carries the why in one clause: "Previously X;
+  that broke Y."
+- **Skip the body when the subject is the whole story.** A typo fix,
+  dependency bump, or rename needs no body. Always write one for
+  breaking changes, security fixes, data migrations, reverts, and any
+  change whose motivation can't be recovered from the diff — those are
+  the commits future debuggers land on.
+- **Name the technical symptom, never the customer.** No customer or
+  organization names, emails, or pasted ticket text: history outlives
+  access controls and gets mirrored and forked. "Import fails on CSVs
+  with a BOM" beats "Fix Acme's broken upload".
 
-When writing a commit, draft the subject first, then add a blank line,
-then write the body wrapped at 72. If a subject feels longer than 72,
-the commit is probably doing too much — split it.
+Before drafting, state the change in one sentence: "<what> so that
+<why>". If you can't, the commit mixes changes — split it. If you can,
+the "<what>" half is your subject; when the diff makes the why obvious,
+you may not need a body at all.
+
+Then draft the subject, add a blank line, and write the body wrapped
+at 72. If a subject feels longer than 72, the commit is probably doing
+too much — split it.
 
 ## What to cut: common drift modes
 
@@ -98,6 +116,12 @@ Symptoms that the body has drifted into WHAT:
   paragraphs. Pick the stronger phrasing; delete the other.
 - **Sub-claim stacking.** Three independent facts packed into one
   parenthetical or clause. Split or cut to one.
+- **Narration filler.** "This commit…", "This change…", "I"/"we",
+  "now", "currently", "As requested by…". The subject already frames
+  the change, and the commit date already says when "now" is. Start
+  at the reason: "X dropped Y because…", not "This commit fixes an
+  issue where X now…". Credit goes in a trailer (`Reported-by:`,
+  `Co-authored-by:`), not prose.
 
 **Aim for ≤4 body paragraphs.** Over that, the commit is usually
 either doing too much (split it — see `git-workflow-curate-unpushed`
