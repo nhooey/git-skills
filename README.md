@@ -73,7 +73,7 @@ Five prefix packs partition the 25 skills — each skill is a member of exactly 
 
 | Pack | Contents | Why |
 | --- | --- | --- |
-| `agent-skills-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no-history-in-code, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
+| `agent-skills-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no history in tracked files, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
 | `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, branch tidying, push-mode choice. |
 | `agent-skills-git-all` | All 12 `git-*` skills | Everything local. |
 | `agent-skills-github-hygiene` | All 3 `github-hygiene-*` skills | PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
@@ -100,7 +100,7 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | [git-hygiene-commit-message-format](skills/git-hygiene-commit-message-format) | style | Subject under 72 chars, blank line, body wrapped at 72, explain WHY not what; body optional except for breaking, security, migration and revert commits. |
 | [git-hygiene-conventional-commits](skills/git-hygiene-conventional-commits) | style, team-stance | `type(scope): subject` Conventional Commits format. |
 | [git-hygiene-gitignore](skills/git-hygiene-gitignore) | style | Anchor paths, keep personal preferences in `~/.gitignore_global`, compress patterns safely. |
-| [git-hygiene-no-history-in-code](skills/git-hygiene-no-history-in-code) | style | Don't embed "added in v3.2" notes in source — put them in commit messages. |
+| [git-hygiene-no-history-in-tracked-files](skills/git-hygiene-no-history-in-tracked-files) | style | Tracked files (code, docs, skills, plans, config) state the current state; "added in v3.2" and "used to do X" notes go in commit messages. Changelogs, ADRs and migration guides exempt. |
 | [git-hygiene-push-force-safely](skills/git-hygiene-push-force-safely) | safety | Always force-push with `--force-with-lease`, never plain `--force`. |
 | [git-hygiene-ssh-remotes](skills/git-hygiene-ssh-remotes) | setup, style | Prefer SSH (`git@github.com:owner/repo.git`) over HTTPS. |
 
