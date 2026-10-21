@@ -13,17 +13,26 @@ Each rule lives in its own skill so you can pick and choose. Skills are grouped 
 Each skill belongs to exactly one pack — the second segment of the name is the pack. Skills that only make sense when an LLM is driving the session carry the `agent` tag (see [Tag vocabulary](#tag-vocabulary)); filter by tag, not by name prefix.
 
 
-## CC Safety Net rulebook
+## CC Safety Net rulebooks
 
-[`.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json`](.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json)
-enforces `git-hygiene-avoid-sweeping-operations` with
-[CC Safety Net](https://github.com/kenryu42/claude-code-safety-net): it blocks
-`git add -A`, `git commit -a`, a bare `git stash`, `git push --all`,
-`--no-verify`, `git config --global` and similar, on top of CC Safety Net's
-built-in git rules. Its test fixtures run with `cc-safety-net rule verify`.
+Two [CC Safety Net](https://github.com/kenryu42/claude-code-safety-net)
+rulebooks enforce `git-hygiene-avoid-sweeping-operations`, on top of CC Safety
+Net's built-in git rules:
+
+- [`.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json`](.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json)
+  blocks a subcommand used with a sweeping flag, such as `git add -A`,
+  `git commit -a`, `git push --all` and `--no-verify`. It uses rulebook
+  format 1, which expands combined short options (`git commit -anm x`) and
+  sees past global options (`git -C <dir> add -A`).
+- [`.cc-safety-net/rules/git-avoid-sweeping-operations-with-exclusions/rulebook.json`](.cc-safety-net/rules/git-avoid-sweeping-operations-with-exclusions/rulebook.json)
+  blocks a bare `git stash` and `git config --global` writes. These rules need
+  `exclude_args`, so this rulebook uses format 2. Format 2 doesn't see past
+  `git -C <dir>`, so `git -C repo stash` isn't caught.
+
+Their test fixtures run with `cc-safety-net rule verify`.
 
 ```bash
-cc-safety-net rule add nhooey/git-skills --only git-avoid-sweeping-operations --global
+cc-safety-net rule add nhooey/git-skills --only git-avoid-sweeping-operations git-avoid-sweeping-operations-with-exclusions --global
 ```
 
 ## Install

@@ -1,119 +1,82 @@
 {
-  "rulebook_version": 2,
+  "rulebook_version": 1,
   "name": "git-avoid-sweeping-operations",
-  "version": "1.0.0",
-  "description": "Blocks git commands that act on everything they can reach instead of named paths and refs. Complements CC Safety Net's built-in git rules (reset --hard, clean -f, branch -D, push --force, stash drop/clear, checkout/restore of the worktree). The why and the alternatives live in the git-hygiene-avoid-sweeping-operations skill. Gaps: a value-taking global option such as `git -C <dir>` hides the subcommand, so `git -C repo add -A` isn't caught; bare `git reset` and `git checkout <branch>` in a shared checkout aren't expressible as exact-token matches; combined short options are listed explicitly because version 2 doesn't expand them.",
+  "version": "2.0.0",
+  "description": "Blocks git commands that act on everything they can reach instead of named paths and refs, when a subcommand plus one forbidden argument says so. Complements CC Safety Net's built-in git rules (reset --hard, clean -f, branch -D, push --force, stash drop/clear, checkout/restore of the worktree). The why and the alternatives live in the git-hygiene-avoid-sweeping-operations skill. Version 1 expands combined short options (`git commit -anm x`) and skips global options (`git -C <dir> add -A`), so both are caught. The bare `git stash` and `git config --global` rules need exclude_args, which version 1 lacks, so they live in the git-avoid-sweeping-operations-with-exclusions rulebook. Gaps: a listed argument matches anywhere after the subcommand, so a path or message that equals one is blocked too (`git worktree add prune`, `git commit -m -n`); bare `git reset` and `git checkout <branch>` in a shared checkout aren't expressible as argument matches.",
   "author": "nhooey/git-skills",
   "allowed_commands": ["git"],
   "rules": [
     {
       "name": "add-sweep",
       "command": "git",
-      "match": {
-        "command_path": ["add"],
-        "any_args": ["-A", "--all", ".", ":/", "-u", "--update", "-Av", "-Ap", "-uv"]
-      },
+      "subcommand": "add",
+      "block_args": ["-A", "--all", ".", ":/", "-u", "--update"],
       "reason": "Stages every change in the tree, including others' edits and untracked files. Run `git add <paths>` or `git add -p <paths>`.",
       "intent": "use_alternative"
     },
     {
       "name": "commit-all",
       "command": "git",
-      "match": {
-        "command_path": ["commit"],
-        "any_args": ["-a", "--all", "-am", "-av", "-avm", "-amv"]
-      },
+      "subcommand": "commit",
+      "block_args": ["-a", "--all"],
       "reason": "Commits every tracked change, staged or not. Run `git add <paths>`, then `git commit`.",
-      "intent": "use_alternative"
-    },
-    {
-      "name": "stash-sweep",
-      "command": "git",
-      "match": {
-        "command_path": ["stash"],
-        "exclude_args": ["--", "list", "show", "pop", "apply", "branch", "drop", "clear", "create", "store"]
-      },
-      "reason": "Stashes every change in the tree, others' included. Run `git stash push -- <paths>`, or use a separate worktree.",
       "intent": "use_alternative"
     },
     {
       "name": "restore-staged-sweep",
       "command": "git",
-      "match": {
-        "command_path": ["restore"],
-        "any_args": [".", ":/"]
-      },
+      "subcommand": "restore",
+      "block_args": [".", ":/"],
       "reason": "Acts on every path anyone staged or changed. Run `git restore --staged <paths>` or `git restore <paths>` for the paths you changed.",
       "intent": "use_alternative"
     },
     {
       "name": "push-all-refs",
       "command": "git",
-      "match": {
-        "command_path": ["push"],
-        "any_args": ["--all", "--tags"]
-      },
+      "subcommand": "push",
+      "block_args": ["--all", "--tags"],
       "reason": "Pushes every local branch or tag, scratch ones included. Run `git push origin <branch>` or `git push origin <tag>`.",
       "intent": "use_alternative"
     },
     {
       "name": "commit-no-verify",
       "command": "git",
-      "match": {
-        "command_path": ["commit"],
-        "any_args": ["--no-verify", "-n"]
-      },
+      "subcommand": "commit",
+      "block_args": ["--no-verify", "-n"],
       "reason": "Skips the repo's commit hooks. Fix what the hook reports instead.",
       "intent": "stop_and_explain"
     },
     {
       "name": "push-no-verify",
       "command": "git",
-      "match": {
-        "command_path": ["push"],
-        "any_args": ["--no-verify"]
-      },
+      "subcommand": "push",
+      "block_args": ["--no-verify"],
       "reason": "Skips the repo's pre-push hooks. Fix what the hook reports instead.",
       "intent": "stop_and_explain"
     },
     {
       "name": "worktree-prune",
       "command": "git",
-      "match": {
-        "command_path": ["worktree", "prune"]
-      },
+      "subcommand": "worktree",
+      "block_args": ["prune"],
       "reason": "Prunes other sessions' worktree records. Run `git worktree remove <path>` for worktrees you created.",
       "intent": "use_alternative"
     },
     {
       "name": "gc-prune-now",
       "command": "git",
-      "match": {
-        "command_path": ["gc"],
-        "any_args": ["--prune=now", "--prune=all"]
-      },
+      "subcommand": "gc",
+      "block_args": ["--prune=now", "--prune=all"],
       "reason": "Deletes unreachable commits, the recovery net for every other mistake. Leave gc to git's defaults.",
       "intent": "hard_stop"
     },
     {
       "name": "reflog-expire",
       "command": "git",
-      "match": {
-        "command_path": ["reflog", "expire"]
-      },
+      "subcommand": "reflog",
+      "block_args": ["expire"],
       "reason": "Expires the reflog, the recovery net for every other mistake. Leave it to git's defaults.",
       "intent": "hard_stop"
-    },
-    {
-      "name": "config-global-write",
-      "command": "git",
-      "match": {
-        "command_path": ["config"],
-        "any_args": ["--global", "--system"],
-        "exclude_args": ["--get", "--get-all", "--get-regexp", "--list", "-l", "--show-origin", "get", "list"]
-      },
-      "reason": "Changes git settings for every repo on the machine. Use `git config --local`, or ask the user first.",
-      "intent": "manual_only"
     }
   ],
   "tests": [
@@ -121,33 +84,48 @@
     { "command": "git add --all", "expect": "blocked", "rule": "add-sweep" },
     { "command": "git add .", "expect": "blocked", "rule": "add-sweep" },
     { "command": "git add -u", "expect": "blocked", "rule": "add-sweep" },
+    { "command": "git add -Av", "expect": "blocked", "rule": "add-sweep" },
+    { "command": "git add -vA", "expect": "blocked", "rule": "add-sweep" },
+    { "command": "git add -nu", "expect": "blocked", "rule": "add-sweep" },
+    { "command": "git -C repo add -A", "expect": "blocked", "rule": "add-sweep" },
+    { "command": "git -c core.autocrlf=false add .", "expect": "blocked", "rule": "add-sweep" },
     { "command": "git add src/main.rs README.md", "expect": "allowed" },
     { "command": "git add -p src/main.rs", "expect": "allowed" },
     { "command": "git add ./src", "expect": "allowed" },
+    { "command": "git -C repo add src/main.rs", "expect": "allowed" },
     { "command": "git commit -a -m wip", "expect": "blocked", "rule": "commit-all" },
     { "command": "git commit -am wip", "expect": "blocked", "rule": "commit-all" },
+    { "command": "git commit -vam wip", "expect": "blocked", "rule": "commit-all" },
+    { "command": "git commit -anm wip", "expect": "blocked", "rule": "commit-all" },
+    { "command": "git -C repo commit -am wip", "expect": "blocked", "rule": "commit-all" },
     { "command": "git commit -m 'Add parser'", "expect": "allowed" },
-    { "command": "git stash", "expect": "blocked", "rule": "stash-sweep" },
-    { "command": "git stash -u", "expect": "blocked", "rule": "stash-sweep" },
-    { "command": "git stash push -m wip", "expect": "blocked", "rule": "stash-sweep" },
-    { "command": "git stash push -- src/main.rs", "expect": "allowed" },
-    { "command": "git stash list", "expect": "allowed" },
-    { "command": "git stash pop", "expect": "allowed" },
+    { "command": "git commit -sm 'Add parser'", "expect": "allowed" },
+    { "command": "git commit --amend --no-edit", "expect": "allowed" },
+    { "command": "git -C repo commit -m 'Add parser'", "expect": "allowed" },
     { "command": "git restore --staged .", "expect": "blocked", "rule": "restore-staged-sweep" },
+    { "command": "git -C repo restore --staged :/", "expect": "blocked", "rule": "restore-staged-sweep" },
     { "command": "git restore --staged src/main.rs", "expect": "allowed" },
     { "command": "git push --all", "expect": "blocked", "rule": "push-all-refs" },
     { "command": "git push origin --tags", "expect": "blocked", "rule": "push-all-refs" },
+    { "command": "git -C repo push --tags", "expect": "blocked", "rule": "push-all-refs" },
     { "command": "git push origin my-branch", "expect": "allowed" },
+    { "command": "git push origin v1.0.0", "expect": "allowed" },
     { "command": "git push --force-with-lease origin my-branch", "expect": "allowed" },
+    { "command": "git -C repo push origin my-branch", "expect": "allowed" },
     { "command": "git commit --no-verify -m wip", "expect": "blocked", "rule": "commit-no-verify" },
+    { "command": "git commit -nm wip", "expect": "blocked", "rule": "commit-no-verify" },
+    { "command": "git -C repo commit -n -m wip", "expect": "blocked", "rule": "commit-no-verify" },
     { "command": "git push --no-verify", "expect": "blocked", "rule": "push-no-verify" },
+    { "command": "git -C repo push --no-verify origin my-branch", "expect": "blocked", "rule": "push-no-verify" },
     { "command": "git worktree prune", "expect": "blocked", "rule": "worktree-prune" },
+    { "command": "git -C repo worktree prune -n", "expect": "blocked", "rule": "worktree-prune" },
     { "command": "git worktree list", "expect": "allowed" },
+    { "command": "git worktree remove ../my-worktree", "expect": "allowed" },
     { "command": "git gc --prune=now", "expect": "blocked", "rule": "gc-prune-now" },
+    { "command": "git -C repo gc --prune=all", "expect": "blocked", "rule": "gc-prune-now" },
     { "command": "git gc", "expect": "allowed" },
     { "command": "git reflog expire --expire=now --all", "expect": "blocked", "rule": "reflog-expire" },
-    { "command": "git config --global user.name Someone", "expect": "blocked", "rule": "config-global-write" },
-    { "command": "git config --global --get user.name", "expect": "allowed" },
-    { "command": "git config --local core.hooksPath .githooks", "expect": "allowed" }
+    { "command": "git -C repo reflog expire --all", "expect": "blocked", "rule": "reflog-expire" },
+    { "command": "git reflog show my-branch", "expect": "allowed" }
   ]
 }

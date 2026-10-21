@@ -65,10 +65,18 @@ would be lost, and run it only once they've seen that. An instruction to
 
 ## Enforcement
 
-This repo also ships a [CC Safety Net](https://github.com/kenryu42/claude-code-safety-net)
-rulebook, `.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json`,
-that blocks most of the commands above before they run. A block reason
-tagged `[git-avoid-sweeping-operations/<rule>]` comes from it; take the
+This repo also ships two [CC Safety Net](https://github.com/kenryu42/claude-code-safety-net)
+rulebooks that block most of the commands above before they run:
+
+- `.cc-safety-net/rules/git-avoid-sweeping-operations/rulebook.json` holds
+  the subcommand-plus-flag rules, such as `git add -A` and `--no-verify`,
+  including combined short options and `git -C <dir>` forms.
+- `.cc-safety-net/rules/git-avoid-sweeping-operations-with-exclusions/rulebook.json`
+  holds the bare `git stash` and `git config --global` rules. It doesn't
+  catch their `git -C <dir>` forms.
+
+A block reason tagged `[git-avoid-sweeping-operations/<rule>]` or
+`[git-avoid-sweeping-operations-with-exclusions/<rule>]` comes from them; take the
 alternative it names rather than working around it.
 
 ## Why the refusing variants
