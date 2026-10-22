@@ -67,7 +67,7 @@ nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely#insta
 # Or build a derivation containing the skill files (no install side-effect)
 nix build github:nhooey/git-skills#all                  # every skill, symlinkJoined
 nix build github:nhooey/git-skills#git-hygiene-push-force-safely # one skill
-nix build github:nhooey/git-skills#agent-skills-git-all         # a curated subset (see below)
+nix build github:nhooey/git-skills#agent-skills-nhooey-git-all         # a curated subset (see below)
 ```
 
 The installer copies into `$CLAUDE_SKILLS_DIR` if set, otherwise `~/.claude/skills/`. Existing skill directories with the same name are replaced.
@@ -82,18 +82,18 @@ Five prefix packs partition the 25 skills — each skill is a member of exactly 
 
 | Pack | Contents | Why |
 | --- | --- | --- |
-| `agent-skills-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no history in tracked files, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
-| `agent-skills-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, branch tidying, push-mode choice. |
-| `agent-skills-git-all` | All 12 `git-*` skills | Everything local. |
-| `agent-skills-github-hygiene` | All 3 `github-hygiene-*` skills | PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
-| `agent-skills-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
-| `agent-skills-github-workflow` | All 6 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; drafting in the browser; a user's activity on a repo. |
-| `agent-skills-github-all` | All 13 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-nhooey-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no history in tracked files, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
+| `agent-skills-nhooey-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, branch tidying, push-mode choice. |
+| `agent-skills-nhooey-git-all` | All 12 `git-*` skills | Everything local. |
+| `agent-skills-nhooey-github-hygiene` | All 3 `github-hygiene-*` skills | PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
+| `agent-skills-nhooey-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
+| `agent-skills-nhooey-github-workflow` | All 6 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; drafting in the browser; a user's activity on a repo. |
+| `agent-skills-nhooey-github-all` | All 13 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
 | `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
-nix build github:nhooey/git-skills#agent-skills-git-hygiene
-nix run github:nhooey/git-skills#agent-skills-github-policy    # (no install, just build)
+nix build github:nhooey/git-skills#agent-skills-nhooey-git-hygiene
+nix run github:nhooey/git-skills#agent-skills-nhooey-github-policy    # (no install, just build)
 ```
 
 ## Skills in this repo
