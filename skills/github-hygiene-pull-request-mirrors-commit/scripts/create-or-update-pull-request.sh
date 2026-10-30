@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Open — or re-sync — a pull request that mirrors the current HEAD commit:
 # the PR title is the commit subject and the PR body is the commit body,
-# reflowed from 72-col hard wrap to GFM paragraphs. No template, no footer.
+# reflowed from 72-col hard wrap to GFM paragraphs, then the Claude Code
+# attribution footer. No template.
 #
 # Run it to open the PR; run it again after `git commit --amend` (+ force-push)
 # and it PATCHes the already-open PR back into line with the reworded commit
@@ -20,16 +21,20 @@ Usage: create-or-update-pull-request.sh [options]
   --verbatim           skip the reflow; send the commit body as-is. Use when
                        the body is already GFM-shaped (blank line after each
                        ## heading, one line per bullet, fenced code blocks).
+  --footer <text>      the line that ends the body (default: the Claude Code
+                       "Generated with" line)
+  --no-footer          end the body with the commit body, no footer
   -h, --help           show this help
 
-Title is always the commit subject and body the commit body — never a
-template. The reflow is an awk paragraph-join: POSIX, no width cap, and never
+Title is always the commit subject and body the commit body plus the footer
+— never a template. The reflow is an awk paragraph-join: POSIX, no width cap, and never
 shadowed the way a dev shell's `fmt`/`nix fmt` command shadows coreutils `fmt`
 (which would silently yield an empty body).
 EOF
 }
 
 base='' head='' repo='' draft='' verbatim=''
+footer='🤖 Generated with [Claude Code](https://claude.com/claude-code)'
 while [ $# -gt 0 ]; do
   case "$1" in
   --base) base=$2 && shift 2 ;;
@@ -37,6 +42,8 @@ while [ $# -gt 0 ]; do
   --repo) repo=$2 && shift 2 ;;
   --draft) draft=1 && shift ;;
   --verbatim) verbatim=1 && shift ;;
+  --footer) footer=$2 && shift 2 ;;
+  --no-footer) footer='' && shift ;;
   -h | --help) usage && exit 0 ;;
   *)
     echo "unknown option: $1 (try --help)" >&2
@@ -52,6 +59,12 @@ if [ -n "$verbatim" ]; then
   body=$(git log -1 --pretty=%b)
 else
   body=$(git log -1 --pretty=%b | reflow)
+fi
+# Checked here, before the footer: a footer alone would pass the PR-side
+# check below and hide an empty reflow.
+[ -n "$body" ] || echo "WARNING: the commit body is empty — check the commit / reflow" >&2
+if [ -n "$footer" ]; then
+  body=${body:+$body$'\n\n'}$footer
 fi
 
 [ -n "$head" ] || head=$(git rev-parse --abbrev-ref HEAD)

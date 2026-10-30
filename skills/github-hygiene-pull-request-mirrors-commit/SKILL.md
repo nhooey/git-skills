@@ -2,10 +2,10 @@
 name: github-hygiene-pull-request-mirrors-commit
 description: |
   Keep each PR a thin wrapper over a single commit: title = subject,
-  body = commit body, no `## Summary` / `## Test plan` / Claude-Code
-  footer. Open and re-sync PRs with the bundled
+  body = commit body plus the Claude Code footer, no `## Summary` /
+  `## Test plan`. Open and re-sync PRs with the bundled
   `create-or-update-pull-request.sh` — it mirrors the commit, reflows the
-  body to GFM paragraphs, and re-PATCHes an open PR after an amend
+  body to GFM paragraphs, adds the footer, and re-PATCHes an open PR after an amend
   (GitHub never refreshes title/body itself). Apply when opening a PR
   from an agent session, or amending a commit behind an open PR.
 tags: [workflow, style, team-stance]
@@ -113,13 +113,15 @@ Don't hand-build the `gh pr create` call — the bundled script does it, so the
 title and body always mirror the commit and the reflow can't be fumbled:
 
 ```bash
-create-or-update-pull-request.sh [--base <branch>] [--draft] [--repo <owner/repo>] [--verbatim]
+create-or-update-pull-request.sh [--base <branch>] [--draft] [--repo <owner/repo>] [--verbatim] [--footer <text> | --no-footer]
 ```
 
 It sets the PR **title to the commit subject** and the **body to the commit
 body**, reflowed from 72-col wrap to GFM paragraphs (an `awk` paragraph-join:
 POSIX and, unlike `fmt`, never shadowed by a dev shell's `nix fmt` command),
-then verifies the body actually landed.
+ends the body with the Claude Code footer, then verifies the body actually
+landed. Pass `--footer` with the session's own attribution line when it
+differs from the default, or `--no-footer` where the session gives none.
 
 **It also re-syncs.** GitHub derives a PR's title/body from the commit *once*,
 at creation; a later `git commit --amend` + force-push refreshes the diff but
