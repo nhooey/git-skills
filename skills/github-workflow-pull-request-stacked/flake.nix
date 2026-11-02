@@ -1,5 +1,5 @@
 {
-  description = "github-workflow-pull-request-stacked: Claude Code skill — submit dependent PRs on GitHub; covers repos you control (`gt submit --stack`, merge bottom-first, `gt sync`), upstream fork-only (draft + Depends-on), and upstream with topic-branch push grant";
+  description = "github-workflow-pull-request-stacked: Claude Code skill — submit dependent PRs on GitHub; covers repos you control (`gh stack submit`, merge the top PR, `gh stack sync`; `gt` for branching stacks), upstream fork-only (draft + Depends-on, `git rebase --update-refs`), and upstream with topic-branch push grant (`gh stack` or `gt`)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
