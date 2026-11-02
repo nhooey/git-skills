@@ -12,13 +12,17 @@ description: |
   The Monitor polls check-runs, issue-comments, review-thread
   comments, and PR state in a single loop, emitting one line per
   delta and reacting per event type (check red → read log, comment
-  from session-user → treat as instruction, merged → fire cleanup
-  prompt).
+  from session-user → treat as instruction, merged or closed → clean
+  up as the project's preferences file says, asking only the first
+  time and saving the answer there).
 tags: [agent, workflow]
 allowed-tools:
   - Bash
   - Read
   - Monitor
+  - AskUserQuestion
+  - Edit
+  - Write
 ---
 
 # github-workflow-pull-request-watcher
@@ -96,9 +100,10 @@ list above.
   hard pause; surface and wait for instruction.
 - **Title/body edited or branch updated by someone else** — accept
   the override, re-fetch before any destructive op.
-- **Merged** — fire the cleanup prompt below.
-- **Closed without merge** — ask whether to reopen, delete the
-  branch, or leave it (see "On close-without-merge" below).
+- **Merged** — clean up as the preferences say, asking only the
+  first time (see "On merge or close" below).
+- **Closed without merge** — reopen, delete the branch or leave it,
+  as the preferences say, asking only the first time.
 
 ## One Monitor, one loop, multiple sources
 
@@ -202,56 +207,97 @@ invocation. They're heavier to set up, and the agent can't bootstrap
 them mid-session, so don't reach for them unless they're already
 wired up — stick with the Monitor when running interactively.
 
-## On merge, prompt the user
+## On merge or close: ask once, then follow the answer
 
-**Entity type:** multi-select (checkbox / multiple-selection; all
-options default-checked).
+What to do when a PR merges or closes is the same choice every time in
+a project, so the user makes it once. Each action below has a key in
+this skill's preferences file (see "Your preferences" below):
 
-**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+- **Key set to an answer:** do what it says, without a picker, and
+  report what was done in the next reply.
+- **Key missing or `ask`:** ask, act on the answer, then save the answer
+  to the project's preferences file, so the picker doesn't open again
+  in this project.
 
-> PR `[#N]` merged into `[base-branch]`. Cleanup actions?
+### On merge
 
-**Option text** (literal start fixed; dynamic parts in `[brackets]`):
+| Key                     | Action                                                                                     | Values             |
+| ----------------------- | ------------------------------------------------------------------------------------------ | ------------------ |
+| `Delete local branch`   | `git branch -d <branch>`, and `git worktree remove <path>` first if a worktree holds it    | `yes`, `no`, `ask` |
+| `Delete remote branch`  | `git push origin --delete <branch>`                                                        | `yes`, `no`, `ask` |
+| `Update default branch` | `git checkout <default> && git pull --rebase origin <default>`, in the main checkout only  | `yes`, `no`, `ask` |
 
-- `Delete local branch [branch-name]` — `git branch -d <branch>`
-  (use `-d`; the merged-only safety check is the point).
-- `Delete remote branch [branch-name]` — `git push origin --delete
-  <branch>`. Pre-check with `git ls-remote --exit-code origin
-  <branch>` and skip the option entirely if the branch is already
-  gone. But `github-policy-auto-delete-merged-branches` is
-  asynchronous — the pre-check can pass and the branch can vanish in
-  the window between the prompt and the user's pick — so the actual
-  `git push --delete` must treat `error: unable to delete
-  '<branch>': remote ref does not exist` as success, not failure.
-  The desired end-state has been reached, just by another mechanism.
-  A no-op question is noise; a phantom failure on the cleanup is
-  worse.
-- `Rebase local [default-branch] from origin` — `git checkout
-  <default> && git pull --rebase origin <default>`. Bail loudly on
-  a dirty tree.
+- **Delete local branch:** use `-d`, never `-D`; the merged-only safety
+  check is the point.
+- **Delete remote branch:** pre-check with `git ls-remote --exit-code
+  origin <branch>` and skip it, unasked, when the branch is already
+  gone. `github-policy-auto-delete-merged-branches` is asynchronous, so
+  the branch can still vanish between the check and the push: treat
+  `remote ref does not exist` as success, since the end state was
+  reached by another path.
+- **Update default branch:** bail loudly on a dirty tree, and never
+  switch a checkout that has another branch's work in progress.
 
-The literal prefixes (`PR ... merged into`, `Delete local branch`,
-`Delete remote branch`, `Rebase local`) are fixed so the prompt is
-recognisable across PRs and any pre-selection by prior answer stays
-deterministic. Only the bracketed segments vary.
+When any of these keys is unanswered, ask them all in one multi-select
+picker, with `All` and `None` first:
 
-`git-workflow-tidy-branches` covers the same cleanup from
-the local side; this rule fires it at the right moment.
+> PR `[#N]` merged into `[base-branch]`. Cleanup actions? Your answer is
+> saved for `[project]`.
 
-## On close-without-merge, prompt the user
+with options `Delete local branch [branch-name]`, `Delete remote branch
+[branch-name]` and `Update local [default-branch] from origin`, leaving
+out an option whose key is already answered. Save each offered key as
+`yes` when picked and `no` when not.
 
-**Entity type:** single-select (radio / multiple-choice; the three
-follow-up paths are mutually exclusive).
+`git-workflow-tidy-branches` covers the same cleanup from the local
+side, for branches that piled up; this fires it for one PR at the
+moment it lands.
 
-**Question text** (literal start fixed; dynamic parts in `[brackets]`):
+### On close without merge
 
-> PR `[#N]` was closed without merging. What now?
+| Key                      | Values                                    |
+| ------------------------ | ----------------------------------------- |
+| `On close without merge` | `reopen`, `delete branch`, `leave`, `ask` |
 
-**Option text** (literal start fixed; dynamic parts in `[brackets]`):
+When it's `ask` or missing, ask in a single-select picker:
 
-- `Reopen PR [#N] — gh pr reopen`
-- `Delete branch [branch-name] locally and on remote`
-- `Leave branch [branch-name] alone`
+> PR `[#N]` was closed without merging. What now? Your answer is saved
+> for `[project]`.
+
+with options `Reopen PR [#N]` (`gh pr reopen`), `Delete branch
+[branch-name] locally and on remote` and `Leave branch [branch-name]
+alone`.
+
+Saving `reopen` makes a reopen happen with no one asked, which fights a
+deliberate close; offer it, but save it only when the user picked it
+and said to keep doing it. Otherwise save `ask` after a reopen.
+
+### Saving the answer
+
+Write the key into the project's file,
+`<project>/.agents/skills/github-workflow-pull-request-watcher.preferences.md`,
+where `<project>` is the session's project directory
+(`$CLAUDE_PROJECT_DIR`), not the PR's repository when the two differ: the
+file is read from there when this skill loads. Keep the file a Markdown
+list, one `- Key: value` line per key, and change only the keys just
+answered:
+
+```markdown
+- Delete local branch: yes
+- Delete remote branch: yes
+- Update default branch: no
+- On close without merge: leave
+```
+
+Then commit it in the project, on its own, with a subject such as `Save
+the PR watcher's on-merge answers`; push only as the project's push
+rules allow. Tell the user in the same reply that the answer is saved
+and that editing the file changes it.
+
+The user's own file, next to this skill's folder, is generated by their
+Home Manager config, so don't write it: when the user wants an answer
+for every project, propose the `home.file` entry for it instead, as
+`coding-agent-skill-references` says.
 
 ## Companion hook: `pull-request-sync-check.sh`
 
@@ -322,12 +368,24 @@ itself has no Nix-specific assumptions.
 - Re-arm on receiving a notification that a watched PR transitioned
   state (the previous loop may have terminated).
 
+## Your preferences
+
+!`cat "${CLAUDE_SKILL_DIR}/../github-workflow-pull-request-watcher.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/github-workflow-pull-request-watcher.preferences.md" 2>/dev/null || true`
+
+If your agent doesn't run the line above, read these files yourself if they
+exist: `github-workflow-pull-request-watcher.preferences.md` next to this skill's folder, then
+`.agents/skills/github-workflow-pull-request-watcher.preferences.md` in the project. A project's
+file overrides the user's, and the user's overrides this skill's defaults.
+
 ## Related skills
 
 When one of these applies and it's in your skill listing, load it
 without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
+
+- `coding-agent-skill-references`: where this skill's preferences files live, and why the user's own file is proposed to Home Manager rather than written.
+- `coding-agent-questions-as-first-class-prompts`: the first-time question goes through the picker, `All` and `None` first.
 
 - `git-workflow-tidy-branches`: the local branch cleanup the on-merge prompt offers.
 - `github-hygiene-gh-cli-gotchas`: `gh pr view --json` field limits and other traps that break a watcher silently.

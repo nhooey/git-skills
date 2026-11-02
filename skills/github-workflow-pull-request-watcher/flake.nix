@@ -1,5 +1,5 @@
 {
-  description = "github-workflow-pull-request-watcher: Claude Code skill — background Monitor that polls PR check-runs/comments/state and reacts to each event";
+  description = "github-workflow-pull-request-watcher: Claude Code skill — background Monitor that polls PR check-runs/comments/state and reacts to each event, cleaning up on merge as the project's saved answer says";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
