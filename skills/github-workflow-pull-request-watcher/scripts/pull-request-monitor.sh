@@ -100,9 +100,38 @@ if [ "$dry_run" -eq 1 ]; then
   echo "# gh api repos/$repo/pulls/$pr/comments"
   gh api "repos/$repo/pulls/$pr/comments"
   echo "# gh api repos/$repo/commits/$sha/check-runs"
-  gh api "repos/$repo/commits/$sha/check-runs"
+  gh api "repos/$repo/commits/$sha/check-runs" ||
+    echo "# check-runs failed; the loop falls back to Actions runs on HTTP 403"
+  echo "# gh api repos/$repo/actions/runs?head_sha=$sha"
+  gh api "repos/$repo/actions/runs?head_sha=$sha&per_page=100" \
+    --jq '{total_count, runs: [.workflow_runs[] | {name, status, conclusion}]}'
   exit 0
 fi
+
+# A fine-grained token has no Checks permission, so check-runs answers
+# 403 on a private repo. Actions runs need only "Actions: Read", so fall
+# back to them for good after the first 403; any other failure is
+# treated as transient and check-runs is tried again on the next poll.
+use_actions=0
+fetch_checks() {
+  local out err
+  if [ "$use_actions" -eq 0 ]; then
+    err=$(mktemp)
+    if out=$(gh api "repos/$repo/commits/$sha/check-runs" 2>"$err"); then
+      rm -f "$err"
+      jq -r '.check_runs[]? | select(.status=="completed") | "\(.name): \(.conclusion)"' <<<"$out"
+      return
+    fi
+    grep -q 'HTTP 403' "$err" && use_actions=1
+    rm -f "$err"
+    [ "$use_actions" -eq 1 ] || return
+  fi
+  gh api "repos/$repo/actions/runs?head_sha=$sha&per_page=100" 2>/dev/null |
+    jq -r '.workflow_runs[]? | select(.status=="completed") | "\(.name): \(.conclusion)"'
+}
+
+checks_file=$(mktemp)
+trap 'rm -f "$checks_file"' EXIT
 
 user=$(gh api user --jq .login)
 prev_checks=""
@@ -117,8 +146,9 @@ fmt_comments='.[] | select(.id > $cutoff)
 
 while :; do
   # Check completions — guard against transient empty fetch.
-  cur=$(gh api "repos/$repo/commits/$sha/check-runs" 2>/dev/null |
-    jq -r '.check_runs[]? | select(.status=="completed") | "\(.name): \(.conclusion)"' | sort)
+  # Not $(fetch_checks): a subshell would lose the switch to Actions runs.
+  fetch_checks >"$checks_file"
+  cur=$(sort "$checks_file")
   if [ -n "$cur" ]; then
     comm -13 <(echo "$prev_checks") <(echo "$cur") | awk 'NF { print "CHECK " $0 }'
     prev_checks=$cur

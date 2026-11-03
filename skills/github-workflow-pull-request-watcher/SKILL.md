@@ -131,9 +131,17 @@ comment was posted by the session-running user), and `STATE <state>
 REVIEW <decision>` on PR-state transitions. The loop breaks when
 state reaches `MERGED` or `CLOSED`.
 
-Two design notes worth knowing — both load-bearing for the silent-
+Three design notes worth knowing — all load-bearing for the silent-
 stuck failure mode below:
 
+- Checks come from `commits/<sha>/check-runs`, but a fine-grained
+  personal access token has no Checks permission, so on a private repo
+  that endpoint answers HTTP 403. After the first 403 the loop reads
+  `actions/runs?head_sha=<sha>` instead, which needs only "Actions:
+  Read", and emits the same `CHECK <name>: <conclusion>` lines: one per
+  workflow run rather than per job, and nothing for checks posted by
+  apps outside Actions. Without it, a private repo's CI would never
+  emit, and silence reads as green.
 - `state` is the right `--json` accessor; `merged` isn't a valid
   field (see `github-hygiene-gh-cli-gotchas`).
 - The `reviewDecision` fallback uses an explicit `null`-and-`""`
