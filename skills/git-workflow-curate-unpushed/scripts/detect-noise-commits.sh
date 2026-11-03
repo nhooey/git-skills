@@ -10,7 +10,8 @@
 #
 # Only fires on unpushed commits, so it is silent once history is clean
 # or when there is nothing new to push. Wired as a skill-frontmatter hook
-# (see this skill's SKILL.md); resolves via $CLAUDE_SKILL_DIR.
+# (see this skill's SKILL.md), which finds it in the skill's install
+# places.
 
 set -u
 export GIT_OPTIONAL_LOCKS=0
