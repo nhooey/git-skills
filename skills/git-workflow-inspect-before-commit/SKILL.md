@@ -15,7 +15,13 @@ hooks:
     - matcher: Bash
       hooks:
         - type: command
-          command: bash "${CLAUDE_SKILL_DIR}/scripts/inspect-staged-diff.sh"
+          # ${CLAUDE_SKILL_DIR} isn't substituted in hooks, so try the
+          # skill's install places in turn: the project's, then the user's.
+          command: >-
+            for d in "${CLAUDE_PROJECT_DIR:-.}/.claude/skills/git-workflow-inspect-before-commit"
+            "$HOME/.claude/skills/git-workflow-inspect-before-commit";
+            do [ -f "$d/scripts/inspect-staged-diff.sh" ] && exec bash "$d/scripts/inspect-staged-diff.sh";
+            done; echo "git-workflow-inspect-before-commit: scripts/inspect-staged-diff.sh not found" >&2
           timeout: 15
 ---
 
@@ -118,10 +124,12 @@ Two caveats worth knowing:
   hook registers when this skill is loaded, so for it to catch a commit
   the skill must already be in context. Loading it before you commit
   (which the description triggers) is what arms it.
-- The command resolves the script through `${CLAUDE_SKILL_DIR}`, which
-  Claude Code exports for the active skill, so it works regardless of
-  the working directory the hook runs in — the bare relative path from
-  the docs' example would resolve against the project cwd, not here.
+- The command finds the script in the skill's install places: the
+  project's `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
+  `~/.claude/skills/`. Claude Code substitutes `${CLAUDE_SKILL_DIR}`
+  only in a skill's body and `allowed-tools`, not in its hooks, and a
+  hook runs in Claude's current directory, so neither that variable
+  nor a relative path finds the script.
 
 ## When to apply
 

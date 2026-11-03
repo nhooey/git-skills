@@ -7,10 +7,9 @@
 # non-blocking `systemMessage` nudge listing what it found; never blocks,
 # always exits 0. The agent still owns the decision to fix or proceed.
 #
-# Wired as a skill-frontmatter hook (see this skill's SKILL.md). The
-# command resolves the script via $CLAUDE_SKILL_DIR, which Claude Code
-# exports for the active skill, so it works regardless of the cwd the
-# hook runs in.
+# Wired as a skill-frontmatter hook (see this skill's SKILL.md), whose
+# command finds this script in the skill's install places, since
+# Claude Code doesn't substitute ${CLAUDE_SKILL_DIR} in hooks.
 
 set -u
 export GIT_OPTIONAL_LOCKS=0
@@ -55,7 +54,7 @@ fi
 if printf '%s\n' "$added" | grep -qE 'AKIA[0-9A-Z]{16}'; then
   add_finding 'AWS access key id (`AKIA...`)'
 fi
-if printf '%s\n' "$added" | grep -qiE '(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token)["'\'' ]*[:=]["'\'' ]*[^"'\'' ]{8,}'; then
+if printf '%s\n' "$added" | grep -qiE '(password|passwd|secret|api[_-]?key|token)[a-z0-9_-]*["'\'' ]*[:=]["'\'' ]*[^"'\'' ]{8,}'; then
   add_finding 'hard-coded credential (a `password`/`secret`/`token`/`api_key` assigned a long literal)'
 fi
 

@@ -16,7 +16,13 @@ hooks:
     - matcher: Bash
       hooks:
         - type: command
-          command: bash "${CLAUDE_SKILL_DIR}/scripts/detect-noise-commits.sh"
+          # ${CLAUDE_SKILL_DIR} isn't substituted in hooks, so try the
+          # skill's install places in turn: the project's, then the user's.
+          command: >-
+            for d in "${CLAUDE_PROJECT_DIR:-.}/.claude/skills/git-workflow-curate-unpushed"
+            "$HOME/.claude/skills/git-workflow-curate-unpushed";
+            do [ -f "$d/scripts/detect-noise-commits.sh" ] && exec bash "$d/scripts/detect-noise-commits.sh";
+            done; echo "git-workflow-curate-unpushed: scripts/detect-noise-commits.sh not found" >&2
           timeout: 15
 ---
 
@@ -108,9 +114,12 @@ Two caveats worth knowing:
 - **Skill-frontmatter hooks only fire while the skill is active.** The
   hook registers when this skill is loaded, so it must already be in
   context before the push for it to fire.
-- The command resolves the script through `${CLAUDE_SKILL_DIR}`, which
-  Claude Code exports for the active skill, so it works regardless of
-  the working directory the hook runs in.
+- The command finds the script in the skill's install places: the
+  project's `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
+  `~/.claude/skills/`. Claude Code substitutes `${CLAUDE_SKILL_DIR}`
+  only in a skill's body and `allowed-tools`, not in its hooks, and a
+  hook runs in Claude's current directory, so neither that variable
+  nor a relative path finds the script.
 
 ## When to apply
 
