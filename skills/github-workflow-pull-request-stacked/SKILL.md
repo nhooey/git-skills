@@ -10,7 +10,9 @@ description: |
   so draft + `Depends on` notes gate merge order and
   `git rebase --update-refs` restacks; (c) upstream with a topic-branch
   push grant — `gh stack` or `gt submit --stack` under the required
-  branch prefix. Apply when the user mentions stacked PRs, dependent
+  branch prefix. Also adopting a hand-built stack into `gh stack`,
+  agent-session flags, and what to do where force-pushing PR branches
+  isn't allowed. Apply when the user mentions stacked PRs, dependent
   PRs, `gh stack`, `gt`, or asks how to keep child-PR diffs small while
   parents are in flight.
 tags: [workflow, team-stance, reference]
@@ -81,6 +83,21 @@ gh extension install github/gh-stack
 gh stack init        # tracks the stack locally; also turns on git rerere
 ```
 
+The stack's metadata lives in `<git common dir>/gh-stack`, so every
+worktree of the clone shares it, and a branch checked out in another
+worktree can join a stack without being checked out here. `gh stack`
+never stashes, creates worktrees or switches another worktree's branch:
+a dirty or busy worktree that owns a branch stops `rebase` and `sync`,
+so keep those worktrees idle while it rewrites history.
+
+GitHub also publishes an agent skill for the extension,
+`gh skill install github/gh-stack`. It sits alongside this one: it
+covers the `gh stack` commands and their flags, and this skill covers
+which case and tool apply, forks, force-push policy and the PR
+conventions. Where the two differ on a command's behaviour, the
+extension's skill and `gh stack <command> --help` win, since they move
+with the extension.
+
 **Graphite**, when it's the tool: initialize it and set trunk to the
 repo's default branch.
 
@@ -120,6 +137,12 @@ gh stack submit                           # opens a PR per branch and links them
 gh stack view                             # branches, PR links and states
 ```
 
+**From an agent session,** where there is no terminal for the editor,
+`gh stack submit` needs `--auto`: it skips the editor, uses generated
+titles and opens new PRs as drafts unless `--open` is given. Re-sync
+each PR's title and body with
+`github-hygiene-pull-request-mirrors-commit`'s script afterwards.
+
 Each PR's base is the branch below it, so child diffs are incremental
 and reviewers see only the per-PR change. GitHub marks each PR with its
 layer number and draws a stack map in the merge box.
@@ -140,6 +163,13 @@ Then bring the local branches up to date:
 gh stack sync        # fetch, rebase the rest, push, and update PR state
 ```
 
+`sync` fast-forwards the trunk, rebases the stack only if the trunk
+moved, pushes, links the open PRs into a stack on GitHub, and offers to
+prune local branches whose PRs merged (`--prune` does it unasked). When
+the local stack and the one on GitHub have diverged, a non-interactive
+`sync` stops without pushing anything and still exits 0, so read its
+output rather than its exit status.
+
 **Rules apply to every layer.** Every PR in a stack must meet the
 trunk's branch protection, CODEOWNER approvals and required checks,
 not only the bottom one. CI for the default branch runs for every PR in
@@ -151,9 +181,28 @@ bypassed for a stack.
 endpoints can't merge a stack; scripts and bots must use the
 asynchronous merge API.
 
-**Unverified:** whether `gh stack push` and `sync` force-push with
-`--force-with-lease`. Check the extension's help before relying on it,
-and never fall back to a plain `--force` by hand.
+**Force-pushes.** `gh stack push` pushes every branch in one atomic
+`git push` with a `--force-with-lease` check per branch, and `sync`
+uses `--force-with-lease` after a rebase. Never fall back to a plain
+`--force` by hand.
+
+**When force-pushing isn't allowed.** Every stacking tool here updates
+a stack by rebasing and force-pushing the branches above a change. That
+is at odds with a rule against force-pushing to PR branches, the
+project's or the user's (`git-hygiene-push-force-safely` covers how to
+force-push when it is allowed); it is not at odds
+with `github-policy-merge-commits-only`, which governs how each PR
+merges into the trunk. Choose by the rule:
+
+- **Force-pushing PR branches is allowed** (with a lease): use
+  `gh stack` as above.
+- **It isn't:** don't stack with a tool. Open each PR with
+  `gh pr create --base <branch below>`, and when a branch below
+  changes, `git merge` it into each branch above and push normally.
+  The child branches gain merge commits, and the PRs are never linked
+  as a stack on GitHub.
+- **Unsure:** ask before the first restack, since a force-push can't
+  be taken back once a reviewer has fetched the branch.
 
 **When to flatten the stack.** Stacking is for changes that are
 independently reviewable. Refactor + use-of-refactor is one PR, not
@@ -295,10 +344,21 @@ tooling, before choosing native stacks there.
 
 Don't run `gt` and `gh stack` on the same stack: each keeps its own
 idea of the chain and retargets PR bases its own way, and the base of
-a PR inside a native stack can't be changed through the API. To bring
-PRs made by another tool into a native stack, `gh stack link` takes
-branch names or PR numbers, bottom to top; it can only add PRs to the
-top of an existing stack.
+a PR inside a native stack can't be changed through the API.
+
+**Adopting a stack built by hand,** with each PR's base set by
+`gh pr create --base` or by another tool, takes two commands:
+
+```bash
+gh stack init --base main feat-first feat-second feat-third   # bottom to top; adopts the existing branches
+gh stack sync                                                 # links their open PRs into a stack on GitHub
+```
+
+`init` adopts branches that already exist, including ones checked out
+in other worktrees. `sync` links the PRs once two or more are open; it
+never opens PRs, so `gh stack submit` opens any that are missing.
+`gh stack link` also takes branch names or PR numbers, bottom to top,
+but can only add PRs to the top of an existing stack.
 
 ## How to advise the user
 
