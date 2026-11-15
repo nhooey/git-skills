@@ -1,20 +1,20 @@
 ---
 name: github-workflow-pull-request-watcher
 description: |
-  MANDATORY after every push to a branch with an open or imminent PR:
-  immediately arm `pull-request-monitor.sh`
-  as a background Monitor. This is non-negotiable — the description IS
-  the standing instruction; the user does not need to ask, and "they
-  only asked me to push" is not a valid skip reason. Skipping leaves
-  the agent blind to red CI, user comments posted as the review
-  surface (treated as chat instructions), and the merge event.
-
-  The Monitor polls check-runs, issue-comments, review-thread
-  comments, and PR state in a single loop, emitting one line per
-  delta and reacting per event type (check red → read log, comment
-  from session-user → treat as instruction, merged or closed → clean
-  up as the project's preferences file says, asking only the first
-  time and saving the answer there).
+  Watch an open pull request in the background and react to each event.
+  After every push to a branch with an open or imminent PR, arm the
+  bundled `pull-request-monitor.sh` as a background Monitor without being
+  asked; a request only to push still gets a watcher. The loop polls
+  check runs, issue comments, review-thread comments and PR state, emits
+  one line per change, and the agent reacts by event: a red check means
+  reading its log, a comment from the session's user is a chat
+  instruction, and a merge or close triggers the clean-up the project's
+  preferences file names, asked once and saved there. Without it the
+  agent misses red CI, comments posted on the PR and the merge itself.
+  Also ships `pull-request-sync-check.sh`, a PostToolUse hook that flags
+  a PR whose title or body has drifted from its commit after an amend or
+  push. Use after any push to a PR branch, on resuming a session with an
+  open PR and no watcher, and when a watched PR changes state.
 tags: [agent, workflow]
 allowed-tools:
   - Bash
@@ -25,241 +25,96 @@ allowed-tools:
   - Write
 ---
 
-# github-workflow-pull-request-watcher
+# Pull request watcher
 
-After pushing to a branch with an open (or imminent) PR, arm a
-background watcher that emits on *every* PR event — check completions,
-comments, reviews, labels, merge, close — and react to each. Don't
-wait passively for the merge: by the time it lands, the user has often
-been pinging the agent through other channels (a comment on the PR, a
-review, a red CI run).
+_After every push to a PR branch, a background loop reports every check, comment, review and state change on the PR, and the agent reacts to each one._
 
-A narrower CI-watching Monitor (e.g. one armed against the pushed
-SHA's check-runs) does **not** substitute for this watcher — it
-watches a strict subset of the surface and never emits on `MERGED` or
-`CLOSED`. An agent that arms only the CI watcher and then tries to
-amend + force-push will discover, too late and against a deleted
-branch, that the PR has already landed. Arm both when both apply; they
-run in parallel on different event streams.
+Loading this skill means arm the watcher now for the current branch's PR; with no PR for the branch, do nothing.
 
-Conversely, this watcher does **not** substitute for the
-`pull-request-sync-check.sh` PostToolUse hook shipped with this
-skill (see "Companion hook" below): the
-watcher arms only after a push and watches external events (CI,
-comments, merge), while the hook fires on local
-`git commit --amend` and catches title/body drift even before any
-push happens.
+The rule: after a push to a branch with an open or imminent PR, arm the watcher without being asked. A user who asked only for a push still wants it, because they often answer through the PR (a comment, a review, a red CI run) rather than the chat.
 
-## How to load this skill
-
-Active. Loading triggers the arming of a Monitor on the current PR
-state. If there's no relevant PR for the current branch, no-op.
+- **A CI-only Monitor doesn't replace it:** one armed on the pushed SHA's check runs never reports comments, `MERGED` or `CLOSED`, so an agent relying on it can amend and force-push to a PR that has already landed. Arm both when both apply.
+- **It doesn't replace the companion hook either:** the watcher sees GitHub-side events after a push; the `pull-request-sync-check.sh` hook (see [Companion hook](#companion-hook-pull-request-sync-checksh)) catches title and body drift on a local amend, before any push.
 
 ## Where the bundled scripts install
 
-This skill bundles two scripts, `pull-request-monitor.sh` and
-`pull-request-sync-check.sh`. Both install in a `scripts/` directory
-alongside this `SKILL.md`, so their absolute paths depend on the scope
-this skill was installed to:
+`pull-request-monitor.sh` and `pull-request-sync-check.sh` sit in `scripts/` beside this `SKILL.md`:
 
 - **User scope:** `~/.claude/skills/github-workflow-pull-request-watcher/scripts/<filename>`
 - **Project scope:** `<project-root>/.claude/skills/github-workflow-pull-request-watcher/scripts/<filename>`
 
-Everywhere below each script is named by its filename alone; resolve
-`pull-request-monitor.sh` or `pull-request-sync-check.sh` against
-whichever path above matches your install before running it. The one
-exception is the `settings.json` hook snippet at the end of this skill:
-a hook command runs outside any agent working directory, so it needs
-the absolute path spelled out — use the matching scope's path from the
-list above.
+Below, each script is named by its filename; resolve it against the path for your install.
 
 ## Reactions per event type
 
-- **Check green** — surface 🟢 in the next reply (see
-  `github-workflow-pull-request-status-line` for the format).
-- **Check red** — read the log (`gh run view <id> --log`), propose a
-  fix, surface 🔴.
-- **Comment from the session-running user** (identify with
-  `gh api user --jq .login` matched against `.user.login` on the
-  comment) — treat as a chat instruction. The user is using GitHub as
-  the conversation surface (often because they're on mobile or
-  reviewing the diff side-by-side). Read it, do the work locally, and
-  surface a *comment line* in your chat reply confirming what was
-  addressed (format defined in `github-workflow-pull-request-status-line`).
-  **Don't post a reply on the PR itself** — that publishes under the
-  user's identity, and the safety layer blocks it (rightly: the agent
-  shouldn't speak as the user). The chat comment line is the
-  substitute: the user sees which comment was handled and how,
-  without the agent posting publicly.
-- **Comment from anyone else** — surface to the user, don't auto-
-  react.
-- **Review approved** — surface 🟢; merge unblocked.
-- **Review requests changes** — read the review, propose the changes,
-  surface 🔴.
-- **Blocking label added** (`do-not-merge`, `needs-work`, etc.) —
-  hard pause; surface and wait for instruction.
-- **Title/body edited or branch updated by someone else** — accept
-  the override, re-fetch before any destructive op.
-- **Merged** — clean up as the preferences say, asking only the
-  first time (see "On merge or close" below).
-- **Closed without merge** — reopen, delete the branch or leave it,
-  as the preferences say, asking only the first time.
+- **Check green:** surface 🟢 in the next reply, in the format of `github-workflow-pull-request-status-line`.
+- **Check red:** read the log (`gh run view <id> --log`), propose a fix, surface 🔴.
+- **Comment from the session's user** (`COMMENT-SELF`): treat it as a chat instruction; the user is using GitHub as the conversation, often from a phone or beside the diff. Do the work locally and confirm it with a comment line in the chat reply, in the format of `github-workflow-pull-request-status-line`. Don't reply on the PR: that would speak as the user, and the safety layer blocks it.
+- **Comment from anyone else:** surface it to the user; don't act on it.
+- **Review approved:** surface 🟢; merge is unblocked.
+- **Review requests changes:** read the review, propose the changes, surface 🔴.
+- **Blocking label added** (`do-not-merge`, `needs-work` and the like): pause, surface it and wait for instruction.
+- **Title or body edited, or branch updated, by someone else:** accept it, and fetch again before any destructive operation.
+- **Merged:** clean up as the preferences say, asking only the first time (see [On merge or close](#on-merge-or-close-ask-once-then-follow-the-answer)).
+- **Closed without merge:** reopen, delete the branch or leave it, as the preferences say, asking only the first time.
 
-## One Monitor, one loop, multiple sources
+## Arming the Monitor
 
-Poll the check-runs, issue-comments, and PR-state endpoints in a
-single loop and emit each delta as a recognizable line. The loop is
-shipped as `pull-request-monitor.sh` alongside this skill;
-arm the `Monitor` tool with `persistent: true` and invoke it:
+`pull-request-monitor.sh` polls check runs, issue comments, review-thread comments and PR state in one loop. Dry-run it first, then arm it with the `Monitor` tool:
 
 ```bash
-bash pull-request-monitor.sh
+bash pull-request-monitor.sh --dry-run   # each gh call once, stderr intact, then exits
+bash pull-request-monitor.sh             # the loop to arm
 ```
 
-All flags are optional and auto-detect from the current branch /
-HEAD: `--pr <num>` (from `gh pr view --json number`), `--repo
-<owner/repo>` (from `gh repo view --json nameWithOwner`), `--sha
-<sha>` (from `git rev-parse HEAD`), `--interval <seconds>` (default
-30). Pass them explicitly to watch a PR other than the one on the
-current branch.
+- **Flags,** all optional and detected from the current branch: `--pr <num>` (`gh pr view --json number`), `--repo <owner/repo>` (`gh repo view --json nameWithOwner`), `--sha <sha>` (`git rev-parse HEAD`), `--interval <seconds>` (default 30). Pass them to watch a PR other than the current branch's.
+- **Lifetime:** set `persistent: true` where the Monitor tool offers it, since a PR can sit for hours. Where it offers only `timeout_ms`, set the maximum and re-arm on each expiry; a re-armed loop starts fresh and reports the existing checks and comments again, so skip the ones already handled.
+- **Output lines,** one event each:
+  - `CHECK <name>: <conclusion>` when a check completes
+  - `COMMENT-<login>: <body>` for a new comment, or `COMMENT-SELF: <body>` when the session's user posted it
+  - `STATE <state> REVIEW <decision>` when the state or review decision changes, with `none` before any review
+- **End:** the loop exits when the state reaches `MERGED` or `CLOSED`.
 
-`persistent: true` matters because a fixed Monitor timeout fires
-spuriously on PRs that sit for hours. Each line of output is a
-single recognizable event: `CHECK <name>: <conclusion>` on check
-completions, `COMMENT-<login>: <body>` (or `COMMENT-SELF` when the
-comment was posted by the session-running user), and `STATE <state>
-REVIEW <decision>` on PR-state transitions. The loop breaks when
-state reaches `MERGED` or `CLOSED`.
+### Why the dry-run matters
 
-Three design notes worth knowing — all load-bearing for the silent-
-stuck failure mode below:
+The loop discards each fetch's stderr and ignores an empty result, so a passing hiccup doesn't re-emit every check and comment. The same guard hides a failure that happens on every poll, such as an invalid `--json` field, a wrong endpoint or a missing permission: the loop then polls forever and emits nothing, and silence reads as green. If the dry-run prints `Unknown JSON field:`, `HTTP 4xx` or `Could not resolve to a Repository`, fix that before arming.
 
-- Checks come from `commits/<sha>/check-runs`, but a fine-grained
-  personal access token has no Checks permission, so on a private repo
-  that endpoint answers HTTP 403. After the first 403 the loop reads
-  `actions/runs?head_sha=<sha>` instead, which needs only "Actions:
-  Read", and emits the same `CHECK <name>: <conclusion>` lines: one per
-  workflow run rather than per job, and nothing for checks posted by
-  apps outside Actions. Without it, a private repo's CI would never
-  emit, and silence reads as green.
-- `state` is the right `--json` accessor; `merged` isn't a valid
-  field (see `github-hygiene-gh-cli-gotchas`).
-- The `reviewDecision` fallback uses an explicit `null`-and-`""`
-  check rather than jq's `//` operator: GitHub returns `""` (empty
-  string), not `null`, when no review has been submitted, and `//`
-  only catches null / false — `(.reviewDecision // "none")` would
-  emit nothing instead of `none` for unreviewed PRs.
+Facts the script relies on:
 
-## Guard against transient empty fetches
+- **Fine-grained tokens can't read check runs:** they have no Checks permission, so `commits/<sha>/check-runs` answers HTTP 403 on a private repo. After the first 403 the loop reads `actions/runs?head_sha=<sha>`, which needs only "Actions: Read", and emits the same `CHECK` lines, one per workflow run rather than per job, and nothing for checks that apps post outside Actions.
+- **Review comments come from REST:** `pulls/<pr>/comments`. `reviewThreads` exists on the GraphQL `pullRequest` type but not in `gh pr view --json`, so swapping it in gives exactly the silent `Unknown JSON field` failure.
+- **`state`, not `merged`:** `merged` isn't a `gh pr view --json` field (see `github-hygiene-gh-cli-gotchas`).
+- **An unreviewed PR's `reviewDecision` is `""`, not `null`:** jq's `//` catches only null and false, so the script tests for both to print `none`.
 
-The script guards every fetch with `if [ -n "$cur" ]; then …; fi` (and
-analogous for the comment fetches): a brief `gh api` failure or rate-
-limit hiccup returns an empty body, which would otherwise (a) regress
-`prev_checks` to empty and re-emit every check on the next successful
-fetch, (b) regress `max_issue` / `max_review` to `0` and re-emit every
-existing comment, and (c) cause `comm -13` of a non-empty `prev_checks`
-against an empty `cur` to print one empty line that a naive
-`sed 's/^/CHECK /'` would render as a bare `CHECK` event. The
-`awk 'NF { print … }'` (instead of `sed`) is defence in depth — even
-if the guard fails, empty lines never get a prefix.
-
-## Dry-run before arming `Monitor`
-
-The empty-fetch guard above protects against *intermittent* failures
-(network hiccup, rate-limit ping). It does **not** protect against
-*systematic* failures — an invalid `--json` field, a typo in the
-endpoint path, a missing repo permission. Those return non-zero
-*every* poll; `2>/dev/null` swallows the stderr; the empty-body
-guard keeps the previous (empty) state; the loop polls silently
-forever, never emitting events and never reaching its terminal-state
-break. The watcher looks "armed" but is brain-dead — and the failure
-mode is silent enough that the user is often the one who notices,
-not the agent.
-
-The script's `--dry-run` flag runs every distinct gh invocation it
-contains exactly once with stderr **intact**, then exits:
-
-```bash
-bash pull-request-monitor.sh --dry-run
-```
-
-If any prints `Unknown JSON field:`, `HTTP 4xx`, or `Could not
-resolve to a Repository`, fix the query and re-dry-run before
-arming the Monitor. Specifically, don't substitute `gh pr view
---json reviewThreads` for the dedicated `pulls/$PR/comments` REST
-endpoint — `reviewThreads` exists on the GraphQL `pullRequest` type
-but is *not* exposed by `gh pr view --json`, and the resulting
-`Unknown JSON field` error is exactly the silent-stuck failure mode
-this section warns about. See `github-hygiene-gh-cli-gotchas` for
-the full `--json`-field inventory.
-
-## Alternative architectures (noted, not prescribed)
-
-The polling Monitor above is the right default for an interactive
-agent session. Other paths exist if the surrounding system already
-supports them:
-
-- **GitHub Actions** on `pull_request_review_comment`,
-  `issue_comment`, `pull_request_review`, etc. — fires the workflow
-  with the full event payload as context, no polling. Anthropic ships
-  `claude-code-action`; community variants exist.
-- **GitHub webhooks** to an external service deliver the same events
-  without committing to Actions; needs hosting and an HTTPS endpoint
-  reachable from GitHub.
-- **GitHub Apps** (e.g. via Probot) add a bot identity that can post
-  under its own name rather than the user's, plus persistent state
-  across events.
-
-These shift the architecture from agent-polls to event-driven-
-invocation. They're heavier to set up, and the agent can't bootstrap
-them mid-session, so don't reach for them unless they're already
-wired up — stick with the Monitor when running interactively.
+Where the project already runs event-driven automation (GitHub Actions on comment and review events, such as `claude-code-action`, a webhook service, or a GitHub App with its own bot identity), it can stand in for polling. An agent can't set those up mid-session, so in an interactive session use the Monitor.
 
 ## On merge or close: ask once, then follow the answer
 
-What to do when a PR merges or closes is the same choice every time in
-a project, so the user makes it once. Each action below has a key in
-this skill's preferences file (see "Your preferences" below):
+What to do when a PR merges or closes is the same choice every time in a project, so the user makes it once. Each action below has a key in this skill's preferences file (see [Your preferences](#your-preferences)):
 
-- **Key set to an answer:** do what it says, without a picker, and
-  report what was done in the next reply.
-- **Key missing or `ask`:** ask, act on the answer, then save the answer
-  to the project's preferences file, so the picker doesn't open again
-  in this project.
+- **Key set to an answer:** do what it says, without a picker, and report what was done in the next reply.
+- **Key missing or `ask`:** ask, act on the answer, then save the answer to the project's preferences file, so the picker doesn't open again in this project.
 
 ### On merge
 
-| Key                     | Action                                                                                     | Values             |
-| ----------------------- | ------------------------------------------------------------------------------------------ | ------------------ |
-| `Delete local branch`   | `git branch -d <branch>`, and `git worktree remove <path>` first if a worktree holds it    | `yes`, `no`, `ask` |
-| `Delete remote branch`  | `git push origin --delete <branch>`                                                        | `yes`, `no`, `ask` |
-| `Update default branch` | `git checkout <default> && git pull --rebase origin <default>`, in the main checkout only  | `yes`, `no`, `ask` |
+| Key                     | Action                                                                                    | Values             |
+| ----------------------- | ----------------------------------------------------------------------------------------- | ------------------ |
+| `Delete local branch`   | `git branch -d <branch>`, and `git worktree remove <path>` first if a worktree holds it   | `yes`, `no`, `ask` |
+| `Delete remote branch`  | `git push origin --delete <branch>`                                                       | `yes`, `no`, `ask` |
+| `Update default branch` | `git checkout <default> && git pull --rebase origin <default>`, in the main checkout only | `yes`, `no`, `ask` |
 
-- **Delete local branch:** use `-d`, never `-D`; the merged-only safety
-  check is the point.
-- **Delete remote branch:** pre-check with `git ls-remote --exit-code
-  origin <branch>` and skip it, unasked, when the branch is already
-  gone. `github-policy-auto-delete-merged-branches` is asynchronous, so
-  the branch can still vanish between the check and the push: treat
-  `remote ref does not exist` as success, since the end state was
-  reached by another path.
-- **Update default branch:** bail loudly on a dirty tree, and never
-  switch a checkout that has another branch's work in progress.
+- **Delete local branch:** use `-d`, never `-D`; the merged-only safety check is the point.
+- **Delete remote branch:** pre-check with `git ls-remote --exit-code origin <branch>` and skip it, unasked, when the branch is already gone. `github-policy-auto-delete-merged-branches` is asynchronous, so the branch can still vanish between the check and the push: treat `remote ref does not exist` as success, since the end state was reached by another path.
+- **Update default branch:** stop and say so on a dirty tree, and never switch a checkout that has another branch's work in progress.
 
-When any of these keys is unanswered, ask them all in one multi-select
-picker, with `All` and `None` first:
+When any of these keys is unanswered, ask them all in one multi-select picker, with `All` and `None` first:
 
 > PR `[#N]` merged into `[base-branch]`. Cleanup actions? Your answer is
 > saved for `[project]`.
 
-with options `Delete local branch [branch-name]`, `Delete remote branch
-[branch-name]` and `Update local [default-branch] from origin`, leaving
-out an option whose key is already answered. Save each offered key as
-`yes` when picked and `no` when not.
+with options `Delete local branch [branch-name]`, `Delete remote branch [branch-name]` and `Update local [default-branch] from origin`, leaving out an option whose key is already answered. Save each offered key as `yes` when picked and `no` when not.
 
-`git-workflow-tidy-branches` covers the same cleanup from the local
-side, for branches that piled up; this fires it for one PR at the
-moment it lands.
+`git-workflow-tidy-branches` covers the same cleanup from the local side, for branches that piled up; this does it for one PR at the moment it lands.
 
 ### On close without merge
 
@@ -272,23 +127,13 @@ When it's `ask` or missing, ask in a single-select picker:
 > PR `[#N]` was closed without merging. What now? Your answer is saved
 > for `[project]`.
 
-with options `Reopen PR [#N]` (`gh pr reopen`), `Delete branch
-[branch-name] locally and on remote` and `Leave branch [branch-name]
-alone`.
+with options `Reopen PR [#N]` (`gh pr reopen`), `Delete branch [branch-name] locally and on remote` and `Leave branch [branch-name] alone`.
 
-Saving `reopen` makes a reopen happen with no one asked, which fights a
-deliberate close; offer it, but save it only when the user picked it
-and said to keep doing it. Otherwise save `ask` after a reopen.
+Saving `reopen` makes a reopen happen with no one asked, which fights a deliberate close; offer it, but save it only when the user picked it and said to keep doing it. Otherwise save `ask` after a reopen.
 
 ### Saving the answer
 
-Write the key into the project's file,
-`<project>/.agents/skills/github-workflow-pull-request-watcher.preferences.md`,
-where `<project>` is the session's project directory
-(`$CLAUDE_PROJECT_DIR`), not the PR's repository when the two differ: the
-file is read from there when this skill loads. Keep the file a Markdown
-list, one `- Key: value` line per key, and change only the keys just
-answered:
+Write the key into the project's file, `<project>/.agents/skills/github-workflow-pull-request-watcher.preferences.md`, where `<project>` is the session's project directory (`$CLAUDE_PROJECT_DIR`), not the PR's repository when the two differ: the file is read from there when this skill loads. Keep the file a Markdown list, one `- Key: value` line per key, and change only the keys just answered:
 
 ```markdown
 - Delete local branch: yes
@@ -297,47 +142,19 @@ answered:
 - On close without merge: leave
 ```
 
-Then commit it in the project, on its own, with a subject such as `Save
-the PR watcher's on-merge answers`; push only as the project's push
-rules allow. Tell the user in the same reply that the answer is saved
-and that editing the file changes it.
+Then commit it in the project, on its own, with a subject such as `Save the PR watcher's on-merge answers`; push only as the project's push rules allow (`git-workflow-push-mode`). Tell the user in the same reply that the answer is saved and that editing the file changes it.
 
-The user's own file, next to this skill's folder, is generated by their
-Home Manager config, so don't write it: when the user wants an answer
-for every project, propose the `home.file` entry for it instead, as
-`coding-agent-skill-references` says.
+The user's own file, next to this skill's folder, is generated by their Home Manager config, so don't write it: when the user wants an answer for every project, propose the `home.file` entry for it instead, as `coding-agent-skill-references` says.
 
 ## Companion hook: `pull-request-sync-check.sh`
 
-This skill ships a PostToolUse hook, `pull-request-sync-check.sh`,
-that closes the local-amend
-gap the Monitor can't reach. The Monitor watches GitHub-side events
-after a push; the hook fires on the *local* `git commit --amend`
-and `git push` Bash calls and probes
-`gh pr list --head <branch> --state open`. If an open PR exists
-and HEAD's commit subject or body has drifted from the PR's
-title/body, the hook emits a `systemMessage` with the exact
-`gh api --method PATCH …` invocation to re-sync (per
-`github-hygiene-pull-request-mirrors-commit`).
+A PostToolUse hook for the drift the Monitor can't see. On a Bash call containing `git commit --amend` or `git push`, it looks up the branch's open PR (`gh pr list --head <branch> --state open`), and when HEAD's subject or body differs from the PR's title or body it emits a `systemMessage` naming the PR and the difference and saying to re-sync with `create-or-update-pull-request.sh` from `github-hygiene-pull-request-mirrors-commit`.
 
-Behaviour contract:
+- **Silent otherwise:** other Bash calls, no git repository, a detached HEAD, no `gh` or `jq`, or no open PR.
+- **Body comparison ignores whitespace** (`tr -s '[:space:]' ' '`), so a 72-column commit body matches its reflowed PR body, and it also matches when the PR body has one extra closing paragraph, the footer that `create-or-update-pull-request.sh` adds.
+- **Never exits non-zero:** it nudges, it doesn't block.
 
-- Gate on the command pattern (`git commit --amend` or
-  `git push`); other Bash calls exit 0 silent.
-- Skip silently when there's no git repo, no current branch
-  (detached HEAD), no `gh` available, or no open PR.
-- Body comparison is whitespace-normalised (`tr -s '[:space:]' ' '`)
-  so a 72-col commit body and a `fmt -w 2500`-unwrapped PR body
-  compare equal when the words match.
-- Never exits non-zero. Blocking would be hostile; the agent just
-  needs the nudge.
-
-To wire it up, add this to your Claude Code `settings.json`, using the
-absolute install path for your scope (see "Where the bundled scripts
-install" above) — a hook command runs outside any agent working
-directory, so the bare filename won't resolve here. The user-scope
-path is shown below; swap in the project-scope path if that's where
-this skill lives:
+To wire it up, add it to Claude Code's `settings.json` with the absolute path for your scope, since a hook runs outside the agent's working directory and a bare filename won't resolve. The user-scope path:
 
 ```json
 "hooks": {
@@ -356,25 +173,13 @@ this skill lives:
 }
 ```
 
-Nix users: the script ships via `agent-skill-flake` standard
-`installPhase` — the `scripts/` directory is auto-copied into
-`$out/share/claude-skills/github-workflow-pull-request-watcher/scripts/`.
-The bash shebang plus standard tools (`jq`, `gh`, `git`, `tr`,
-`sed`, `diff`, `head`, `fmt`) resolve via the user's PATH at hook-
-exec time; no wrapper is needed in the typical case. If you want
-fully-pinned dependencies, wrap the script with
-`pkgs.writeShellApplication` in a downstream module — the script
-itself has no Nix-specific assumptions.
+Installed through Nix, the skill's derivation copies `scripts/` into `$out/share/claude-skills/github-workflow-pull-request-watcher/scripts/`. The script finds `jq`, `gh`, `git` and the usual text tools on the user's PATH when the hook runs; for pinned dependencies, wrap it with `pkgs.writeShellApplication` in a downstream module.
 
 ## When to apply
 
-- Arm IMMEDIATELY after every push to a branch with an open or
-  imminent PR. No exceptions, including pushes the user explicitly
-  requested without asking for a watcher.
-- Arm on resuming a session where a PR was opened earlier and the
-  prior session ended without a watcher running.
-- Re-arm on receiving a notification that a watched PR transitioned
-  state (the previous loop may have terminated).
+- After every push to a branch with an open or imminent PR, including a push the user asked for without mentioning a watcher.
+- On resuming a session where a PR was opened earlier and no watcher is running.
+- On a notification that a watched PR changed state, or that its Monitor expired, since the loop may have ended.
 
 ## Your preferences
 
@@ -392,11 +197,11 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
-- `coding-agent-skill-references`: where this skill's preferences files live, and why the user's own file is proposed to Home Manager rather than written.
 - `coding-agent-questions-as-first-class-prompts`: the first-time question goes through the picker, `All` and `None` first.
-
+- `coding-agent-skill-references`: where this skill's preferences files live, and why the user's own file is proposed to Home Manager rather than written.
+- `git-workflow-push-mode`: whether the saved preferences commit may be pushed, and how.
 - `git-workflow-tidy-branches`: the local branch cleanup the on-merge prompt offers.
 - `github-hygiene-gh-cli-gotchas`: `gh pr view --json` field limits and other traps that break a watcher silently.
-- `github-hygiene-pull-request-mirrors-commit`: re-syncing the PR's title and body, which the companion sync-check hook nudges you to do.
+- `github-hygiene-pull-request-mirrors-commit`: re-syncing the PR's title and body, which the companion hook nudges you to do.
 - `github-policy-auto-delete-merged-branches`: GitHub's delete-on-merge setting, which decides whether the remote branch is already gone on merge.
-- `github-workflow-pull-request-status-line`: the status line and comment-block format used to report each Monitor event.
+- `github-workflow-pull-request-status-line`: the status line and comment-line format used to report each Monitor event.
