@@ -5,27 +5,21 @@ description: |
   label, linked: `#206 "Fix new_project.bats on macOS…"` for an issue or
   PR in the same repo, `owner/repo#N "title…"` across repos, and a short
   SHA plus subject for a commit. A branch name only ever appears in
-  parentheses after the PR it belongs to, never as the reference. Fetch
-  titles and subjects with `gh pr view`, `gh issue view` and `git log`
-  rather than guessing. Apply whenever you mention an issue, PR, commit
-  or branch in a status report, PR body, review comment, commit message
-  or reply.
+  parentheses after the PR it belongs to, never as the reference. Titles
+  and subjects are fetched with `gh pr view`, `gh issue view` and
+  `git log` rather than guessed. Use whenever you mention an issue, PR,
+  commit or branch in a status report, PR body, review comment, commit
+  message or reply.
 tags: [style]
 ---
 
-# github-hygiene-refer-to-issues-and-pull-requests
+# Referring to GitHub issues, pull requests and commits
+
+_Name every issue, PR and commit by the title or subject the reader would see on opening it, with its number or SHA beside it and a link on top._
 
 `#206`, `up/22-bats-copy-path-macos` and `8127188` mean nothing to a
 reader until they look each one up. This skill applies
-`writing-hygiene-refer-by-canonical-label` to GitHub: every issue, PR
-and commit is named by the label the reader would see if they opened
-it, with the number or SHA beside it and a link on top.
-
-## How to load this skill
-
-Active whenever you write about an issue, PR, commit or branch. Loading
-it doesn't fetch or post anything; it shapes how you name those things
-the next time you write.
+`writing-hygiene-refer-by-canonical-label` to GitHub.
 
 ## The canonical label
 
@@ -33,7 +27,7 @@ the next time you write.
 | --- | --- | --- |
 | Issue | its title | `#N`, or `owner/repo#N` across repos |
 | Pull request | its title | `#N`, or `owner/repo#N` across repos |
-| Commit | its subject line | short SHA (7 characters) |
+| Commit | its subject line | short SHA (7 or more characters, as `git log --format=%h` prints it) |
 | Branch | none of its own: it belongs to a PR | the branch name, in parentheses after the PR |
 
 Use the label word for word every time. The only allowed variation is
