@@ -17,7 +17,7 @@ Usage: safe-body-edit.sh <owner/repo> <number> <base-file> <new-file>
 
   <number>     an issue or PR number (the issues endpoint serves both)
   <base-file>  the body your draft started from, as fetched with
-               gh api repos/<owner/repo>/issues/<number> --jq .body
+               gh api repos/<owner/repo>/issues/<number> --jq .body | tr -d '\r'
   <new-file>   your draft
 EOF
 }
