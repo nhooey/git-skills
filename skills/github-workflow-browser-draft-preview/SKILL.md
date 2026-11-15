@@ -1,9 +1,9 @@
 ---
 name: github-workflow-browser-draft-preview
 description: |
-  Draft GitHub text in the user's own browser with Claude in Chrome — a
+  Draft GitHub text in the user's own browser with Claude in Chrome (a
   new pull request, an issue or PR comment, a review reply, or an edit
-  to an existing PR body or comment — and leave it unsubmitted for the
+  to an existing PR body or comment) and leave it unsubmitted for the
   user to check. After filling the editor, switch it from Write to
   Preview, draw a red box around the rendered draft
   (`highlight-preview.js`), bring that browser tab and window to the front
@@ -27,34 +27,28 @@ allowed-tools:
   - mcp__claude-in-chrome__javascript_tool
 ---
 
-# github-workflow-browser-draft-preview
+# Draft GitHub text in the browser
 
-Write the draft where it will be posted, show it rendered, and put it in
-front of the user. The user reads GitHub's own Preview, in their own
-signed-in browser, with the part to read boxed in red, and nothing posts
-until they say so.
+_Write the draft where it will be posted, show it rendered in GitHub's own Preview with the part to read boxed in red, bring it to the front, and post nothing until the user says so._
 
-## How to load this skill
-
-Load it before the first Claude in Chrome call of a GitHub drafting task.
-Load the `claude-in-chrome` skill too: it covers loading the browser
-tools in one `ToolSearch` call and working in a new tab. This skill only
-drafts; it never clicks a submit button without the user's answer from
-step 6.
+Load it before the first Claude in Chrome call of a GitHub drafting task,
+together with `chrome-browser`, which covers loading the browser tools
+in one `ToolSearch` call and working in a new tab, and
+`coding-agent-browser-selection`, which makes sure the session drives the
+user's preferred browser. This skill only drafts; it never clicks a
+submit button without the user's answer from step 6.
 
 For a PR that should mirror a commit (`github-hygiene-pull-request-mirrors-commit`),
 that skill's script is the default. Use this one when the user wants to
 see or adjust the rendered text before it posts.
 
-## Where the bundled scripts install
+## The bundled scripts
 
-Both scripts sit in a `scripts/` directory alongside this `SKILL.md`:
-
-- **User scope:** `~/.claude/skills/github-workflow-browser-draft-preview/scripts/`
-- **Project scope:** `<project-root>/.claude/skills/github-workflow-browser-draft-preview/scripts/`
-
-`focus-chrome-tab.sh` is run with Bash. `highlight-preview.js` is not
-run directly: Read it and pass its text to `javascript_tool`.
+Both scripts sit in `scripts/` beside this `SKILL.md`
+(`~/.claude/skills/github-workflow-browser-draft-preview/scripts/` for a
+user install). `focus-chrome-tab.sh` is run with Bash.
+`highlight-preview.js` is not run directly: Read it and pass its text to
+`javascript_tool`.
 
 ## The draft surfaces
 
@@ -108,8 +102,9 @@ parameters, even where GitHub accepts `title=` and `body=`.
 6. **Ask the user to check it**, in the same response as step 5 and
    immediately after it. `AskUserQuestion` blocks until the user
    answers, so the window has to be raised before the question rather
-   than after it. Name the surface and the target, e.g. "Comment on
-   jlesquembre/clj-nix#214 is drafted in Chrome, boxed in red. Post it?",
+   than after it. Name the surface and the target by its canonical
+   label, e.g. "Comment on jlesquembre/clj-nix#214 "Format Clojure and
+   Nix files…" is drafted in Chrome, boxed in red. Post it?",
    with these options:
    - **Post it**: submit exactly what is in the editor now.
    - **I edited it in the browser, post that**: read the editor's
@@ -160,3 +155,14 @@ parameters, even where GitHub accepts `title=` and `body=`.
 - The user wants to see GitHub's rendering before something posts.
 - Editing someone's existing comment or PR body, where seeing the result
   in place matters more than the raw diff of the text.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `chrome-browser`: loading the Claude in Chrome tools and working in a new tab of the user's browser.
+- `coding-agent-browser-selection`: making sure the session drives the user's preferred browser and window before the first Claude in Chrome call.
+- `github-hygiene-pull-request-mirrors-commit`: the default way to open a PR that mirrors a commit, and `owner/repo#N` references.
