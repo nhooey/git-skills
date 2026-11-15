@@ -2,11 +2,12 @@
 name: git-workflow-curate-unpushed
 description: |
   Curate local history before pushing: squash noise commits ("fix typo",
-  "oops", trial-and-error iterations), and amend forward into existing
-  unpushed commits rather than stacking "fix the previous commit"
-  commits. Preserve real lessons in commit bodies or code comments.
-  Apply before any push of a feature branch, and to any follow-up change
-  on an unpushed commit.
+  "oops", trial-and-error iterations) into their parent, and amend forward
+  into existing unpushed commits rather than stacking "fix the previous
+  commit" commits, keeping any real lesson in a commit body or code
+  comment. Ships a non-blocking hook that lists noise subjects on `git
+  push`. Use before pushing a feature branch, and when making a follow-up
+  change to an unpushed commit.
 tags: [workflow, style]
 allowed-tools:
   - Bash
@@ -26,96 +27,72 @@ hooks:
           timeout: 15
 ---
 
-# git-workflow-curate-unpushed
+# Curate unpushed commits
 
-Apply when you have unpushed commits and want to clean them up before
-they hit the remote. Two complementary moves: squash uninteresting
-fixups, and amend forward into existing unpushed commits rather than
-stacking new "fix the previous commit" commits.
+_Before work reaches the remote, each commit is one coherent change: noise folds into its parent, follow-ups amend forward, and the lessons survive in the message or the code._
 
-## How to load this skill
+Loading this skill is not a request to rewrite history now; it applies when you make a follow-up change to unpushed work or are about to push.
 
-Passive reference. Loading it doesn't mean you should rewrite history
-now — just that when you make a follow-up change to unpushed work, or
-when you're about to push, you'll curate first.
-
-## 1. Squash uninteresting fixes before pushing
+## 1. Squash noise before pushing
 
 Before pushing a feature branch, review your local commits. Anything
-that is just "fix typo", "oops", "actually make it compile", or 4
-commits of trial-and-error on the same function is noise — squash it
-into the parent commit before pushing.
+that is just "fix typo", "oops", "actually make it compile", or several
+commits of trial-and-error on the same function is noise: squash it
+into the parent commit by marking it `fixup` (or `squash`, to edit
+the message) in `git rebase -i <base>`. Without an editor to drive,
+set `GIT_SEQUENCE_EDITOR` to a `sed` command that rewrites those
+`pick` lines.
 
-**But preserve the lessons.** If you hit a real landmine (an
-undocumented API quirk, a footgun in the framework, a subtle ordering
-requirement), that's valuable. Choose where it belongs:
+Keep the lessons. If you hit a real landmine (an undocumented API
+quirk, a footgun in the framework, a subtle ordering requirement),
+put it where it belongs:
 
-- **Commit message body** — when the lesson explains why this commit
+- **Commit message body:** when the lesson explains why this commit
   looks the way it does. ("Tried passing the buffer directly first; the
   C API silently truncates above 4 KiB, so we chunk.")
-- **Code comment** — when the constraint affects future edits. ("Must
-  flush before close — the driver drops the last page otherwise.")
-
-Either way, the goal is: future readers benefit from your pain without
-having to wade through 6 noise commits to find it.
-
-Use `git rebase -i <base>` (or `git commit --fixup` + `git rebase -i
---autosquash`) to clean up before push. After push, the calculus
-changes — coordinate before rewriting public history.
+- **Code comment:** when the constraint affects future edits. ("Must
+  flush before close; the driver drops the last page otherwise.")
 
 ## 2. Amend forward into existing unpushed commits
 
-When you make follow-up changes to code you already touched in a local,
-unpushed commit, the default move is to fold the change into that
-existing commit, not stack a new "fix the previous commit" commit on
-top.
+When you change code you already touched in a local, unpushed commit,
+fold the change into that commit rather than stacking a new "fix the
+previous commit" commit on top, so the history reads as one change per
+concern.
 
-**Why:** the resulting history reads as one coherent change per
-concern, not "Add feature" → "Fix feature" → "Actually fix feature" →
-"Final fix this time I promise".
+- Most recent commit: stage the change, then `git commit --amend`.
+- Older unpushed commit: `git commit --fixup=<sha>`, then
+  `git rebase --autosquash <base>`. `--autosquash` works without `-i`,
+  so no editor is needed; add `-i` only to review the todo list by hand.
 
-**How:**
-
-- Most recent commit: `git commit --amend` (after staging the change).
-- Older unpushed commit: `git commit --fixup=<sha>`, then `git rebase
-  -i --autosquash <base>`.
-
-**When to break the rule:** if the follow-up is genuinely a different
-concern (different file, different intent, different reviewer mental
-model), keep it as its own commit. The rule is about avoiding
+If the follow-up is a different concern (different intent, different
+reviewer mental model), keep it as its own commit. The rule is about
 self-referential noise, not about cramming unrelated work together.
 
-Once a commit has been pushed and others may have pulled it, this rule
-flips — rewriting pushed history is a coordination problem (see
-`git-hygiene-push-force-safely` for the safety mechanism, and
-`github-hygiene-pull-request-mirrors-commit` for re-syncing the PR after the rewrite).
+Once a commit has been pushed and others may have pulled it, rewriting
+it is a coordination problem: see `git-hygiene-push-force-safely` for
+the lease, and `github-hygiene-pull-request-mirrors-commit` for
+re-syncing the PR after the rewrite.
 
-## Deterministic safety net: the `detect-noise-commits.sh` hook
+## The `detect-noise-commits.sh` hook
 
-Spotting noise-subject commits is the mechanical half of step 1, so this
-skill ships it as a `PreToolUse` hook — `scripts/detect-noise-commits.sh`,
-wired in the frontmatter. On any `git push` Bash call, the hook lists the
+The frontmatter wires `scripts/detect-noise-commits.sh` as a
+`PreToolUse` hook. On any Bash call containing `git push`, it lists the
 unpushed commits (`@{push}..HEAD`, falling back to `@{upstream}..HEAD`)
-and flags subjects that look like throwaway fixups — `fixup!`/`squash!`
-leftovers, "fix typo", "oops", "wip", "actually fix it", "make it
-compile", and similar — then emits a non-blocking `systemMessage`
-suggesting a squash or amend-forward before the push lands. It never
-blocks (always exits 0): squashing is a judgment call, and a commit that
-is genuinely a separate concern should stay standalone.
+and flags subjects that look like throwaway fixups: `fixup!`, `squash!`
+and `amend!` leftovers, "fix typo", "oops", "wip", "actually fix it",
+"make it compile" and similar. It then emits a `systemMessage`
+suggesting a squash or amend-forward. It never blocks (always exits 0):
+what to squash, and where the lesson goes, stays your call.
 
 It is silent when there is nothing to push, no upstream is configured
-yet, or the subjects are all clean — so it only speaks up when there is
-real noise to curate. The decision of *what* to squash, and where to
-preserve the lesson, stays with you; the hook only surfaces the
-candidates.
+yet, or every subject is clean.
 
-Two caveats worth knowing:
-
-- **Skill-frontmatter hooks only fire while the skill is active.** The
-  hook registers when this skill is loaded, so it must already be in
-  context before the push for it to fire.
-- The command finds the script in the skill's install places: the
-  project's `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
+- **It fires only while the skill is active.** A skill-frontmatter hook
+  registers when the skill is loaded, so the skill must already be in
+  context before the push.
+- **It finds the script in the skill's install places:** the project's
+  `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
   `~/.claude/skills/`. Claude Code substitutes `${CLAUDE_SKILL_DIR}`
   only in a skill's body and `allowed-tools`, not in its hooks, and a
   hook runs in Claude's current directory, so neither that variable
@@ -123,10 +100,10 @@ Two caveats worth knowing:
 
 ## When to apply
 
-- About to push a feature branch (squash noise first).
-- Just made a follow-up change to an unpushed commit (amend, don't
-  stack).
-- About to do `git commit -m "fix typo"` — stop, amend forward instead.
+- About to push a feature branch: squash noise first.
+- Just made a follow-up change to an unpushed commit: amend, don't
+  stack.
+- About to run `git commit -m "fix typo"`: amend forward instead.
 
 ## Related skills
 
