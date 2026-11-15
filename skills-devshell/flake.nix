@@ -11,8 +11,8 @@
     };
 
     # skillspkgs' curated `authoring-with-git` combination (nix + humanizer +
-    # anthropic/daymade skill-creation + superpowers + the whole git/GitHub
-    # pack — which already bundles git-skills' own skills, deduped into one
+    # anthropic skill-creation + superpowers + the whole git/GitHub pack —
+    # which already bundles git-skills' own skills, deduped into one
     # consistent set). This is the dev shell's entire skill set in one
     # combination, so it's the lone source.
     skillspkgs-combinations = {
