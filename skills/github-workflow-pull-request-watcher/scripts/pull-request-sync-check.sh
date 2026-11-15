@@ -71,8 +71,21 @@ commit_body_raw=$(git log -1 --pretty=%b)
 normalize() { tr -s '[:space:]' ' ' | sed -e 's/^ //' -e 's/ $//'; }
 pr_body_norm=$(printf '%s' "$pr_body" | normalize)
 commit_body_norm=$(printf '%s' "$commit_body_raw" | normalize)
+# create-or-update-pull-request.sh ends the PR body with a footer
+# paragraph the commit doesn't have, so the body also matches when
+# only its last paragraph is dropped.
+pr_body_sans_footer_norm=$(printf '%s\n' "$pr_body" |
+  awk 'BEGIN { RS = "" } { p[NR] = $0 } END { for (i = 1; i < NR; i++) print p[i] "\n" }' |
+  normalize)
 
-if [ "$pr_title" = "$commit_subject" ] && [ "$pr_body_norm" = "$commit_body_norm" ]; then
+if [ "$pr_body_norm" = "$commit_body_norm" ] ||
+  [ "$pr_body_sans_footer_norm" = "$commit_body_norm" ]; then
+  body_in_sync=1
+else
+  body_in_sync=0
+fi
+
+if [ "$pr_title" = "$commit_subject" ] && [ "$body_in_sync" -eq 1 ]; then
   exit 0
 fi
 
@@ -83,7 +96,7 @@ diff_summary=$(
     if [ "$pr_title" != "$commit_subject" ]; then
       printf 'title:\n  PR:     %s\n  commit: %s\n' "$pr_title" "$commit_subject"
     fi
-    if [ "$pr_body_norm" != "$commit_body_norm" ]; then
+    if [ "$body_in_sync" -eq 0 ]; then
       printf 'body diff (PR vs commit, first 8 lines):\n'
       diff <(printf '%s\n' "$pr_body") <(printf '%s\n' "$commit_body_raw") | head -n 8
     fi
@@ -92,11 +105,7 @@ diff_summary=$(
 
 msg=$(
   cat <<EOF
-PR #${pr_num} on branch \`${branch}\` is out of sync with HEAD's commit message. Re-sync per \`github-hygiene-pull-request-mirrors-commit\`:
-
-  gh api --method PATCH "/repos/${repo}/pulls/${pr_num}" \\
-    -f title="\$(git log -1 --pretty=%s)" \\
-    -f body="\$(git log -1 --pretty=%b | fmt -w 2500)"
+PR #${pr_num} (${repo}) on branch \`${branch}\` is out of sync with HEAD's commit message. Re-sync it by running \`create-or-update-pull-request.sh\` from the \`github-hygiene-pull-request-mirrors-commit\` skill on this branch; it PATCHes the open PR's title and body.
 
 ${diff_summary}
 EOF
