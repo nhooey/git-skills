@@ -1,28 +1,23 @@
 ---
 name: git-hygiene-push-force-safely
 description: |
-  Never run plain `git push --force` or `git push -f`. Always use
-  `git push --force-with-lease`, which rejects the push if the remote
-  tip changed since your last fetch — preventing silent clobbering of a
-  collaborator's commits. Apply whenever about to force-push.
+  Force-push only with `git push --force-with-lease`, never plain
+  `git push --force` or `-f`. The lease rejects the push if the remote tip
+  changed since your last fetch, so a collaborator's commits aren't
+  silently clobbered; `--force-if-includes` also covers a background fetch.
+  Use whenever about to force-push.
 tags: [safety]
 allowed-tools:
   - Bash
 ---
 
-# git-hygiene-push-force-safely
+# Force-pushing safely
 
-Never run plain `git push --force` or `git push -f`. Always:
+_Force-push with `--force-with-lease`, never plain `--force`, and stop to look when the lease rejects the push._
 
 ```bash
 git push --force-with-lease
 ```
-
-## How to load this skill
-
-Passive reference. Loading it doesn't mean the user wants you to
-force-push now — just that when you do force-push, you'll use the safer
-flag.
 
 ## Why
 
@@ -34,14 +29,14 @@ have never seen.
 
 ## If `--force-with-lease` rejects the push
 
-**Stop and investigate** — do not "fix" it by upgrading to `--force`.
+Stop and investigate; don't "fix" it by upgrading to `--force`.
 Fetch, look at the remote tip, decide whether to rebase on top or
 coordinate with whoever pushed.
 
 ## Close the autofetch hole with `--force-if-includes`
 
 `--force-with-lease` trusts your remote-tracking ref — but a background
-`git fetch` (an IDE autofetch, `fetch.prune`, another tool) can advance
+`git fetch` (an IDE's autofetch, another tool or session) can advance
 that ref to commits you never looked at. The lease then checks against
 the *fetched* tip and passes, so you can still clobber a collaborator's
 work without seeing it.
@@ -50,13 +45,13 @@ work without seeing it.
 git push --force-with-lease --force-if-includes
 ```
 
-`--force-if-includes` (Git ≥ 2.30) additionally requires that the remote
-commits being overwritten are reachable from a local ref you've actually
-integrated — so a stray fetch alone no longer satisfies the check. Pair
-it with lease whenever a background fetch is plausible, which on a shared
-branch is almost always.
+`--force-if-includes` (Git ≥ 2.30) also requires the remote-tracking tip
+to be reachable from the local branch's reflog, that is, integrated into
+your branch at some point, so a stray fetch alone no longer satisfies the
+check. Pair it with the lease whenever a background fetch is plausible,
+which on a shared branch is almost always.
 
-## Extra paranoia on shared branches
+## Pin the expected commit on shared branches
 
 ```bash
 git push --force-with-lease=<branch>:<expected-sha>
@@ -64,7 +59,8 @@ git push --force-with-lease=<branch>:<expected-sha>
 
 Pins the exact SHA you expect to overwrite. This form doesn't consult
 the remote-tracking ref at all, so it's also immune to the autofetch
-problem above — use it when you know precisely what you're replacing.
+problem above, and `--force-if-includes` has no effect beside it. Use
+it when you know precisely what you're replacing.
 
 ## When to apply
 
