@@ -7,7 +7,7 @@ description: |
   rebase merges included), rebases branches that replay onto the base without
   conflicts and force-pushes them with a lease, and flags what needs a person:
   stacks, conflicts, diverged copies, branches checked out elsewhere. Saves the
-  user's choices as preferences. Apply after merging, when branches pile up,
+  user's choices as preferences. Use after merging, when branches pile up,
   or when asked to clean up, prune or rebase branches.
 tags: [workflow, interactive, safety]
 allowed-tools:
@@ -16,18 +16,15 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# git-workflow-tidy-branches
+# Tidy branches
 
 _Report first, apply second. The script decides what is safe from the
 repository's state alone; the user decides what to act on. Nothing is
 deleted or rewritten that the report didn't name, and nothing whose sha
 moved since the report._
 
-## How to load this skill
-
-Passive reference. Loading it doesn't mean you should tidy branches now;
-it means that when you do, you'll use the script instead of reasoning out
-`git branch --merged` by hand.
+Loading this skill is not a request to tidy now; when you do tidy, use
+the script rather than reasoning out `git branch --merged` by hand.
 
 ## Why a script
 
@@ -105,7 +102,7 @@ If the agent's permission layer refuses a force-push or a delete, stop and
 give the user the exact `apply` input or `git push` line to run
 themselves; don't rewrite it into a form the layer allows.
 
-## Preferences
+## Preference keys
 
 The script reads the preferences files and applies them itself.
 
