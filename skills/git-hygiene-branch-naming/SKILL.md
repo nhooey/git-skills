@@ -1,10 +1,10 @@
 ---
 name: git-hygiene-branch-naming
 description: |
-  Name branches long, descriptive, dash-separated, autocomplete-friendly:
-  `rate-limit-cache-eviction` over `fix-rl` or `2026-04-task-1234`. Avoid
-  date prefixes, bare ticket numbers, and counter suffixes — they push
-  the topic word past where autocomplete reaches it first. Apply when
+  Name branches long, descriptive, dash-separated and autocomplete-friendly:
+  `rate-limit-cache-eviction` over `fix-rl` or `2026-04-task-1234`. Date
+  prefixes, bare ticket numbers and counter suffixes are out, because they
+  push the topic word past where autocomplete reaches it first. Use when
   creating a new branch or renaming an existing one.
 tags: [style]
 allowed-tools:
@@ -12,26 +12,18 @@ allowed-tools:
   - Read
 ---
 
-# git-hygiene-branch-naming
+# Branch naming
 
-Favour branch names like `rate-limit-cache-eviction` over short cryptic
-ones (`fix-rl`, `wip`) or sterile dated and numeric ones
-(`2026-04-task-1234`, `tmp-3`, `feature-7`).
-
-## How to load this skill
-
-Passive reference. Loading it doesn't mean you should create a branch
-now — just that when you do, you'll pick a name that holds up six
-months later.
+_A branch name is a short sentence about the change, such as `rate-limit-cache-eviction`, never a cryptic abbreviation (`fix-rl`, `wip`) or a date, ticket or counter (`2026-04-task-1234`, `tmp-3`, `feature-7`)._
 
 ## Four properties to hold the name to
 
 - **Long enough to read.** Aim for 3-6 words. Weeks-old branch listings
-  are browsable when the names are sentences; opaque when they're
+  are browsable when the names are sentences, and opaque when they're
   abbreviations.
 - **Descriptive of the change.** The topic word is what your memory
-  hangs on by the time you're triaging stale branches — not the date,
-  not the ticket number, not a counter.
+  hangs on by the time you're triaging stale branches, not the date,
+  the ticket number or a counter.
 - **Dash-separated** (`rate-limit-cache-eviction`, not
   `rate_limit_cache_eviction` or `RateLimitCacheEviction`). That's what
   git tooling, autocomplete, and URL slugs expect, and what reads
@@ -52,17 +44,17 @@ months later.
 - **Bare ticket numbers** (`task-1234`, `JIRA-1234`). Only acceptable
   followed by a topic word (`JIRA-1234-streaming-api`), never alone.
 - **Counter suffixes** (`tmp-3`, `feature-7`, `wip2`). The number
-  disambiguates without describing — you're labelling without naming.
+  disambiguates without describing.
 
 ## Read your branch list before opening the PR
 
 If a name doesn't tell you what the work was in one glance six months
-later, it's too short or too generic — rename before the PR lands,
+later, it's too short or too generic. Rename it before the PR lands,
 because the name then lives forever in `git log --first-parent` as the
 merge commit subject.
 
 ## When to apply
 
 - About to `git switch -c <name>` or `git checkout -b <name>`.
-- About to open a PR — if the branch name is regrettable, rename
-  first.
+- About to open a PR with a branch whose name doesn't say what the work
+  is: rename it first.
