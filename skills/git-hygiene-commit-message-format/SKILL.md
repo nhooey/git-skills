@@ -1,13 +1,13 @@
 ---
 name: git-hygiene-commit-message-format
 description: |
-  Format commit messages with subject under 72 chars, blank line after the
-  subject, body wrapped at 72 chars, and explain WHY rather than what.
+  Format commit messages with a subject under 72 chars, a blank line after
+  it, and a body wrapped at 72 chars that explains why rather than what.
   Skip the body when the subject says it all, but always write one for
-  breaking, security, migration and revert commits. Names the common
-  drift modes to cut from the body (diff paraphrase, test inventory,
-  while-here paragraph, audit walkthrough, narration filler) and caps
-  the body at ~4 paragraphs. Apply whenever writing or amending any commit
+  breaking, security, migration and revert commits. Names the common drift
+  modes to cut from the body (diff paraphrase, test inventory, while-here
+  paragraph, audit walkthrough, narration filler) and caps the body at
+  about 4 paragraphs. Use whenever writing, amending or reviewing a commit
   message. Pair with git-hygiene-conventional-commits if the repo adopts
   that convention.
 tags: [style]
@@ -18,18 +18,12 @@ allowed-tools:
   - Write
 ---
 
-# git-hygiene-commit-message-format
+# Commit message format
 
-Apply this rule whenever you are about to create or amend a commit. The
-goal is a readable history that future readers (including future-you) can
-mine for context.
+_A short imperative subject, a blank line, and a body wrapped at 72 that says why the change was made, kept to what the diff can't tell a later reader._
 
-## How to load this skill
-
-Passive reference, not a command. Loading it does **not** mean the user
-wants you to commit right now. Do not run `git status`, stage files, or
-create commits on load — just internalize the rule and apply it the next
-time a commit comes up.
+Loading this skill is not a request to commit: apply it the next time you
+write or amend a commit message.
 
 ## The rule
 
@@ -46,7 +40,8 @@ time a commit comes up.
   (Beams).
 - **Capitalize the subject.** Treat it as a title, not a sentence
   fragment. Matches how `git log --oneline` displays a column of
-  subjects.
+  subjects. Behind a Conventional Commits prefix,
+  `git-hygiene-conventional-commits` sets the case instead.
 - **No trailing period on the subject.** It's a title, not a sentence —
   the period wastes a character against the 50-char target and reads as
   noise in `git log --oneline`.
@@ -71,13 +66,9 @@ time a commit comes up.
   with a BOM" beats "Fix Acme's broken upload".
 
 Before drafting, state the change in one sentence: "<what> so that
-<why>". If you can't, the commit mixes changes — split it. If you can,
-the "<what>" half is your subject; when the diff makes the why obvious,
-you may not need a body at all.
-
-Then draft the subject, add a blank line, and write the body wrapped
-at 72. If a subject feels longer than 72, the commit is probably doing
-too much — split it.
+<why>". If you can't, or the subject won't fit in 72, the commit mixes
+changes: split it. If you can, the "<what>" half is your subject; when
+the diff makes the why obvious, you may not need a body at all.
 
 ## What to cut: common drift modes
 
