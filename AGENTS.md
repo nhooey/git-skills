@@ -7,11 +7,19 @@ bundles; the root `flake.nix` aggregates them into packages and packs.
 
 ## Build and test
 
-- `nix flake check` evaluates every flake output, checks formatting and
-  runs the skills' Python tests. It must pass before a change is done.
-- `nix fmt` formats Nix, shell and YAML files with treefmt.
-- A skill's Python scripts have standard-library `unittest` tests beside
-  them: `python3 -m unittest discover -s skills/<skill>/scripts`. A new
-  suite joins `nix flake check` through the `checks` set in `flake.nix`.
-- `nix develop` installs the dev shell's skills, listed in
-  `skills-devshell/flake.nix`, into `.agents/skills/`.
+`nix develop` enters the dev shell, installs its skills (listed in
+`skills-devshell/flake.nix`) into `.agents/skills/`, and prints `menu`,
+which lists every command below with a line of help.
+
+- `check` runs `nix flake check`: every flake output, formatting, the
+  skills' tests and `git-skills lint`. It must pass before a change is
+  done.
+- `fmt` formats Nix, shell and YAML files with treefmt.
+- `git-skills test [SKILL...]` runs the standard-library `unittest`
+  suites beside a skill's scripts (`scripts/test_*.py`). A new suite is
+  picked up by it and by `check` without further wiring.
+- `git-skills lint [SKILL...]` checks that each folder name is
+  lowercase-with-hyphens under a pack prefix, and that `SKILL.md`'s
+  frontmatter has a `name` matching the folder, a `description`, and
+  `tags` from the README's tag vocabulary.
+- `git-skills list [--tested]` prints the skills.
