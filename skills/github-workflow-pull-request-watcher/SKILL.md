@@ -155,26 +155,10 @@ A PostToolUse hook for the drift the Monitor can't see. On a Bash call containin
 - **Body comparison ignores whitespace** (`tr -s '[:space:]' ' '`), so a 72-column commit body matches its reflowed PR body, and it also matches when the PR body has one extra closing paragraph, the footer that `create-or-update-pull-request.sh` adds.
 - **Never exits non-zero:** it nudges, it doesn't block.
 
-To wire it up, add it to Claude Code's `settings.json` with the absolute path for your scope, since a hook runs outside the agent's working directory and a bare filename won't resolve. The user-scope path:
+The hook comes from the `git-skills-hooks` Claude Code plugin, which this repository builds as its flake package `hooks-plugin`. It's installed through agent-plugins-nixpkgs and enabled in managed settings by the user's nix-darwin configuration (MyNixOS), so it runs in every session and inside subagents, whether or not this skill is loaded. Don't add it to `settings.json` as well: it would run twice on every Bash call.
 
-```json
-"hooks": {
-  "PostToolUse": [
-    {
-      "matcher": "Bash",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bash ~/.claude/skills/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh",
-          "timeout": 15
-        }
-      ]
-    }
-  ]
-}
-```
-
-Installed through Nix, the skill's derivation copies `scripts/` into `$out/share/claude-skills/github-workflow-pull-request-watcher/scripts/`. The script finds `jq`, `gh`, `git` and the usual text tools on the user's PATH when the hook runs; for pinned dependencies, wrap it with `pkgs.writeShellApplication` in a downstream module.
+- **Without the plugin,** as on a machine not configured through Nix, nothing checks for drift: re-sync after every amend as `github-hygiene-pull-request-mirrors-commit` says, and point the user at the plugin. It's installed by adding `git-skills`' `hooks-plugin` to `services.agent-plugins.plugins`.
+- **Dependencies:** the script finds `jq`, `gh`, `git` and the usual text tools on the user's PATH when the hook runs.
 
 ## When to apply
 
