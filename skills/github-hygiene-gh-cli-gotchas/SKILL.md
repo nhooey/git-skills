@@ -142,7 +142,9 @@ A PR that is part of a stack refuses `gh pr merge`, with "This pull
 request is part of a stack and must be merged using the asynchronous
 merge REST API". Merge it with `gh stack merge <num> --merge --yes` in
 the repository's checkout, as `github-workflow-pull-request-stacked`
-says.
+says. `gh stack merge` reads a bare number as a stack number before a PR
+number, so with `--yes` a PR number that is also a stack's number merges
+that other stack unasked.
 
 ## Renaming a branch closes open PRs whose head it is
 
