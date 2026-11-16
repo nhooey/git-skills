@@ -8,7 +8,7 @@
 # `hooks-plugin`) copies this script into its scripts/ and runs it from
 # plugin/hooks/hooks.json; see the README's "Hooks plugin" section.
 #
-# Background: skills/github-hygiene-pull-request-mirrors-commit
+# Background: this skill, github-hygiene-pull-request-mirrors-commit,
 # prescribes a PATCH to the pull request after any amend, but skill
 # loading is heuristic — this hook is the deterministic safety net.
 # Companion to the `github-workflow-pull-request-watcher` Monitor, which

@@ -153,7 +153,7 @@
       # test it; the package copies it into the plugin's scripts/, and
       # plugin/hooks/hooks.json runs it from there.
       hookScripts = [
-        ./skills/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh
+        ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-sync-check.sh
       ];
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
