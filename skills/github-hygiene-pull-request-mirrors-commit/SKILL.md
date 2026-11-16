@@ -155,8 +155,17 @@ subject or body differs from the PR's title or body it emits a
 `systemMessage` naming the PR and the difference and saying to re-sync
 with `create-or-update-pull-request.sh`.
 
-- **Silent otherwise:** other Bash calls, no git repository, a
-  detached HEAD, no `gh` or `jq`, or no open PR.
+- **The watcher reminder,** from the same `gh pr list` call: after a
+  `git push` that succeeded, it adds `additionalContext` naming the PR
+  and the `pull-request-monitor.sh` command that arms
+  `github-workflow-pull-request-watcher`, unless the user said
+  otherwise. It gives it once per PR per session, recorded under
+  `${CLAUDE_PLUGIN_DATA}` (or `$TMPDIR`) by session id, and not for a
+  push to the default branch where `git-workflow-push-mode`'s saved
+  mode is direct.
+- **Silent otherwise:** other Bash calls, which it tests before any
+  other process starts; no git repository, a detached HEAD, no `gh` or
+  `jq`, no token, or no open PR.
 - **Body comparison ignores whitespace** (`tr -s '[:space:]' ' '`), so
   a 72-column commit body matches its reflowed PR body, and it also
   matches when the PR body has one extra closing paragraph, the footer
