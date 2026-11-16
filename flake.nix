@@ -161,7 +161,7 @@
       flake.reconcileScript = base.reconcileScript;
 
       perSystem =
-        { system, ... }:
+        { pkgs, system, ... }:
         {
           # `base.packages` (mkAllSkillsFlake without a `name =`) carries a
           # `default` alias and the owner-wide `agent-skills-nhooey-all`
@@ -178,6 +178,24 @@
             // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs;
 
           apps = base.apps.${system};
+
+          # Each skill's bundled Python scripts carry standard-library
+          # unittest suites beside them; run every one under `nix flake check`.
+          checks =
+            builtins.mapAttrs
+              (
+                skill: extraInputs:
+                pkgs.runCommand "${skill}-tests" { nativeBuildInputs = [ pkgs.python3 ] ++ extraInputs; } ''
+                  export HOME="$TMPDIR"
+                  cd ${./skills + "/${skill}/scripts"}
+                  python3 -B -m unittest discover --verbose
+                  touch "$out"
+                ''
+              )
+              {
+                git-workflow-tidy-branches = [ pkgs.git ];
+                github-workflow-repo-activity = [ ];
+              };
 
           # The devShell (name, stock motd, install-skills startup, the
           # ci/dev/maintenance command trio, and the reap-skills/
