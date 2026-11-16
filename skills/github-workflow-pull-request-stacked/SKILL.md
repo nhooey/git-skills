@@ -291,8 +291,12 @@ one command (git ≥ 2.38):
 git fetch upstream
 git switch feat-second                         # the top of the stack
 git rebase --update-refs upstream/main         # moves every branch in the chain
-git push --force-with-lease origin feat-second # and every other branch it moved
+git push --force-with-lease origin feat-second # name every branch it moved
 ```
+
+Name every branch the rebase moved in that `git push`: it pushes only
+the branches it names, and a moved branch left off keeps its old commits
+on the fork, so its PR shows the wrong diff.
 
 `--update-refs` skips any branch checked out in another worktree, so
 rebase that one on its own or free it first. After the rebase, the next child's diff shows only its own changes.
