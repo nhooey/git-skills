@@ -11,6 +11,7 @@ tags: [setup, team-stance]
 allowed-tools:
   - Bash
   - Read
+  - 'Bash(gh api *)'
 ---
 
 # Merge commits only

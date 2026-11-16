@@ -16,6 +16,7 @@ tags: [reference]
 allowed-tools:
   - Bash
   - Read
+  - 'Bash(gh api *)'
 ---
 
 # `gh` CLI gotchas

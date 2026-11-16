@@ -12,6 +12,7 @@ allowed-tools:
   - Read
   - Edit
   - Write
+  - 'Bash(gh api *)'
 ---
 
 # Code owners
