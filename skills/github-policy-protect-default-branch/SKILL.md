@@ -12,6 +12,7 @@ allowed-tools:
   - Bash
   - Read
   - AskUserQuestion
+  - 'Bash(gh api *)'
 ---
 
 # Protect the default branch

@@ -10,6 +10,7 @@ tags: [setup]
 allowed-tools:
   - Bash
   - Read
+  - 'Bash(gh api *)'
 ---
 
 # Auto-delete merged branches

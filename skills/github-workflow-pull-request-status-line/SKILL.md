@@ -14,6 +14,7 @@ tags: [agent, style]
 allowed-tools:
   - Bash
   - Read
+  - 'Bash(gh api *)'
 ---
 
 # Pull request status line

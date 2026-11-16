@@ -15,6 +15,7 @@ tags: [workflow, reference]
 allowed-tools:
   - Bash
   - Read
+  - 'Bash(gh api *)'
 ---
 
 # A user's activity on a GitHub repository

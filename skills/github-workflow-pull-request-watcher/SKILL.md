@@ -23,6 +23,7 @@ allowed-tools:
   - AskUserQuestion
   - Edit
   - Write
+  - 'Bash(gh api *)'
 ---
 
 # Pull request watcher

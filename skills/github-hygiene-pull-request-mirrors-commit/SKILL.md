@@ -14,6 +14,7 @@ tags: [workflow, style, team-stance]
 allowed-tools:
   - Bash
   - Read
+  - 'Bash(gh api *)'
 ---
 
 # Pull requests that mirror their commit
