@@ -4,25 +4,9 @@
 # after a `git commit --amend` or `git push`. Never blocks; always
 # exits 0.
 #
-# Wire this in as a PostToolUse hook with the *literal* install path
-# for your scope — a hook command runs outside any agent working
-# directory, so a bare filename won't resolve. This matches the
-# "Where the bundled scripts install" section of the skill's SKILL.md:
-#
-#   - user scope:    ~/.claude/skills/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh
-#   - project scope: <project>/.claude/skills/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh
-#
-#   {
-#     "matcher": "Bash",
-#     "hooks": [{
-#       "type": "command",
-#       "command": "bash ~/.claude/skills/github-workflow-pull-request-watcher/scripts/pull-request-sync-check.sh",
-#       "timeout": 15
-#     }]
-#   }
-#
-# (Claude Code does not set `$CLAUDE_SKILLS_DIR` — if you prefer a
-# variable over a literal path, export it yourself first.)
+# The repository's `git-skills-hooks` plugin (flake package
+# `hooks-plugin`) copies this script into its scripts/ and runs it from
+# plugin/hooks/hooks.json; see the README's "Hooks plugin" section.
 #
 # Background: skills/github-hygiene-pull-request-mirrors-commit
 # prescribes a PATCH to the pull request after any amend, but skill
