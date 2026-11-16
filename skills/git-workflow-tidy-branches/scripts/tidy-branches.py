@@ -26,6 +26,7 @@ and only used to find branches with open pull requests.
 """
 
 import argparse
+import difflib
 import fnmatch
 import json
 import os
@@ -36,18 +37,20 @@ import sys
 
 NAME = "git-workflow-tidy-branches"
 
-# Preference keys, in the order a preferences file is written.
-DEFAULTS = {
-    "base": "",
-    "push remote": "origin",
-    "keep": ["main", "master", "release/*"],
-    "delete merged": "ask",
-    "rebase": "ask",
-    "rebase open pull requests": "ask",
+# The preference keys and their kinds, in the order a preferences file is
+# written. Their defaults are in DEFAULTS_FILE, which ships beside this script.
+SCHEMA = {
+    "base": "ref",
+    "push remote": "remote",
+    "keep": "globs",
+    "delete merged": "mode",
+    "rebase": "mode",
+    "rebase open pull requests": "mode",
 }
-LIST_KEYS = {"keep"}
-MODE_KEYS = {"delete merged", "rebase", "rebase open pull requests"}
+LIST_KEYS = {k for k, kind in SCHEMA.items() if kind == "globs"}
+MODE_KEYS = {k for k, kind in SCHEMA.items() if kind == "mode"}
 MODES = {"ask": "ask", "yes": "auto"}  # "no" emits no action
+DEFAULTS_FILE = pathlib.Path(__file__).resolve().parent / "tidy-branches.defaults.md"
 
 
 # --- git ---------------------------------------------------------------------
@@ -178,7 +181,7 @@ def parse_prefs(text):
 
 def render_prefs(prefs):
     lines = []
-    for key in DEFAULTS:
+    for key in SCHEMA:
         if key not in prefs:
             continue
         label = key[0].upper() + key[1:]
@@ -190,26 +193,52 @@ def render_prefs(prefs):
     return "\n".join(lines) + "\n"
 
 
+def check_keys(where, prefs):
+    """Exit naming `where` and the closest known key if `prefs` has a key
+    the schema doesn't."""
+    for k in prefs:
+        if k not in SCHEMA:
+            near = difflib.get_close_matches(k, SCHEMA, n=1)
+            hint = f"; did you mean {near[0]!r}?" if near else f"; known: {', '.join(SCHEMA)}"
+            sys.exit(f"{where}: unknown preference {k!r}{hint}")
+    return prefs
+
+
 def read_prefs_file(path):
     try:
-        return parse_prefs(path.read_text())
+        text = path.read_text()
     except OSError:
         return {}
+    return check_keys(path, parse_prefs(text))
+
+
+def read_defaults(path=DEFAULTS_FILE):
+    """The shipped defaults, which must name every key in the schema."""
+    try:
+        defaults = check_keys(path, parse_prefs(path.read_text()))
+    except OSError as e:
+        sys.exit(f"cannot read the shipped defaults: {e}")
+    missing = [k for k in SCHEMA if k not in defaults]
+    if missing:
+        sys.exit(f"{path}: no default for {', '.join(missing)}")
+    return {k: defaults[k] for k in SCHEMA}
+
+
+DEFAULTS = read_defaults()
 
 
 def layer_prefs(layers):
     """The defaults, then each (scope, prefs) in `layers`, later winning:
-    (prefs, scope each value came from). Unknown keys are ignored."""
+    (prefs, scope each value came from)."""
     prefs, source = dict(DEFAULTS), {k: "default" for k in DEFAULTS}
     for scope, layer in layers:
-        for k, v in layer.items():
-            if k in DEFAULTS:
-                prefs[k], source[k] = v, scope
+        for k, v in check_keys(scope, layer).items():
+            prefs[k], source[k] = v, scope
     return prefs, source
 
 
 def load_prefs():
-    """Defaults, then the user's file, then the project's: later wins."""
+    """The shipped defaults, then the user's file, then the project's: later wins."""
     prefs, source = layer_prefs((scope, read_prefs_file(path)) for scope, path in prefs_paths().items())
     for k in MODE_KEYS:
         if prefs[k] not in ("ask", "yes", "no"):
@@ -220,17 +249,17 @@ def load_prefs():
 def cmd_prefs(args):
     if args.action == "show":
         prefs, source = load_prefs()
+        print(f"file\tdefault\t{DEFAULTS_FILE}\texists")
         for scope, path in prefs_paths().items():
             print(f"file\t{scope}\t{path}\t{'exists' if path.exists() else 'absent'}")
         print(f"installed\t{installed_scope()}")
-        for k in DEFAULTS:
+        for k in SCHEMA:
             v = ", ".join(prefs[k]) if k in LIST_KEYS else prefs[k]
             print(f"pref\t{k}\t{v}\t{source[k]}")
         return 0
 
     key = args.key.lower()
-    if key not in DEFAULTS:
-        sys.exit(f"unknown preference {args.key!r}; known: {', '.join(DEFAULTS)}")
+    check_keys("prefs set", {key: None})
     value = [v for item in args.value for v in item.split(",") if v] if key in LIST_KEYS else " ".join(args.value)
     if key in MODE_KEYS and value not in ("ask", "yes", "no"):
         sys.exit(f"preference {key!r} must be ask, yes or no")

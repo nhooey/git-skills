@@ -104,21 +104,17 @@ themselves; don't rewrite it into a form the layer allows.
 
 ## Preference keys
 
-The script reads the preferences files and applies them itself.
+The script starts from `scripts/tidy-branches.defaults.md`, which ships
+with it and lists every key with its default and what it does, then merges
+the user's and the project's preferences files over it, key by key. A
+preferences file names only what it changes, and an unknown key in one is
+an error.
 
-| Key                         | Values                       | Default                       |
-| --------------------------- | ---------------------------- | ----------------------------- |
-| `Base`                      | a ref, like `upstream/main`  | as above                      |
-| `Push remote`               | a remote                     | `origin`                      |
-| `Keep`                      | branch globs, never touched  | `main`, `master`, `release/*` |
-| `Delete merged`             | `ask`, `yes`, `no`           | `ask`                         |
-| `Rebase`                    | `ask`, `yes`, `no`           | `ask`                         |
-| `Rebase open pull requests` | `ask`, `yes`, `no`           | `ask`                         |
+!`cat "${CLAUDE_SKILL_DIR}/scripts/tidy-branches.defaults.md"`
 
-`yes` makes the lines `auto`, applied without a question; `no` leaves them
-out of the plan. `Rebase open pull requests` overrides `Rebase` for
-branches with an open pull request, since every force-push notifies the
-reviewer and resets "changes since your last review".
+If your agent doesn't run the line above, read that file yourself.
+`prefs show` prints the value in effect for each key and the file it came
+from.
 
 **Saving a choice.** When the user answers in a way they'll want again,
 such as "always keep `integration`" or "never rebase PR branches", save
