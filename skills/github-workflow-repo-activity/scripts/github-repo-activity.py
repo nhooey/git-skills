@@ -413,6 +413,11 @@ class Activity:
         return events
 
 
+def sort_events(events: Iterable[dict]) -> List[dict]:
+    """Oldest first; events at the same time by kind, then number."""
+    return sorted(events, key=lambda e: (e["time"], e["kind"], e["number"] or 0))
+
+
 def human(events: Iterable[dict], show_actor: bool) -> str:
     lines = []
     for e in events:
@@ -464,7 +469,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
     for note in dict.fromkeys(activity.notes):
         print(f"note: {note}", file=sys.stderr)
-    events.sort(key=lambda e: (e["time"], e["kind"], e["number"] or 0))
+    events = sort_events(events)
     if args.json:
         json.dump(events, sys.stdout, indent=2)
         sys.stdout.write("\n")
