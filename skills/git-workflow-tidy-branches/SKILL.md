@@ -96,7 +96,9 @@ line names the base and its sha.
 4. **Report the notes.** They are the branches that need a person: name
    each with its reason and what would settle it. Stacks go to a stack
    tool, such as `git rebase --update-refs` or git-spice's
-   `gs repo restack`, not to this script.
+   `gs repo restack`, not to this script. A branch checked out in a
+   worktree goes to `git-workflow-tidy-worktrees`, which removes the
+   worktree first.
 
 If the agent's permission layer refuses a force-push or a delete, stop and
 give the user the exact `apply` input or `git push` line to run
@@ -160,6 +162,7 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `git-hygiene-push-force-safely`: why every force-push carries a lease, as the script's do.
+- `git-workflow-tidy-worktrees`: removing the worktree a branch is checked out in, before the branch.
 - `github-policy-auto-delete-merged-branches`: makes GitHub delete the remote head branch on merge, leaving only the local copy to tidy.
 - `github-workflow-pull-request-stacked`: restacking the branches this skill only flags.
 - `github-workflow-pull-request-watcher`: fires this cleanup when a pull request merges.
