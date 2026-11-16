@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "agent-plugins-nixpkgs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793459592,
+        "narHash": "sha256-CWlFFbXDtWi0y+BaSLhjVUlVuJFUJ4grBPOjkjlTV8k=",
+        "owner": "nhooey",
+        "repo": "agent-plugins-nixpkgs",
+        "rev": "fbee5045ee86cd644b1a2bccf6f301485e9f737d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nhooey",
+        "repo": "agent-plugins-nixpkgs",
+        "type": "github"
+      }
+    },
     "agent-skill-flake": {
       "inputs": {
         "devshell": "devshell",
@@ -104,6 +120,7 @@
     },
     "root": {
       "inputs": {
+        "agent-plugins-nixpkgs": "agent-plugins-nixpkgs",
         "agent-skill-flake": "agent-skill-flake",
         "flake-parts": "flake-parts_2",
         "nixpkgs": "nixpkgs",
