@@ -1,36 +1,28 @@
 ---
 name: github-policy-auto-delete-merged-branches
 description: |
-  Enable GitHub's `delete_branch_on_merge` setting so PR head branches
-  vanish on merge. One PATCH per repo. Apply when creating a new repo
-  or when stale merged branches are accumulating on the remote.
+  Enable GitHub's `delete_branch_on_merge` repository setting, so a PR's
+  head branch is deleted when the PR merges, with one `gh api` PATCH per
+  repo and a check that it took. Use when creating a new GitHub repo,
+  setting one up alongside a default-branch ruleset, or when merged
+  branches are piling up on the remote.
 tags: [setup]
 allowed-tools:
   - Bash
   - Read
 ---
 
-# github-policy-auto-delete-merged-branches
+# Auto-delete merged branches
 
-Once a PR is merged, the source branch has done its job. Leaving it on
-the remote creates two ongoing costs:
+_Turn on GitHub's per-repo setting that deletes a PR's head branch when the PR merges._
 
-- **`git branch -r` becomes unreadable.** Active branches drown in
-  hundreds of merged-and-forgotten ones. `git fetch --prune` only
-  helps after someone has deleted them on the remote.
-- **Stale branches confuse tooling.** PR-checkers, deploy previews,
-  and "open PRs by branch" UIs all key off branch names. Resurrected
-  names (`fix-login` reused six months later) collide with stale refs
-  and produce surprising behaviour.
+Merged branches left on the remote bury the active ones in
+`git branch -r`, and a reused name (`fix-login` six months later)
+collides with a stale ref in tools that key off branch names.
+`git fetch --prune` only helps once the remote branch is gone.
 
-GitHub has a per-repo toggle that deletes the head branch automatically
-when a PR is merged. Turn it on.
-
-## How to load this skill
-
-Loading this skill doesn't mean you should change a repo's settings
-now — just that when configuring a new repo or auditing branch hygiene,
-you'll flip this toggle.
+Loading this skill doesn't mean changing a repo's settings now; apply it
+when setting up a repo or auditing its branches.
 
 ## Apply with `gh`
 
@@ -39,10 +31,9 @@ gh api -X PATCH "repos/<owner>/<repo>" \
   -F delete_branch_on_merge=true
 ```
 
-Use `-F` (typed field), not `-f` — `-f` sends the JSON *string* `"true"`,
-while this setting wants a real boolean. GitHub's repo-settings endpoint
-happens to coerce the string today, but relying on that is the exact trap
-`github-hygiene-gh-cli-gotchas` warns about, so send the right type.
+Use `-F` (typed field), not `-f`: `-f` sends the JSON string `"true"`,
+while this setting is a boolean. The endpoint coerces the string today,
+but send the right type rather than rely on that.
 
 ## Verify
 
@@ -56,23 +47,18 @@ head branches**.
 
 ## Scope
 
-The setting only deletes the *source* branch of a merged PR — never
-the base branch, never branches that close without merging, never
-branches with no associated PR. It is safe to enable on any repo where
-contributors land changes via PRs.
+The setting deletes only the head branch of a merged PR: never the base
+branch, never a branch whose PR closed without merging, never a branch
+with no PR. It is safe on any repo where changes land through PRs.
 
-## Forks are unaffected
-
-Auto-delete operates on the head branch in the head repository. When
-the PR comes from a fork, the contributor's fork keeps its branch —
-that's their cleanup.
+When the PR comes from a fork, the branch lives in the contributor's
+fork and stays there; that cleanup is theirs.
 
 ## When to apply
 
-- Creating a new GitHub repo.
+- Creating a new GitHub repo, together with
+  `github-policy-protect-default-branch`.
 - Auditing an existing repo where merged branches accumulate.
-- Companion to `github-policy-protect-default-branch` — apply both at repo
-  setup time.
 
 ## Related skills
 

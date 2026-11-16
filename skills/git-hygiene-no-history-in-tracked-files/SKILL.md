@@ -7,7 +7,7 @@ description: |
   "added in v3.2", "this used to do X", "TODO remove after the
   migration", dated rulings tables, quotes of who asked for a rule and
   when, or "changed from X to Y" notes. CHANGELOG.md, release notes,
-  ADRs, decision logs and user migration guides are exempt. Load before
+  ADRs, decision logs and user migration guides are exempt. Use before
   adding a historical note to any tracked file, and when reviewing one.
 tags: [style]
 allowed-tools:
@@ -15,19 +15,14 @@ allowed-tools:
   - Edit
 ---
 
-# git-hygiene-no-history-in-tracked-files
+# No history in tracked files
 
-A tracked file says what is true now. How it got that way belongs in the
-commit message that made the change: git is already the record over
-time, and `git log` and `git blame` put that record next to every line.
+_A tracked file says what is true now; how it got that way goes in the commit message that changed it._
+
+Git is already the record over time, and `git log` and `git blame` put
+that record next to every line.
 History written into the file itself rots. Later edits drift past it,
 it contradicts the text around it, and readers stop trusting the file.
-
-## How to load this skill
-
-Passive reference. Loading it doesn't mean the user wants you to edit a
-file right now — just that when a historical note seems called for,
-you'll put it in the commit message instead.
 
 ## Which files
 

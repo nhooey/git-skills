@@ -4,50 +4,44 @@ description: |
   Submit a chain of dependent PRs on GitHub, picking the tool by case:
   GitHub's own stacked PRs (`gh stack`) for a same-repo linear chain,
   Graphite (`gt`) for branching stacks or users already on it, and
-  plain git for forks. Covers three cases: (a) repos you control —
-  `gh stack submit`, merge the top PR or queue the stack, `gh stack
-  sync`; (b) upstream fork-only — native stacks don't support forks,
-  so draft + `Depends on` notes gate merge order and
+  plain git for forks. Covers three cases: (a) repos you control, with
+  `gh stack submit`, merging the top PR or queueing the stack, and `gh stack
+  sync`; (b) upstream fork-only, where native stacks don't reach, so
+  draft status and `Depends on` notes gate merge order and
   `git rebase --update-refs` restacks; (c) upstream with a topic-branch
-  push grant — `gh stack` or `gt submit --stack` under the required
-  branch prefix. Also adopting a hand-built stack into `gh stack`,
-  agent-session flags, and what to do where force-pushing PR branches
-  isn't allowed. Apply when the user mentions stacked PRs, dependent
-  PRs, `gh stack`, `gt`, or asks how to keep child-PR diffs small while
-  parents are in flight.
+  push grant, using `gh stack` or `gt submit --stack` under the required
+  branch prefix. Also covers adopting a hand-built stack into
+  `gh stack`, flags for agent sessions, and what to do where
+  force-pushing PR branches isn't allowed. Use when the user mentions
+  stacked PRs, dependent PRs, `gh stack` or `gt`, or asks how to keep
+  child-PR diffs small while parents are in flight.
 tags: [workflow, team-stance, reference]
 allowed-tools:
   - Bash
   - Read
 ---
 
-# github-workflow-pull-request-stacked
+# Stacked pull requests
 
-This skill captures the workflow for submitting a chain of **dependent**
-pull requests — where each PR builds on the previous, and the child
-PRs' diffs would otherwise show the cumulative change. The workflow has
-three flavors keyed on who controls the merge button:
+_A chain of dependent PRs, each building on the one below, kept so every child PR shows only its own change; which tool does it depends on who controls the merge button._
 
-- **§A — Repo you control.** Full write access, you merge things
-  yourself. The easy case: `gh stack submit`, then merge the stack
-  from the top or through the merge queue.
-- **§B — Upstream, no push access (fork-only).** You have a fork, you
-  push to your fork, but you can't push branches to upstream. The hard
-  case: GitHub will only let a PR's base be a branch in the upstream
-  repo, and native stacks don't cross forks, so child PRs can't be
-  incremental — diff management happens via draft status and
-  `Depends on` notes.
-- **§C — Upstream, maintainer-granted topic-branch prefix.** Some
-  projects (LLVM is the canonical example) grant contributors push
-  access to upstream under a naming prefix (often `users/<username>/`).
-  The branches then live in upstream, so stacking works against it —
-  same shape as §A, plus the branch-prefix requirement.
+Three cases:
 
-Each PR in the stack is still a single-commit PR — this skill is
-compatible with `github-hygiene-pull-request-mirrors-commit`,
-which governs the title/body/commit relationship for any one PR in the
-chain. And every restack force-pushes to a branch, so
-`git-hygiene-push-force-safely` applies.
+- **§A, a repo you control:** you have write access and merge yourself.
+  `gh stack submit`, then merge the stack from the top or through the
+  merge queue.
+- **§B, upstream with no push access (fork-only):** you push only to
+  your fork. A PR's base must be a branch in the upstream repo and
+  native stacks don't cross forks, so child PRs can't be incremental;
+  draft status and `Depends on` notes manage the order instead.
+- **§C, upstream with a topic-branch prefix granted:** some projects
+  (LLVM, for one) let contributors push to upstream under a prefix,
+  often `users/<username>/`. The branches live upstream, so it works
+  like §A plus the prefix.
+
+Each PR in the stack is still a single-commit PR governed by
+`github-hygiene-pull-request-mirrors-commit`, and every restack
+force-pushes, so `git-hygiene-push-force-safely` applies.
 
 ## Choosing a tool
 
@@ -98,23 +92,22 @@ conventions. Where the two differ on a command's behaviour, the
 extension's skill and `gh stack <command> --help` win, since they move
 with the extension.
 
-**Graphite**, when it's the tool: initialize it and set trunk to the
-repo's default branch.
+**Graphite**, when it's the tool: initialize it with the repo's
+default branch as trunk. Submitting needs an auth token, which the user
+creates at Graphite's CLI settings page and passes to `gt auth --token`.
 
 ```bash
-gt init
-# When prompted for the trunk branch, choose the default (main or master).
-gt config --help     # later, to discover trunk / branch-naming settings
+gt init --trunk main     # or master; without --trunk it prompts
 ```
 
-The `gt config` menu wording changes between Graphite releases, so
-`gt config --help` is the durable entry point — don't hard-code menu
-paths in advice to the user. Graphite's free plan covers personal
-repositories only; an organization's repositories need a paid seat per
-user.
+Other settings, such as a branch prefix, live in `gt config`, an
+interactive menu whose `--help` lists none of them and whose wording
+changes between releases; have the user run it rather than quoting
+menu paths. From an agent session, pass the global `--no-interactive`
+flag so `gt` doesn't wait on a prompt.
 
-For §B and §C, also make sure the remotes are conventional —
-`origin` → your fork, `upstream` → the repo you're contributing to:
+For §B and §C, make sure `origin` is your fork and `upstream` the repo
+you're contributing to:
 
 ```bash
 git remote -v        # confirm origin = your fork, upstream = the target
@@ -163,12 +156,13 @@ Then bring the local branches up to date:
 gh stack sync        # fetch, rebase the rest, push, and update PR state
 ```
 
-`sync` fast-forwards the trunk, rebases the stack only if the trunk
-moved, pushes, links the open PRs into a stack on GitHub, and offers to
-prune local branches whose PRs merged (`--prune` does it unasked). When
-the local stack and the one on GitHub have diverged, a non-interactive
-`sync` stops without pushing anything and still exits 0, so read its
-output rather than its exit status.
+`sync` fast-forwards the trunk, rebases the stack onto it, pushes,
+and links the open PRs into a stack on GitHub; `--prune` deletes local
+branches whose PRs merged. On a rebase conflict it restores every
+branch and leaves the resolving to `gh stack rebase`. When the local
+stack and the one on GitHub have diverged, a non-interactive `sync`
+stops without pushing anything and still exits 0, so read its output
+("Stack synced" or "Branches synced") rather than its exit status.
 
 **Rules apply to every layer.** Every PR in a stack must meet the
 trunk's branch protection, CODEOWNER approvals and required checks,
@@ -183,7 +177,7 @@ asynchronous merge API.
 
 **Force-pushes.** `gh stack push` pushes every branch in one atomic
 `git push` with a `--force-with-lease` check per branch, and `sync`
-uses `--force-with-lease` after a rebase. Never fall back to a plain
+uses `--force-with-lease` after a rebase. Don't fall back to a plain
 `--force` by hand.
 
 **When force-pushing isn't allowed.** Every stacking tool here updates
@@ -212,9 +206,10 @@ smell.
 
 **Conflicts during restack.** `gh stack rebase` restacks the chain one
 branch at a time; resolve each conflict, `git add <files>`, and
-continue. To reorder or edit a branch in the middle, use
-`gh stack modify`; it refuses merged branches and needs a linear
-history with nothing queued.
+`gh stack rebase --continue` (or `--abort` to restore every branch).
+To drop, fold, insert, reorder or rename branches, the user runs
+`gh stack modify`, an interactive TUI an agent can't drive; it refuses
+merged branches and needs a linear history with nothing queued.
 
 ### With Graphite
 
@@ -239,15 +234,15 @@ Repeat for each PR. `gt sync` detects merged PRs by SHA with merge
 commits and by patch-id with squash merges; rebase-merge works but is
 the noisiest. With `github-policy-auto-delete-merged-branches` enabled,
 the remote head branches vanish on merge and `gt sync` cleans up the
-local copies. On conflicts, resolve, `git add <files>`, `gt continue`;
-`gt modify` edits a branch in the middle and restacks its children.
-`gt` force-pushes with `--force-with-lease` by default.
+local copies. On conflicts, resolve, `git add <files>`, `gt continue`.
+To change a branch in the middle, check it out and `gt modify`: it
+amends the branch and restacks the ones above. `gt submit` pushes with
+`--force-with-lease` unless given `--force`.
 
 ## §B — Upstream, no push access (fork-only)
 
-The hard case. Before giving commands, make sure the user understands
-*why* stacking tools can't give small diffs here, because it shapes
-everything.
+Before giving commands, explain why no stacking tool gives small diffs
+here, because it shapes everything else.
 
 GitHub will only let a PR's base be a branch in the upstream repo. On a
 repo you don't control, you can't push the intermediate branches there,
@@ -282,9 +277,9 @@ rather than pretending the diffs will be incremental:
   renders the link and the maintainer sees the chain. Prefix titles
   like `[2/4]` for legibility.
 
-The draft status is the only thing that *actually* blocks an out-of-
-order merge from the contributor side; the `Depends on` note is a
-courtesy signal, not a gate.
+Draft status is the only thing that blocks an out-of-order merge from
+the contributor's side; the `Depends on` note is a courtesy, not a
+gate.
 
 When PR #1 merges, restack the rest onto the updated upstream trunk in
 one command (git ≥ 2.38):
@@ -293,10 +288,11 @@ one command (git ≥ 2.38):
 git fetch upstream
 git switch feat-second                         # the top of the stack
 git rebase --update-refs upstream/main         # moves every branch in the chain
-git push --force-with-lease origin feat-second # each moved branch
+git push --force-with-lease origin feat-second # and every other branch it moved
 ```
 
-After the rebase, the next child's diff shows only its own changes.
+`--update-refs` skips any branch checked out in another worktree, so
+rebase that one on its own or free it first. After the rebase, the next child's diff shows only its own changes.
 **Mark that child "Ready for review"** in the GitHub UI, and repeat
 down the stack as each parent lands. On conflicts, resolve,
 `git add <files>`, `git rebase --continue`.
@@ -308,7 +304,7 @@ open the PRs by hand.
 
 ## §C — Upstream with topic-branch push grant
 
-If the project grants topic-branch push access, prefer this over §B —
+If the project grants topic-branch push access, prefer this over §B:
 it gives the small per-PR diffs the user wants. The branches live in
 upstream, so both `gh stack` and `gt` work here; follow the project's
 documented tool if it has one (LLVM documents Graphite).
@@ -322,8 +318,7 @@ the upstream namespace. Include the trailing `/`, or the push fails.
   `gh stack` has a setting that applies the prefix itself, and whether
   a contributor who isn't a collaborator can create a stack. If
   `submit` refuses, fall back to `gt` or §B.
-- **`gt`:** set the prefix first (look up the current flag or
-  interactive path via `gt config --help`), then:
+- **`gt`:** have the user set the prefix in `gt config` first, then:
 
   ```bash
   gt checkout main                       # the upstream trunk
@@ -357,16 +352,18 @@ gh stack sync                                                 # links their open
 `init` adopts branches that already exist, including ones checked out
 in other worktrees. `sync` links the PRs once two or more are open; it
 never opens PRs, so `gh stack submit` opens any that are missing.
-`gh stack link` also takes branch names or PR numbers, bottom to top,
-but can only add PRs to the top of an existing stack.
+`gh stack link` does it without local tracking: it takes branch names,
+PR numbers or URLs, bottom to top, pushes the branches, opens PRs for
+any without one, and never removes a PR from a stack, so on an
+existing stack it can only add to the top.
 
 ## How to advise the user
 
 When the user asks for help with this workflow, structure the response
 as:
 
-1. One sentence identifying which case they're in (§A, §B, or §C) — or
-   asking, if unclear. The fastest tell: do they have write access to
+1. One sentence identifying which case they're in (§A, §B or §C), or
+   asking if unclear. The fastest tell: do they have write access to
    the repo? Yes → §A. No, but maintainers granted a branch prefix →
    §C. No, fork only → §B.
 2. The tool, by [Choosing a tool](#choosing-a-tool), and its exact
@@ -375,19 +372,16 @@ as:
 4. For §B only: a one-line reminder that draft status is the only real
    merge-ordering gate available to a no-access contributor.
 
-Keep it concrete and command-first. Don't re-explain git fundamentals
-unless the user signals they're new to forks and remotes.
-
 ## Alternatives considered
 
 Mention these if the user pushes back on the tools above:
 
-- **ghstack** — Meta's stacking tool; clean but assumes you can push
+- **ghstack:** Meta's stacking tool; clean, but it assumes you can push
   intermediate branches somewhere with a stable mapping, so it's a
-  poor fit for §B. Better in §A or §C.
-- **spr** (Rust/Go variants) — one-commit-per-PR model from the
+  poor fit for §B and better in §A or §C.
+- **spr** (Rust and Go variants): one commit per PR, from the
   Phabricator lineage; opinionated about commit structure, lighter
-  than Graphite, same upstream-push limitation as ghstack in §B.
+  than Graphite, with the same upstream-push limit as ghstack in §B.
 
 ## Related skills
 

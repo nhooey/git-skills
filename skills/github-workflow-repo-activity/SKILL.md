@@ -1,39 +1,32 @@
 ---
 name: github-workflow-repo-activity
 description: |
-  List what one GitHub user did on one repository since a given time —
-  comments, review comments, reviews, merges they performed, PRs and
-  issues they opened, closed or retitled, commits they pushed (direct to
-  a branch or onto a PR), branches they created or deleted — merged into
-  one time-sorted list. Run the bundled `github-repo-activity.py`
+  List what one GitHub user did on one repository since a given time
+  (comments, review comments, reviews, merges they performed, PRs and
+  issues they opened, closed or retitled, commits they pushed directly
+  to a branch or onto a PR, branches they created or deleted), merged
+  into one time-sorted list. Run the bundled `github-repo-activity.py`
   (Python stdlib, reads through `gh api`). Use for "what has <user> done
   on <repo> since <time>", checking whether a maintainer replied, merged
-  or reviewed, or catching up on a repo after time away. Never reach for
-  the GitHub Events API for this: it truncates, lags, misattributes
-  merges and drops pushes.
+  or reviewed, or catching up on a repo after time away. Don't use the
+  GitHub Events API for this: it truncates, lags, misattributes merges
+  and drops pushes.
 tags: [workflow, reference]
 allowed-tools:
   - Bash
   - Read
 ---
 
-# github-workflow-repo-activity
+# A user's activity on a GitHub repository
 
-Answer "what has this person done on this repo since then?" from the
-endpoints that are the record for each kind of activity, not from the
-Events API.
+_Answer "what has this person done on this repo since then?" from the endpoints that are the record for each kind of activity, not from the Events API._
 
-## Where the bundled script installs
+## The bundled script
 
-This skill bundles `github-repo-activity.py` and its offline self-check
-`test_github_repo_activity.py`, in a `scripts/` directory alongside this
-`SKILL.md`:
-
-- **User scope:** `~/.claude/skills/github-workflow-repo-activity/scripts/github-repo-activity.py`
-- **Project scope:** `<project-root>/.claude/skills/github-workflow-repo-activity/scripts/github-repo-activity.py`
-
-Below, the script is named by its filename alone; resolve it against the
-path that matches your install. It needs Python 3.9+ and an authenticated
+`github-repo-activity.py` and its offline self-check
+`test_github_repo_activity.py` are in `scripts/` beside this `SKILL.md`
+(`~/.claude/skills/github-workflow-repo-activity/scripts/` for a user
+install). Below, the script is named by its filename alone. It needs Python 3.9+ and an authenticated
 `gh`; it never handles a token itself.
 
 ## Run it
@@ -54,16 +47,16 @@ parentheses, URL. `--json` prints the same events as an array of
 `{time, kind, number, title, url, actor, detail}`. `--help` on the script
 and on each subcommand lists every option.
 
-| Subcommand | Lists                                                                                  |
-| ---------- | -------------------------------------------------------------------------------------- |
-| `summary`  | everything below, merged and sorted by time                                            |
-| `comments` | conversation comments (`comment`, `comment-edited`) and diff comments (`review-comment`) |
-| `reviews`  | `review-approved`, `review-changes_requested`, `review-commented`, `review-dismissed`  |
-| `merges`   | `merged`: PRs whose `merged_by` is the user, with the PR author when someone else      |
-| `prs`      | PRs `opened`, `closed` unmerged, `reopened`, `retitled`, `referenced`                   |
-| `issues`   | the same kinds for issues                                                              |
-| `commits`  | `commit` (no PR carries it: a direct push) and `commit-via-pr`, at the time pushed     |
-| `branches` | `branch-created`, `branch-deleted`, `force-pushed`                                     |
+| Subcommand | Lists                                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| `summary`  | everything below, merged and sorted by time                                                                       |
+| `comments` | conversation comments (`comment`, `comment-edited`) and diff comments (`review-comment`, `review-comment-edited`) |
+| `reviews`  | `review-approved`, `review-changes_requested`, `review-commented`, `review-dismissed`                             |
+| `merges`   | `merged`: PRs whose `merged_by` is the user, with the PR author when someone else                                 |
+| `prs`      | PRs `opened`, `closed` unmerged, `reopened`, `retitled`, `referenced`                                             |
+| `issues`   | the same kinds for issues                                                                                         |
+| `commits`  | `commit` (no PR carries it: a direct push) and `commit-via-pr`, at the time pushed                                |
+| `branches` | `branch-created`, `branch-deleted`, `force-pushed`                                                                |
 
 Options on every subcommand:
 

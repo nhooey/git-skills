@@ -1,28 +1,23 @@
 ---
 name: github-policy-merge-commits-only
 description: |
-  Configure repo so PRs land as explicit merge commits — disable squash
-  and rebase merges. The merge commit is a clean revert point (`git
-  revert -m 1`), and per-commit history stays for `git log
-  --first-parent` and `git blame`. Skip this skill if the team prefers
-  squash-merge.
+  Configure a GitHub repository so every pull request lands as an
+  explicit merge commit, with squash and rebase merges disabled. The
+  merge commit is a clean revert point (`git revert -m 1`), and the
+  branch's commits stay for `git log --first-parent` and `git blame`.
+  Use when creating a GitHub repository or auditing its merge settings,
+  unless the team prefers squash-merge.
 tags: [setup, team-stance]
 allowed-tools:
   - Bash
   - Read
 ---
 
-# github-policy-merge-commits-only
+# Merge commits only
 
-A team-stance: this skill takes the position that every PR should land
-as an explicit merge commit. Other teams legitimately prefer
-squash-merge or rebase-merge; if so, skip this skill.
+_Every pull request lands as an explicit merge commit. This is a team stance: a team that prefers squash-merge or rebase-merge skips this skill._
 
-## How to load this skill
-
-Loading this skill doesn't mean you should reconfigure a repo's merge
-settings now — just that when configuring a new repo or auditing one,
-you'll apply this opinion.
+Loading this skill is not a request to change a repository's settings now; it applies when one is being created or audited.
 
 ## The rule
 
@@ -36,14 +31,11 @@ gh api -X PATCH "repos/<owner>/<repo>" \
   -F allow_rebase_merge=false
 ```
 
-Use `-F` (typed field), not `-f`: `-f` sends each value as the JSON
-*string* `"true"`/`"false"`, but these settings want real booleans.
-GitHub's repo-settings endpoint coerces the strings today, but leaning on
-that is exactly the footgun `github-hygiene-gh-cli-gotchas` documents.
+Use `-F` (typed field), not `-f`: `-F` converts `true` and `false` to
+JSON booleans, while `-f` sends them as the strings `"true"` and
+`"false"` (see `github-hygiene-gh-cli-gotchas`).
 
 ## Why
-
-Two reasons:
 
 1. **The merge commit is a clean revert point for the whole PR.**
    `git revert -m 1 <merge-sha>` undoes the entire feature in one go.
@@ -59,7 +51,7 @@ Two reasons:
 
 ## Compatibility caveat
 
-Do **not** add `{ "type": "required_linear_history" }` to the ruleset
+Don't add `{ "type": "required_linear_history" }` to the ruleset
 in `github-policy-protect-default-branch` — that rule rejects exactly the
 merge commits this option produces. The two settings are mutually
 exclusive; pick one.
@@ -69,7 +61,7 @@ exclusive; pick one.
 - Creating a new GitHub repo where the team wants merge commits.
 - Auditing an existing repo for merge strategy.
 - After enabling `github-policy-protect-default-branch`, double-check that
-  `required_linear_history` is NOT in the ruleset.
+  `required_linear_history` is not in the ruleset.
 
 ## Related skills
 
@@ -79,4 +71,5 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `git-workflow-curate-unpushed`: curating per-commit history before push, which is what makes keeping it in merge commits worthwhile.
+- `github-hygiene-gh-cli-gotchas`: why `gh api` booleans go through `-F` rather than `-f`.
 - `github-policy-protect-default-branch`: the default-branch ruleset, which must not include `required_linear_history` alongside merge commits.

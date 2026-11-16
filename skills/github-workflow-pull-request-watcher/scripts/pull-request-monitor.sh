@@ -3,7 +3,9 @@
 # delta on check-runs, issue comments, review-thread comments, and PR
 # state — then breaks when the PR transitions to MERGED or CLOSED.
 #
-# Intended to be passed to the `Monitor` tool with `persistent: true`.
+# Intended to be passed to the `Monitor` tool with `persistent: true`,
+# or, where Monitor has no such option, its longest `timeout_ms`,
+# re-armed on each expiry.
 #
 # Usage:
 #   pull-request-monitor.sh [--pr N] [--repo OWNER/REPO] [--sha SHA]
@@ -140,7 +142,9 @@ max_review=0
 prev_state=""
 
 # Shared jq filter for both comment sources — emits one line per new
-# comment, flagging self-comments distinctly.
+# comment, flagging self-comments distinctly. $cutoff and $user are jq
+# variables, not shell ones.
+# shellcheck disable=SC2016
 fmt_comments='.[] | select(.id > $cutoff)
   | "COMMENT-\(if .user.login==$user then "SELF" else .user.login end): \(.body | gsub("\n"; " "))"'
 

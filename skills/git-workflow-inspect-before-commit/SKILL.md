@@ -2,9 +2,10 @@
 name: git-workflow-inspect-before-commit
 description: |
   Before turning working-tree changes into a commit, walk three steps:
-  inspect (`git status` / `git diff`), stage only what belongs (`git add
-  -p` for mixed changes), and review the cached diff (`git diff --cached`)
-  for secrets, debug logging, and unintended formatting churn. Apply
+  inspect (`git status` / `git diff`), stage only what belongs (named paths,
+  or hunks with `git add -p` for mixed changes), and review the cached diff
+  (`git diff --cached`) for secrets, debug logging and unintended formatting
+  churn. Ships a non-blocking hook that scans the diff on `git commit`. Use
   whenever about to `git commit`.
 tags: [workflow, safety]
 allowed-tools:
@@ -25,18 +26,11 @@ hooks:
           timeout: 15
 ---
 
-# git-workflow-inspect-before-commit
+# Inspect before committing
 
-Before turning a working-tree change into a commit, walk three small
-steps. None of them takes more than a few seconds; together they catch
-the failure modes that show up later as "why is this in my diff?", "why
-did I commit my `.env`?", or "this commit does three things at once."
+_Read the change, stage only what belongs to this commit, then review the staged diff before it lands._
 
-## How to load this skill
-
-Passive reference. Loading it doesn't mean the user wants you to commit
-right now — just that when a commit comes up, you'll walk these steps
-first.
+Loading this skill is not a request to commit now; it applies when a commit comes up.
 
 ## 1. Inspect before staging
 
@@ -46,86 +40,79 @@ git diff           # what the changes are
 git diff --stat    # if the diff is too large to scan inline
 ```
 
-Don't reach for `git add` before reading these. Surprises in `git diff`
-— a stray `console.log`, an editor's auto-format-on-save, a secret that
-crept in — are cheap to undo before staging and expensive to undo after
-committing.
+A stray `console.log`, an editor's format-on-save or a secret is cheap
+to undo before staging and expensive after committing.
 
 ## 2. Stage only what belongs in this commit
 
-When the changes are clean and all belong together, `git add <paths>` is
-fine. When the working tree mixes concerns (refactor + feature,
-formatting + logic, tests + prod code), stage by hunks instead:
+Name the paths: `git add <paths>`. Never stage with `git add -A`,
+`git add --all`, `git add .` or `git commit -a`; repos often hold
+untracked working files (plans, agent config, scratch notes) that must
+stay out of commits. `git-hygiene-avoid-sweeping-operations` covers
+this rule for every git command.
+
+When the working tree mixes concerns (refactor and feature, formatting
+and logic, tests and production code), stage by hunks:
 
 ```bash
-git add -p                   # iterate hunk-by-hunk, accept/reject each
-git restore --staged -p      # unstage by hunk
-git restore --staged <path>  # unstage a file
+git add -p <paths>               # pick hunks to stage
+git restore --staged -p <paths>  # pick hunks to unstage
+git restore --staged <path>      # unstage a file
 ```
 
-Never stage with `git add -A`, `git add --all`, `git add .` or
-`git commit -a`; always name the paths. Repos often hold untracked
-working files (plans, agent config, scratch notes) that must stay out of
-commits.
+`-p` prompts for each hunk, so it needs a terminal to answer it. Without
+one, write the hunks you want as a patch and stage it with
+`git apply --cached <patch>`.
 
-The 1-2-sentence test (step 3) is the forcing function for whether to
-split: if you can't describe the staged change in 1-2 sentences (what +
-why), the commit is mixed; unstage some hunks and write a separate
-commit for them.
+If you can't describe the staged change in one or two sentences (what
+and why), the commit is mixed: unstage some hunks and commit them
+separately.
 
-## 3. Review what will actually be committed
+## 3. Review what will be committed
 
 ```bash
-git diff --cached    # the diff that's about to be committed
+git diff --cached
 ```
 
-Scan for three failure modes that often slip past `git diff` in step 1
-but become embarrassing after the push:
+Look for:
 
-- **Secrets / tokens.** Hard-coded API keys, `.env` files, `id_rsa`,
+- **Secrets and tokens:** hard-coded API keys, `.env` files, `id_rsa`,
   anything with `password=` or `token=` followed by a long random
   string.
-- **Debug logging.** `console.log`, `print(...)`, `dbg!`, commented-out
+- **Debug logging:** `console.log`, `print(...)`, `dbg!`, commented-out
   experiments left over from local poking.
-- **Unrelated formatting churn.** A reformatter ran on save and
-  rewrote 200 lines you didn't intend to touch. Either separate the
-  reformat into its own commit (per step 2) or revert it.
+- **Unrelated formatting churn:** a reformatter ran on save and rewrote
+  lines you didn't mean to touch. Move the reformat into its own commit
+  (step 2) or revert it.
 
-If the repo has a fast meaningful check (a typecheck on the staged
-files, a unit-test subset, a `lint --since=HEAD`), run it here too —
-cheaper to find a broken commit before it lands in history than after
-it does.
+If the repo has a fast check (a typecheck on the staged files, a
+unit-test subset, a linter), run it here too. If anything surfaces a
+problem, fix it and re-stage before committing.
 
-If any of these surface a problem, fix and re-stage. Don't commit "and
-clean it up next time" — next time is harder.
+## The `inspect-staged-diff.sh` hook
 
-## Deterministic safety net: the `inspect-staged-diff.sh` hook
+The frontmatter wires `scripts/inspect-staged-diff.sh` as a
+`PreToolUse` hook for the two pattern-matchable failure modes. On any
+Bash call containing `git commit`, it reads the diff about to be
+committed (the index, or `git diff HEAD` for a `-a` commit) and scans
+the added lines for:
 
-The first two failure modes above (secrets and debug logging) are
-pattern-matchable, so this skill ships them as a `PreToolUse` hook —
-`scripts/inspect-staged-diff.sh`, wired in the frontmatter — instead of
-relying on the agent to remember the scan. On any `git commit` Bash
-call, the hook inspects the diff that is about to be committed (the
-index, or `git diff HEAD` for a `-a` commit), scans the **added** lines
-for hard-coded credentials (private keys, `AKIA…` ids,
-`password`/`secret`/`token`/`api_key` literals, `.env` files) and debug
-logging (`console.log`, `debugger`, `binding.pry`, `dbg!`, …), and emits
-a non-blocking `systemMessage` listing what it found. It never blocks
-(always exits 0) — the three-step review above is still yours to run;
-the hook just catches the mechanical cases when heuristic skill-loading
-would have missed them.
+- **Credentials:** private key blocks, `AKIA…` AWS key ids,
+  `password`/`secret`/`token`/`api_key` assigned a long literal, and
+  `.env` files other than `.env.example`, `.sample`, `.template` and
+  `.dist`.
+- **Debug logging:** `console.log`, `debugger;`, `binding.pry`,
+  `byebug`, `dbg!`, `var_dump(` and similar.
 
-The third failure mode — unrelated formatting churn — is a judgment
-call, not a regex, so it stays a manual review step.
+It emits a `systemMessage` listing what it found and never blocks
+(always exits 0). Formatting churn is a judgment call, not a regex, so
+step 3 still covers it.
 
-Two caveats worth knowing:
-
-- **Skill-frontmatter hooks only fire while the skill is active.** The
-  hook registers when this skill is loaded, so for it to catch a commit
-  the skill must already be in context. Loading it before you commit
-  (which the description triggers) is what arms it.
-- The command finds the script in the skill's install places: the
-  project's `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
+- **It fires only while the skill is active.** A skill-frontmatter hook
+  registers when the skill is loaded, so the skill must already be in
+  context before the commit.
+- **It finds the script in the skill's install places:** the project's
+  `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
   `~/.claude/skills/`. Claude Code substitutes `${CLAUDE_SKILL_DIR}`
   only in a skill's body and `allowed-tools`, not in its hooks, and a
   hook runs in Claude's current directory, so neither that variable
@@ -135,3 +122,12 @@ Two caveats worth knowing:
 
 - About to stage and commit changes.
 - Reviewing your own working tree before pushing.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `git-hygiene-avoid-sweeping-operations`: name the paths a git command acts on, the rule behind staging by path rather than `git add -A`.
