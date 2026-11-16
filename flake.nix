@@ -12,6 +12,14 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Read only for `lib.mkClaudePlugin`, which builds `hooks-plugin`. A
+    # plain source, not a flake: agent-plugins-nixpkgs takes this repository
+    # as an input to pass `hooks-plugin` through, and a flake input here
+    # would make the two lock files nest each other at every update.
+    agent-plugins-nixpkgs = {
+      url = "github:nhooey/agent-plugins-nixpkgs";
+      flake = false;
+    };
     # `agent-skill-flake` is the builder library, not a skill — it turns skill
     # directories into installable flakes and aggregates them, and also exports
     # `flakeModules.devshellSkills` (which bundles numtide/devshell), so this
@@ -137,6 +145,16 @@
           name = packName;
           skills = builtins.map (n: base.bySkillName.${system}.${n}) skillNames;
         };
+
+      claudePlugins = import "${inputs.agent-plugins-nixpkgs}/lib" { inherit (nixpkgs) lib; };
+
+      # The hook scripts the `git-skills-hooks` plugin runs. Each stays in
+      # its skill's scripts/, where the skill documents it and the checks
+      # test it; the package copies it into the plugin's scripts/, and
+      # plugin/hooks/hooks.json runs it from there.
+      hookScripts = [
+        ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-sync-check.sh
+      ];
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
@@ -170,6 +188,18 @@
             runtimeInputs = [ pkgs.python3 ];
             text = ''exec python3 -B ${./scripts/git_skills.py} "$@"'';
           };
+
+          # `git-skills-hooks`: a hooks-only Claude Code plugin, installed
+          # through agent-plugins-nixpkgs.
+          hooks-plugin = claudePlugins.mkClaudePlugin pkgs {
+            src = ./plugin;
+            postPatch = ''
+              mkdir -p scripts
+              ${pkgs.lib.concatMapStrings (script: ''
+                cp ${script} scripts/${builtins.baseNameOf script}
+              '') hookScripts}
+            '';
+          };
         in
         {
           # `base.packages` (mkAllSkillsFlake without a `name =`) carries a
@@ -186,7 +216,7 @@
             ])
             // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs
             // {
-              inherit git-skills;
+              inherit git-skills hooks-plugin;
             };
 
           apps = base.apps.${system};
@@ -201,7 +231,10 @@
           ];
 
           # Every skill's bundled unittest suite, the skills' frontmatter, and
-          # the tool's own tests. `git` is for tidy-branches' git-side tests.
+          # the tool's own tests. `git` is for tidy-branches' git-side tests,
+          # `git` and `jq` for the pull request sync check hook's tests.
+          # `hooks-plugin` checks the built plugin's manifest and hooks.json,
+          # and that each Bash hook stays silent for a command it ignores.
           checks =
             builtins.mapAttrs
               (
@@ -211,6 +244,7 @@
                     nativeBuildInputs = [
                       git-skills
                       pkgs.git
+                      pkgs.jq
                       pkgs.python3
                     ];
                   }
@@ -224,6 +258,7 @@
                 skill-tests = "git-skills --root ${./.} test";
                 skill-lint = "git-skills --root ${./.} lint";
                 tool-tests = "cd ${./scripts} && python3 -B -m unittest discover --verbose";
+                hooks-plugin = "bash ${./scripts/check-hooks-plugin.sh} ${hooks-plugin} git-skills-hooks";
               };
 
           treefmt = {

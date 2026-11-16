@@ -171,9 +171,12 @@ the stack; a workflow can read `github.event.pull_request.stack` to
 skip expensive jobs on the upper layers. Merge requirements can't be
 bypassed for a stack.
 
-**Automation needs the new merge API.** The legacy pull request merge
-endpoints can't merge a stack; scripts and bots must use the
-asynchronous merge API.
+**Merge a stacked PR with `gh stack merge`, never `gh pr merge`.**
+`gh pr merge` refuses any PR in a stack: "This pull request is part of
+a stack and must be merged using the asynchronous merge REST API". Run
+`gh stack merge <number> --merge --yes` in the repository's checkout; it
+merges every PR up to and including that one. Scripts calling the REST
+API directly must use the asynchronous merge API too.
 
 **Force-pushes.** `gh stack push` pushes every branch in one atomic
 `git push` with a `--force-with-lease` check per branch, and `sync`

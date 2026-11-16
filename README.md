@@ -110,6 +110,29 @@ Five prefix packs partition the 25 skills — each skill is a member of exactly 
 nix build github:nhooey/git-skills#agent-skills-nhooey-git-hygiene
 ```
 
+## Hooks plugin
+
+The skills' Claude Code hooks ship as one hooks-only plugin, `git-skills-hooks`, built by the flake package `hooks-plugin`. A plugin hook runs in every session and inside subagents, whether or not its skill is loaded.
+
+| Hook | Event | Skill | Does |
+| --- | --- | --- | --- |
+| `pull-request-sync-check.sh` | `PostToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | After `git commit --amend` or `git push`, flags an open PR whose title or body differs from HEAD's commit; after a successful `git push` to a branch with an open PR, reminds the session once to arm `pull-request-monitor.sh`. |
+
+```sh
+nix build github:nhooey/git-skills#hooks-plugin
+```
+
+The plugin's manifest and `hooks/hooks.json` live in [`plugin/`](plugin), not at the repository root, so the plugin doesn't load `skills/` a second time under a namespaced name. Each hook script stays in its skill's `scripts/`, where the skill documents it and the checks test it.
+
+To add a skill's hook:
+
+1. Add the script's path to `hookScripts` in `flake.nix`; the package copies it into the plugin's `scripts/`.
+2. Add its entry to `plugin/hooks/hooks.json`, running it as `bash "${CLAUDE_PLUGIN_ROOT}/scripts/<name>"`: a store file has no executable bit to rely on.
+3. Keep it fast: every session runs it on every matching tool call, so it exits at once, in well under 50 ms, when the call isn't one it acts on. `nix flake check` checks `hooks.json` and runs each `Bash` hook on a command it should ignore.
+4. Give a blocking hook (one that denies or asks) a setting that turns it down to a reminder or off, read from its skill's preferences file: `<skill>.preferences.md` beside the skill's folder for the user, and `.agents/skills/<skill>.preferences.md` in the project, as `coding-agent-skill-references` describes. A plugin enabled in managed settings can't be turned off from a session, so this setting is the only off switch short of a rebuild. A hook that only adds context, like the sync check, needs none.
+
+[agent-plugins-nixpkgs](https://github.com/nhooey/agent-plugins-nixpkgs) takes this repository as an input and passes `hooks-plugin` through. To install it, add that package to `services.agent-plugins.plugins` in a nix-darwin configuration, which lists it in a marketplace in the store and enables it in managed settings. Don't also wire its hooks into `settings.json`: they'd run twice.
+
 ## Skills in this repo
 
 One section per pack. The four skills tagged `agent` (only meaningful when an LLM is driving) live under `github-workflow-*`; filter by tag if a human reads this without an agent.

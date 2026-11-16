@@ -128,8 +128,7 @@ stale temporary file, no race with a parallel agent.
 
 Even with admin rights you can't `gh pr review --approve` a PR you
 authored; the API rejects it with `Review Can not approve your own pull
-request`. In a solo workflow, such as stacked PRs you push and merge
-yourself, skip approval and merge directly:
+request`. In a solo workflow, skip approval and merge directly:
 
 ```bash
 gh pr merge <num> --merge --delete-branch
@@ -138,6 +137,12 @@ gh pr merge <num> --merge --delete-branch
 `--delete-branch` deletes the local and the remote branch after the
 merge, which a repo with `github-policy-auto-delete-merged-branches`
 applied doesn't need.
+
+A PR that is part of a stack refuses `gh pr merge`, with "This pull
+request is part of a stack and must be merged using the asynchronous
+merge REST API". Merge it with `gh stack merge <num> --merge --yes` in
+the repository's checkout, as `github-workflow-pull-request-stacked`
+says.
 
 ## Renaming a branch closes open PRs whose head it is
 
@@ -187,6 +192,7 @@ The PR number changes; that's unavoidable.
 - `gh pr edit` failed with a Projects (classic) error.
 - Writing a PR watcher that needs the merged or closed state.
 - Approving a PR you authored (you can't).
+- Merging a PR that is part of a stack (`gh stack merge`, not `gh pr merge`).
 - Renaming a branch that has an open PR against it.
 
 ## Related skills
@@ -196,4 +202,5 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
+- `github-workflow-pull-request-stacked`: merging a stacked PR with `gh stack merge`, which `gh pr merge` refuses.
 - `github-policy-auto-delete-merged-branches`: enables GitHub's delete-on-merge setting, which makes `gh pr merge --delete-branch` unnecessary.
