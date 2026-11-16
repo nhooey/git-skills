@@ -116,7 +116,7 @@ The skills' Claude Code hooks ship as one hooks-only plugin, `git-skills-hooks`,
 
 | Hook | Event | Skill | Does |
 | --- | --- | --- | --- |
-| `pull-request-sync-check.sh` | `PostToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | After `git commit --amend` or `git push`, flags an open PR whose title or body differs from HEAD's commit. |
+| `pull-request-sync-check.sh` | `PostToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | After `git commit --amend` or `git push`, flags an open PR whose title or body differs from HEAD's commit; after a successful `git push` to a branch with an open PR, reminds the session once to arm `pull-request-monitor.sh`. |
 
 ```sh
 nix build github:nhooey/git-skills#hooks-plugin

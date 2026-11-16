@@ -231,7 +231,8 @@
           ];
 
           # Every skill's bundled unittest suite, the skills' frontmatter, and
-          # the tool's own tests. `git` is for tidy-branches' git-side tests.
+          # the tool's own tests. `git` is for tidy-branches' git-side tests,
+          # `git` and `jq` for the pull request sync check hook's tests.
           # `hooks-plugin` checks the built plugin's manifest and hooks.json,
           # and that each Bash hook stays silent for a command it ignores.
           checks =
