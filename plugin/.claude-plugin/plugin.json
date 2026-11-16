@@ -1,0 +1,10 @@
+{
+  "name": "git-skills-hooks",
+  "version": "0.1.0",
+  "description": "Hooks for the git-skills skills: the PostToolUse check that flags a pull request whose title or body has drifted from its commit",
+  "author": {
+    "name": "Neil Hooey"
+  },
+  "homepage": "https://github.com/nhooey/git-skills",
+  "repository": "https://github.com/nhooey/git-skills"
+}
