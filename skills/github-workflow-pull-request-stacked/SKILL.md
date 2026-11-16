@@ -153,6 +153,7 @@ Merge requirements can't be bypassed for a stack.
 
 **Merge a stacked PR with `gh stack merge`, never `gh pr merge`.** `gh pr merge` refuses any PR in a stack: "This pull request is part of a stack and must be merged using the asynchronous merge REST API".
 Run `gh stack merge <number> --merge --yes` in the repository's checkout; it merges every PR up to and including that one.
+A bare number is read as a stack number first and only then as a PR number, and `--yes` merges without asking, so pass a PR number only when no stack has the same number; otherwise check out the stack and run `gh stack merge --merge --yes`, which merges the whole stack.
 Scripts calling the REST API directly must use the asynchronous merge API too.
 
 **Force-pushes.** `gh stack push` pushes every branch in one atomic `git push` with a `--force-with-lease` check per branch, and `sync` uses `--force-with-lease` after a rebase.
