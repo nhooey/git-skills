@@ -2,17 +2,16 @@
 name: github-workflow-pull-request-watcher
 description: |
   Watch an open pull request in the background and react to each event.
-  After every push to a branch with an open or imminent PR, arm the
-  bundled `pull-request-monitor.sh` as a background Monitor without being
-  asked; a request only to push still gets a watcher. The loop polls
-  check runs, issue comments, review-thread comments and PR state, emits
-  one line per change, and the agent reacts by event: a red check means
-  reading its log, a comment from the session's user is a chat
+  The bundled `pull-request-monitor.sh`, armed as a background Monitor,
+  polls check runs, issue comments, review-thread comments and PR state
+  and emits one line per change; the agent reacts by event: a red check
+  means reading its log, a comment from the session's user is a chat
   instruction, and a merge or close triggers the clean-up the project's
-  preferences file names, asked once and saved there. Without it the
-  agent misses red CI, comments posted on the PR and the merge itself.
-  Use after any push to a PR branch, on resuming a session with an open
-  PR and no watcher, and when a watched PR changes state.
+  preferences file names, asked once and saved there. After a push to a
+  branch with an open PR, the `pull-request-sync-check.sh` hook from
+  `github-hygiene-pull-request-mirrors-commit` reminds the session to
+  arm it. Use after a push to a PR branch, on resuming a session with an
+  open PR and no watcher, and when a watched PR changes state.
 tags: [agent, workflow]
 allowed-tools:
   - Bash
@@ -31,6 +30,8 @@ _After every push to a PR branch, a background loop reports every check, comment
 Loading this skill means arm the watcher now for the current branch's PR; with no PR for the branch, do nothing.
 
 The rule: after a push to a branch with an open or imminent PR, arm the watcher without being asked. A user who asked only for a push still wants it, because they often answer through the PR (a comment, a review, a red CI run) rather than the chat.
+
+- **The push reminder:** where `pull-request-sync-check.sh` from `github-hygiene-pull-request-mirrors-commit` runs as a PostToolUse hook, a successful `git push` to a branch with an open PR adds context naming the PR and the `pull-request-monitor.sh` command to arm, once per PR per session. Follow it unless the user said otherwise. It can't arm the Monitor itself, and it doesn't fire for a PR opened after the push, so the rule still applies without it.
 
 - **A CI-only Monitor doesn't replace it:** one armed on the pushed SHA's check runs never reports comments, `MERGED` or `CLOSED`, so an agent relying on it can amend and force-push to a PR that has already landed. Arm both when both apply.
 - **It doesn't replace the sync check either:** the watcher sees GitHub-side events after a push; the `pull-request-sync-check.sh` hook from `github-hygiene-pull-request-mirrors-commit` catches title and body drift on a local amend, before any push.
