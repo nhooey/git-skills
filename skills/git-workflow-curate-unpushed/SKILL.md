@@ -62,8 +62,11 @@ concern.
 
 - Most recent commit: stage the change, then `git commit --amend`.
 - Older unpushed commit: `git commit --fixup=<sha>`, then
-  `git rebase --autosquash <base>`. `--autosquash` works without `-i`,
-  so no editor is needed; add `-i` only to review the todo list by hand.
+  `git rebase --autosquash <base>`. From Git 2.44 `--autosquash` works
+  without `-i`, so no editor is needed; older Git ignores it without
+  `-i` and squashes nothing, so there run
+  `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>`, which
+  applies the fixups without opening an editor.
 
 If the follow-up is a different concern (different intent, different
 reviewer mental model), keep it as its own commit. The rule is about
