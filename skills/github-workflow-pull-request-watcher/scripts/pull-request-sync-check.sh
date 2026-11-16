@@ -34,7 +34,16 @@
 set -u
 export GIT_OPTIONAL_LOCKS=0
 
-payload=$(cat)
+IFS= read -r -d '' payload || true
+
+# Every session runs this on every Bash call, so the common case (no
+# `git commit` or `git push` anywhere in the payload) exits here, on
+# builtins alone, before forking jq.
+case "$payload" in
+*"git commit"* | *"git push"*) ;;
+*) exit 0 ;;
+esac
+
 command -v jq >/dev/null 2>&1 || exit 0
 
 cmd=$(jq -r '.tool_input.command // ""' <<<"$payload" 2>/dev/null) || exit 0
