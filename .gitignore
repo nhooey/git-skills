@@ -7,5 +7,8 @@
 # Local worktree convention (see using-git-worktrees).
 /.worktrees/
 
-# Project-scope skill installs from `nix develop`'s shellHook.
+# Project-scope skill installs from `nix develop`'s shellHook; the
+# skills' preferences files beside them are the project's own.
+/.agents/skills/*
+!/.agents/skills/*.preferences.md
 /.claude/skills/

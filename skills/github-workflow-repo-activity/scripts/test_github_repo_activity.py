@@ -110,6 +110,10 @@ def no_activity_get(path, paginate=True):
     return FIXTURES[path]
 
 
+def row(e):
+    return (e["time"], e["kind"], e["number"], e["title"], e["url"], e["actor"], e["detail"])
+
+
 def kinds(events):
     return sorted((e["kind"], e["number"]) for e in events)
 
@@ -152,18 +156,35 @@ class ActivityTest(unittest.TestCase):
         self.assertEqual([e["detail"] for e in a.branches()], ["topic -> t1"])
         self.assertTrue(any("commit date" in n for n in a.notes))
 
-    def test_summary_has_every_kind(self):
-        self.assertEqual(
-            {e["kind"] for e in self.a.summary()},
-            {"comment", "comment-edited", "review-approved", "merged", "opened", "closed",
-             "commit", "commit-via-pr", "branch-created"},
-        )
+    def test_summary_lists_every_event_once_in_time_order(self):
+        self.assertEqual([row(e) for e in activity.sort_events(self.a.summary())], [
+            ("2026-10-18T08:00:00Z", "commit", None, "Made Friday",
+             f"https://github.com/{R}/commit/old1", "maint", "main old1"),
+            ("2026-10-18T09:00:00Z", "review-approved", 1, "Merged by maintainer", "r1", "maint", None),
+            ("2026-10-18T10:00:00Z", "merged", 1, "Merged by maintainer", "u1", "maint", "by contrib"),
+            ("2026-10-18T11:00:00Z", "comment", 3, "Bug", "c1", "maint", None),
+            ("2026-10-18T12:00:00Z", "opened", 2, "Question", "u2", "maint", None),
+            ("2026-10-18T13:00:00Z", "comment-edited", 3, "Bug", "c2", "maint", None),
+            ("2026-10-18T14:00:00Z", "closed", 3, "Bug", "u3", "maint", None),
+            ("2026-10-18T16:05:00Z", "branch-created", None, "topic",
+             f"https://github.com/{R}/tree/topic", "maint", "t1"),
+            ("2026-10-18T16:05:00Z", "commit-via-pr", 2, "Topic work",
+             f"https://github.com/{R}/commit/t1", "maint", "topic t1"),
+        ])
+
+    def test_sort_events_breaks_ties_by_kind_then_number(self):
+        events = [{"time": "t2", "kind": "a", "number": None}, {"time": "t1", "kind": "b", "number": 2},
+                  {"time": "t1", "kind": "b", "number": None}, {"time": "t1", "kind": "a", "number": 9}]
+        self.assertEqual([(e["time"], e["kind"], e["number"]) for e in activity.sort_events(events)],
+                         [("t1", "a", 9), ("t1", "b", None), ("t1", "b", 2), ("t2", "a", None)])
 
     def test_everyone_mode_drops_bots_unless_asked(self):
         everyone = activity.Activity(R, None, SINCE, get=fake_get)
-        self.assertEqual(len(everyone.comments()), 2)
+        self.assertEqual([(e["url"], e["actor"]) for e in everyone.comments()],
+                         [("c1", "maint"), ("c2", "maint")])
         with_bots = activity.Activity(R, None, SINCE, include_bots=True, get=fake_get)
-        self.assertEqual(len(with_bots.comments()), 3)
+        self.assertEqual([(e["url"], e["actor"]) for e in with_bots.comments()],
+                         [("c1", "maint"), ("c2", "maint"), ("c3", "dependabot[bot]")])
 
 
 if __name__ == "__main__":

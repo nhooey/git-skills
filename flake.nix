@@ -161,7 +161,16 @@
       flake.reconcileScript = base.reconcileScript;
 
       perSystem =
-        { system, ... }:
+        { pkgs, system, ... }:
+        let
+          # `git-skills` (scripts/git_skills.py) runs the skills' checks; the
+          # dev shell's menu lists it and `nix flake check` runs it below.
+          git-skills = pkgs.writeShellApplication {
+            name = "git-skills";
+            runtimeInputs = [ pkgs.python3 ];
+            text = ''exec python3 -B ${./scripts/git_skills.py} "$@"'';
+          };
+        in
         {
           # `base.packages` (mkAllSkillsFlake without a `name =`) carries a
           # `default` alias and the owner-wide `agent-skills-nhooey-all`
@@ -175,16 +184,47 @@
               "default"
               "agent-skills-nhooey-all"
             ])
-            // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs;
+            // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs
+            // {
+              inherit git-skills;
+            };
 
           apps = base.apps.${system};
 
-          # The devShell (name, stock motd, install-skills startup, the
-          # ci/dev/maintenance command trio, and the reap-skills/
-          # update-skills-devshell skills commands) comes entirely from the
-          # devshellSkills module imported above. git-skills has no
-          # repo-specific dev-shell packages or commands to add, so there is no
-          # `devshells.default` block here.
+          devshells.default.commands = [
+            {
+              category = "ci";
+              name = "git-skills";
+              help = "Test and lint the skills: git-skills test|lint|list [SKILL...]";
+              package = git-skills;
+            }
+          ];
+
+          # Every skill's bundled unittest suite, the skills' frontmatter, and
+          # the tool's own tests. `git` is for tidy-branches' git-side tests.
+          checks =
+            builtins.mapAttrs
+              (
+                name: command:
+                pkgs.runCommand "git-skills-${name}"
+                  {
+                    nativeBuildInputs = [
+                      git-skills
+                      pkgs.git
+                      pkgs.python3
+                    ];
+                  }
+                  ''
+                    export HOME="$TMPDIR"
+                    ${command}
+                    touch "$out"
+                  ''
+              )
+              {
+                skill-tests = "git-skills --root ${./.} test";
+                skill-lint = "git-skills --root ${./.} lint";
+                tool-tests = "cd ${./scripts} && python3 -B -m unittest discover --verbose";
+              };
 
           treefmt = {
             projectRootFile = "flake.nix";

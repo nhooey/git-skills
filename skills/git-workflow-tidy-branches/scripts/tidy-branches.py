@@ -26,6 +26,7 @@ and only used to find branches with open pull requests.
 """
 
 import argparse
+import difflib
 import fnmatch
 import json
 import os
@@ -36,18 +37,20 @@ import sys
 
 NAME = "git-workflow-tidy-branches"
 
-# Preference keys, in the order a preferences file is written.
-DEFAULTS = {
-    "base": "",
-    "push remote": "origin",
-    "keep": ["main", "master", "release/*"],
-    "delete merged": "ask",
-    "rebase": "ask",
-    "rebase open pull requests": "ask",
+# The preference keys and their kinds, in the order a preferences file is
+# written. Their defaults are in DEFAULTS_FILE, which ships beside this script.
+SCHEMA = {
+    "base": "ref",
+    "push remote": "remote",
+    "keep": "globs",
+    "delete merged": "mode",
+    "rebase": "mode",
+    "rebase open pull requests": "mode",
 }
-LIST_KEYS = {"keep"}
-MODE_KEYS = {"delete merged", "rebase", "rebase open pull requests"}
+LIST_KEYS = {k for k, kind in SCHEMA.items() if kind == "globs"}
+MODE_KEYS = {k for k, kind in SCHEMA.items() if kind == "mode"}
 MODES = {"ask": "ask", "yes": "auto"}  # "no" emits no action
+DEFAULTS_FILE = pathlib.Path(__file__).resolve().parent / "tidy-branches.defaults.md"
 
 
 # --- git ---------------------------------------------------------------------
@@ -178,7 +181,7 @@ def parse_prefs(text):
 
 def render_prefs(prefs):
     lines = []
-    for key in DEFAULTS:
+    for key in SCHEMA:
         if key not in prefs:
             continue
         label = key[0].upper() + key[1:]
@@ -190,20 +193,53 @@ def render_prefs(prefs):
     return "\n".join(lines) + "\n"
 
 
+def check_keys(where, prefs):
+    """Exit naming `where` and the closest known key if `prefs` has a key
+    the schema doesn't."""
+    for k in prefs:
+        if k not in SCHEMA:
+            near = difflib.get_close_matches(k, SCHEMA, n=1)
+            hint = f"; did you mean {near[0]!r}?" if near else f"; known: {', '.join(SCHEMA)}"
+            sys.exit(f"{where}: unknown preference {k!r}{hint}")
+    return prefs
+
+
 def read_prefs_file(path):
     try:
-        return parse_prefs(path.read_text())
+        text = path.read_text()
     except OSError:
         return {}
+    return check_keys(path, parse_prefs(text))
+
+
+def read_defaults(path=DEFAULTS_FILE):
+    """The shipped defaults, which must name every key in the schema."""
+    try:
+        defaults = check_keys(path, parse_prefs(path.read_text()))
+    except OSError as e:
+        sys.exit(f"cannot read the shipped defaults: {e}")
+    missing = [k for k in SCHEMA if k not in defaults]
+    if missing:
+        sys.exit(f"{path}: no default for {', '.join(missing)}")
+    return {k: defaults[k] for k in SCHEMA}
+
+
+DEFAULTS = read_defaults()
+
+
+def layer_prefs(layers):
+    """The defaults, then each (scope, prefs) in `layers`, later winning:
+    (prefs, scope each value came from)."""
+    prefs, source = dict(DEFAULTS), {k: "default" for k in DEFAULTS}
+    for scope, layer in layers:
+        for k, v in check_keys(scope, layer).items():
+            prefs[k], source[k] = v, scope
+    return prefs, source
 
 
 def load_prefs():
-    """Defaults, then the user's file, then the project's: later wins."""
-    prefs, source = dict(DEFAULTS), {k: "default" for k in DEFAULTS}
-    for scope, path in prefs_paths().items():
-        for k, v in read_prefs_file(path).items():
-            if k in DEFAULTS:
-                prefs[k], source[k] = v, scope
+    """The shipped defaults, then the user's file, then the project's: later wins."""
+    prefs, source = layer_prefs((scope, read_prefs_file(path)) for scope, path in prefs_paths().items())
     for k in MODE_KEYS:
         if prefs[k] not in ("ask", "yes", "no"):
             sys.exit(f"preference {k!r} must be ask, yes or no, not {prefs[k]!r}")
@@ -213,17 +249,17 @@ def load_prefs():
 def cmd_prefs(args):
     if args.action == "show":
         prefs, source = load_prefs()
+        print(f"file\tdefault\t{DEFAULTS_FILE}\texists")
         for scope, path in prefs_paths().items():
             print(f"file\t{scope}\t{path}\t{'exists' if path.exists() else 'absent'}")
         print(f"installed\t{installed_scope()}")
-        for k in DEFAULTS:
+        for k in SCHEMA:
             v = ", ".join(prefs[k]) if k in LIST_KEYS else prefs[k]
             print(f"pref\t{k}\t{v}\t{source[k]}")
         return 0
 
     key = args.key.lower()
-    if key not in DEFAULTS:
-        sys.exit(f"unknown preference {args.key!r}; known: {', '.join(DEFAULTS)}")
+    check_keys("prefs set", {key: None})
     value = [v for item in args.value for v in item.split(",") if v] if key in LIST_KEYS else " ".join(args.value)
     if key in MODE_KEYS and value not in ("ask", "yes", "no"):
         sys.exit(f"preference {key!r} must be ask, yes or no")
@@ -279,6 +315,130 @@ def resolve_base(prefs):
     sys.exit("could not find the base branch; set the `Base` preference")
 
 
+class Git:
+    """The commit-graph questions `plan` asks, answered by git."""
+
+    ancestor = staticmethod(ancestor)
+    merged = staticmethod(merged)
+
+    @staticmethod
+    def has_merges(base, tip):
+        return bool(run("git", "rev-list", "--merges", "-n1", f"{base}..{tip}").stdout.strip())
+
+    @staticmethod
+    def replays(branch, onto):
+        return replay(branch, onto) is not None
+
+
+def find_stacks(tips, ancestor):
+    """Branch -> why it is in a stack, among unmerged branches `tips` (name ->
+    sha): built on another of them, or with others built on it."""
+    below = {b: [a for a in tips if a != b and ancestor(tips[a], tips[b])] for b in tips}
+    stacked = {}
+    for b, parents in below.items():
+        # the nearest: a parent no other parent is built on
+        near = sorted(p for p in parents if not any(q != p and tips[q] != tips[p] and ancestor(tips[p], tips[q]) for q in parents))
+        if near:
+            stacked.setdefault(b, []).append(f"on {', '.join(near)}")
+    for a in tips:
+        n = sum(a in parents for parents in below.values())
+        if n:
+            stacked.setdefault(a, []).append(f"{n} branch{'es' if n > 1 else ''} on it")
+    return stacked
+
+
+def plan(prefs, base, base_name, base_sha, branches, remote_branches, trees, prs, prunable, graph):
+    """The report's plan lines, from facts already read from the repository.
+
+    branches         (name, tip, upstream track) for each local branch
+    remote_branches  name -> tip for each branch on the push remote
+    trees            branch -> path of the worktree it is checked out in
+    prs              head branches of open pull requests, or None if unknown
+    prunable         whether `git worktree prune` would remove anything
+    graph            answers ancestor, merged, has_merges and replays (`Git`)
+    """
+    remote = prefs["push remote"]
+    keep = list(prefs["keep"]) + [base_name]
+    kept = lambda b: any(fnmatch.fnmatchcase(b, pat) for pat in keep)
+    out = []
+
+    def note(ref, reason):
+        out.append(f"note\t{ref}\t{reason}")
+
+    if prs is None:
+        note("-", "gh unavailable: open pull requests unknown")
+    for k in MODE_KEYS:
+        if prefs[k] == "no":
+            note("-", f"preference {k}: no")
+
+    if prunable:
+        out.append("auto\tprune-worktrees")
+
+    unmerged = []
+    open_prs = prs or set()
+    for name, tip, track in branches:
+        if kept(name):
+            continue
+        if graph.merged(tip, base_sha):
+            if name in open_prs:
+                note(name, f"merged into {base}, but its pull request is still open")
+            elif name in trees:
+                note(name, f"merged into {base}, but checked out in {trees[name]}")
+            elif prefs["delete merged"] != "no":
+                out.append(f"{MODES[prefs['delete merged']]}\tdelete-local\t{name}\t{tip}")
+        else:
+            unmerged.append((name, tip, track))
+
+    # A branch built on another unmerged branch is a stack: rebasing either
+    # onto the base alone would split it, so stacks are left to a stack tool.
+    stacked = find_stacks({n: t for n, t, _ in unmerged}, graph.ancestor)
+
+    for name, tip, track in unmerged:
+        if "gone" in track:
+            note(name, "its upstream branch is gone, but it isn't merged")
+        if name in stacked:
+            note(name, f"stacked ({', '.join(stacked[name])}); restack with a stack tool")
+            continue
+        if graph.ancestor(base_sha, tip):
+            continue  # already on the base
+        remote_tip = remote_branches.get(name)
+        if remote_tip and remote_tip != tip:
+            if graph.ancestor(tip, remote_tip):
+                note(name, f"{remote}/{name} has commits it lacks; pull first")
+                continue
+            if not graph.ancestor(remote_tip, tip):
+                note(name, f"differs from {remote}/{name}: each has commits the other lacks")
+                continue
+        if graph.has_merges(base_sha, tip):
+            note(name, f"behind {base}, but has merge commits; rebase by hand")
+            continue
+        if name in trees:
+            note(name, f"behind {base}; checked out in {trees[name]}, rebase it there")
+            continue
+        has_pr = prs is not None and name in prs
+        mode = prefs["rebase open pull requests" if has_pr else "rebase"]
+        if mode == "no":
+            continue
+        if not graph.replays(name, base_sha):
+            note(name, f"behind {base}; rebasing it conflicts")
+            continue
+        out.append(f"{MODES[mode]}\trebase\t{name}\t{tip}\t{base_sha}")
+        if remote_tip == tip:
+            out.append(f"{MODES[mode]}\tpush\t{remote}\t{name}\t{remote_tip}")
+        elif remote_tip:
+            note(name, f"has commits not on {remote}; push it yourself after the rebase")
+
+    for name, tip in remote_branches.items():
+        if name == "HEAD" or kept(name) or not graph.merged(tip, base_sha):
+            continue
+        if name in open_prs:
+            note(f"{remote}/{name}", f"merged into {base}, but its pull request is still open")
+        elif prefs["delete merged"] != "no":
+            out.append(f"{MODES[prefs['delete merged']]}\tdelete-remote\t{remote}\t{name}\t{tip}")
+
+    return out
+
+
 def cmd_report(args):
     prefs, _ = load_prefs()
     remote = prefs["push remote"]
@@ -292,106 +452,24 @@ def cmd_report(args):
                 run("git", "fetch", "--prune", "--quiet", r)
 
     base_sha = rev(base)
-    keep = list(prefs["keep"]) + [base_name]
-    kept = lambda b: any(fnmatch.fnmatchcase(b, pat) for pat in keep)
-    trees = worktrees()
-    prs = open_pull_requests()
-    out = []
-
-    def note(ref, reason):
-        out.append(f"note\t{ref}\t{reason}")
-
-    if prs is None:
-        note("-", "gh unavailable: open pull requests unknown")
-    for k in MODE_KEYS:
-        if prefs[k] == "no":
-            note("-", f"preference {k}: no")
-
-    if run("git", "worktree", "prune", "--dry-run").stdout.strip():
-        out.append("auto\tprune-worktrees")
-
-    branches = []
     fmt = "%(refname:short)\t%(objectname)\t%(upstream:track)"
-    for line in git("for-each-ref", "--format", fmt, "refs/heads").splitlines():
-        name, tip, track = (line.split("\t") + [""])[:3]
-        if not kept(name):
-            branches.append((name, tip, track))
-
-    unmerged = []
-    open_prs = prs or set()
-    for name, tip, track in branches:
-        if merged(tip, base_sha):
-            if name in open_prs:
-                note(name, f"merged into {base}, but its pull request is still open")
-            elif name in trees:
-                note(name, f"merged into {base}, but checked out in {trees[name]}")
-            elif prefs["delete merged"] != "no":
-                out.append(f"{MODES[prefs['delete merged']]}\tdelete-local\t{name}\t{tip}")
-        else:
-            unmerged.append((name, tip, track))
-
-    # A branch built on another unmerged branch is a stack: rebasing either
-    # onto the base alone would split it, so stacks are left to a stack tool.
-    tips = dict((n, t) for n, t, _ in unmerged)
-    below = {b: [a for a in tips if a != b and ancestor(tips[a], tips[b])] for b in tips}
-    stacked = {}
-    for b, parents in below.items():
-        # the nearest: a parent no other parent is built on
-        near = sorted(p for p in parents if not any(q != p and tips[q] != tips[p] and ancestor(tips[p], tips[q]) for q in parents))
-        if near:
-            stacked.setdefault(b, []).append(f"on {', '.join(near)}")
-    for a in tips:
-        n = sum(a in parents for parents in below.values())
-        if n:
-            stacked.setdefault(a, []).append(f"{n} branch{'es' if n > 1 else ''} on it")
-
-    for name, tip, track in unmerged:
-        if "gone" in track:
-            note(name, "its upstream branch is gone, but it isn't merged")
-        if name in stacked:
-            note(name, f"stacked ({', '.join(stacked[name])}); restack with a stack tool")
-            continue
-        if ancestor(base_sha, tip):
-            continue  # already on the base
-        remote_tip = rev(f"refs/remotes/{remote}/{name}")
-        if remote_tip and remote_tip != tip:
-            if ancestor(tip, remote_tip):
-                note(name, f"{remote}/{name} has commits it lacks; pull first")
-                continue
-            if not ancestor(remote_tip, tip):
-                note(name, f"differs from {remote}/{name}: each has commits the other lacks")
-                continue
-        if run("git", "rev-list", "--merges", "-n1", f"{base_sha}..{tip}").stdout.strip():
-            note(name, f"behind {base}, but has merge commits; rebase by hand")
-            continue
-        if name in trees:
-            note(name, f"behind {base}; checked out in {trees[name]}, rebase it there")
-            continue
-        has_pr = prs is not None and name in prs
-        mode = prefs["rebase open pull requests" if has_pr else "rebase"]
-        if mode == "no":
-            continue
-        if not replay(name, base_sha):
-            note(name, f"behind {base}; rebasing it conflicts")
-            continue
-        out.append(f"{MODES[mode]}\trebase\t{name}\t{tip}\t{base_sha}")
-        if remote_tip == tip:
-            out.append(f"{MODES[mode]}\tpush\t{remote}\t{name}\t{remote_tip}")
-        elif remote_tip:
-            note(name, f"has commits not on {remote}; push it yourself after the rebase")
-
-    for line in git("for-each-ref", "--format", "%(refname)\t%(objectname)", f"refs/remotes/{remote}").splitlines():
+    branches = [tuple((line.split("\t") + [""])[:3])
+                for line in git("for-each-ref", "--format", fmt, "refs/heads").splitlines()]
+    prefix = f"refs/remotes/{remote}/"
+    remote_branches = {}
+    for line in git("for-each-ref", "--format", "%(refname)\t%(objectname)", prefix.rstrip("/")).splitlines():
         ref, tip = line.split("\t")
-        name = ref[len(f"refs/remotes/{remote}/"):]
-        if name == "HEAD" or kept(name) or not merged(tip, base_sha):
-            continue
-        if name in open_prs:
-            note(f"{remote}/{name}", f"merged into {base}, but its pull request is still open")
-        elif prefs["delete merged"] != "no":
-            out.append(f"{MODES[prefs['delete merged']]}\tdelete-remote\t{remote}\t{name}\t{tip}")
+        remote_branches[ref[len(prefix):]] = tip
+    lines = plan(
+        prefs, base, base_name, base_sha, branches, remote_branches,
+        trees=worktrees(),
+        prs=open_pull_requests(),
+        prunable=bool(run("git", "worktree", "prune", "--dry-run").stdout.strip()),
+        graph=Git,
+    )
 
     print(f"base\t{base}\t{base_sha}")
-    print("\n".join(out))
+    print("\n".join(lines))
     return 0
 
 

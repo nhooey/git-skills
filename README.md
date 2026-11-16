@@ -29,7 +29,8 @@ Net's built-in git rules:
   `exclude_args`, so this rulebook uses format 2. Format 2 doesn't see past
   `git -C <dir>`, so `git -C repo stash` isn't caught.
 
-Their test fixtures run with `cc-safety-net rule verify`.
+Run their test fixtures with `cc-safety-net rule verify`. The dev shell
+doesn't provide `cc-safety-net`, and `nix flake check` doesn't run them.
 
 ```bash
 cc-safety-net rule add nhooey/git-skills --only git-avoid-sweeping-operations git-avoid-sweeping-operations-with-exclusions --global
@@ -53,30 +54,45 @@ cp -r git-skills/skills/* ~/.claude/skills/
 
 The top-level flake aggregates every skill; each skill directory is *also* its own flake, so you can install one without pulling the others.
 
-The default `nix run` is a **read-only preview** — it lists what would be installed and where, without touching your filesystem. To actually install, use the explicit `#install` app.
+The default `nix run` is a **read-only preview** — it lists what would be installed and where, without touching your filesystem. To actually install, use the explicit `#install` app. Every app needs `--scope`:
+
+- `--scope=personal` — `~/.claude/skills/`
+- `--scope=project` — `<project-root>/.claude/skills/`, where the project root is the nearest ancestor of the current directory holding `.git/` or `flake.nix`
+- `--scope=custom --root=<path>` — `<path>`
 
 ```sh
 # Preview what would be installed (no side effects)
-nix run github:nhooey/git-skills
-nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely'
+nix run github:nhooey/git-skills -- --scope=personal
+nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely' -- --scope=personal
 
 # Actually install
-nix run github:nhooey/git-skills#install                              # all skills
-nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely#install'   # just one
+nix run github:nhooey/git-skills#install -- --scope=personal                                  # all skills
+nix run github:nhooey/git-skills#install -- --scope=personal git-hygiene-push-force-safely    # just one
+nix run 'github:nhooey/git-skills?dir=skills/git-hygiene-push-force-safely#install' -- --scope=personal
 
 # Or build a derivation containing the skill files (no install side-effect)
-nix build github:nhooey/git-skills#all                  # every skill, symlinkJoined
-nix build github:nhooey/git-skills#git-hygiene-push-force-safely # one skill
-nix build github:nhooey/git-skills#agent-skills-nhooey-git-all         # a curated subset (see below)
+nix build github:nhooey/git-skills#agent-skill-nhooey-git-hygiene-push-force-safely  # one skill
+nix build github:nhooey/git-skills#agent-skills-nhooey-git-all                       # a pack (see below)
 ```
 
-The installer copies into `$CLAUDE_SKILLS_DIR` if set, otherwise `~/.claude/skills/`. Existing skill directories with the same name are replaced.
+The installer links each skill into the target directory as a symlink to its store path and registers a per-user GC root so `nix-store --gc` keeps it. With `--profile` it installs each skill into your Nix profile with `nix profile install` and links to `~/.nix-profile/share/claude-skills/` instead. Pass `--help` to any app for its full options.
 
-Each skill derivation produces `$out/share/claude-skills/<name>/` containing `SKILL.md`, so you can wire skills into a Home Manager module or NixOS configuration without using the installer.
+The flake's other apps take the same `--scope`:
+
+| App | Does |
+| --- | --- |
+| `reconcile` | Installs or refreshes every skill in the flake and removes managed skills that aren't in it. |
+| `uninstall` | Removes the named skills, or every skill in the flake with no names. |
+| `reap` | Removes managed skills whose store paths have been garbage-collected, and orphan GC roots. |
+| `purge` | Removes every skill any `agent-skill-flake` installer put in the target directory (`--dry-run` lists them first). |
+
+`flake.reconcileScript.<system>` is the `reconcile` command line at `--scope=project`, for another flake's dev shell to run.
+
+Each per-skill package produces `$out/share/claude-skills/<name>/` containing `SKILL.md` and the skill's bundled files, so you can wire skills into a Home Manager module or NixOS configuration without using the installer.
 
 ## Starter packs
 
-Curated subsets exposed as flake packages. Build a pack the same way as a single skill.
+Curated subsets exposed as flake packages. Build a pack the same way as a single skill. There's no package holding every skill; the `#install` app installs them all.
 
 Five prefix packs partition the 25 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
 
@@ -89,11 +105,9 @@ Five prefix packs partition the 25 skills — each skill is a member of exactly 
 | `agent-skills-nhooey-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
 | `agent-skills-nhooey-github-workflow` | All 6 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; drafting in the browser; a user's activity on a repo. |
 | `agent-skills-nhooey-github-all` | All 13 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
-| `all` | Every skill in the repo | The default `mkAllSkillsFlake` aggregator. |
 
 ```sh
 nix build github:nhooey/git-skills#agent-skills-nhooey-git-hygiene
-nix run github:nhooey/git-skills#agent-skills-nhooey-github-policy    # (no install, just build)
 ```
 
 ## Skills in this repo
@@ -127,7 +141,7 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | Name | Tags | What |
 | --- | --- | --- |
 | [github-hygiene-gh-cli-gotchas](skills/github-hygiene-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
-| [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (unwrapped via `fmt -w 2500`); re-sync after every amend. |
+| [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (reflowed to paragraphs by the bundled `create-or-update-pull-request.sh`); re-sync after every amend. |
 | [github-hygiene-refer-to-issues-and-pull-requests](skills/github-hygiene-refer-to-issues-and-pull-requests) | style | Name issues/PRs as `#N "title…"` (or `owner/repo#N "title…"`) and commits as short SHA + subject, linked; branches only in parentheses after their PR. |
 
 ### `github-policy-*` — one-time repo configuration
@@ -194,6 +208,6 @@ tags: [style]
 ---
 ```
 
-Write the `description` so an agent can decide whether to invoke the skill from that one line — describe both *what it does* and *when to use it*. Pick `tags` from the vocabulary above.
+Write the `description` so an agent can decide whether to invoke the skill from that one line — describe both *what it does* and *when to use it*. Pick `tags` from the vocabulary above. In the dev shell (`nix develop`), `git-skills lint` checks these rules and `git-skills test` runs the skills' bundled tests; `menu` lists every dev-shell command.
 
-To make a new skill installable via Nix in isolation, drop a `flake.nix` into the skill folder modeled on `skills/git-hygiene-push-force-safely/flake.nix`. The top-level flake auto-discovers any subdirectory of `skills/` that contains a `SKILL.md`, so the aggregate package picks up new skills without further changes. If the new skill belongs in a starter pack, add its name to the pack's list in the top-level `flake.nix`.
+To make a new skill installable via Nix in isolation, drop a `flake.nix` into the skill folder modeled on `skills/git-hygiene-push-force-safely/flake.nix`. The top-level flake auto-discovers any subdirectory of `skills/` that contains a `SKILL.md`, so a new skill gets its `agent-skill-nhooey-<name>` package and joins the apps without further changes. If the new skill belongs in a starter pack, add its name to the pack's list in the top-level `flake.nix`.
