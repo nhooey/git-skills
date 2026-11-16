@@ -1,242 +1,205 @@
 #!/usr/bin/env python3
-"""Offline self-check for tidy-branches.py: builds throwaway repos with a
-local bare remote, so it needs git 2.44+ but no network or `gh`.
+"""Unit tests for tidy-branches.py's pure parts: the plan, stack detection and
+preferences, fed values instead of a repository. The git-backed tests are in
+test_tidy_branches_git.py.
 
     python3 test_tidy_branches.py
 """
 
-import contextlib
 import importlib.util
-import io
-import os
 import pathlib
-import subprocess
-import tempfile
 import unittest
 
 HERE = pathlib.Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("tidy", HERE / "tidy-branches.py")
 tidy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tidy)
-tidy.open_pull_requests = lambda: set()
 
-ENV = {
-    "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
-    "GIT_COMMITTER_EMAIL": "t@t", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+
+class Graph:
+    """A commit graph as child -> parents, answering what `tidy.Git` answers."""
+
+    def __init__(self, parents, squashed=(), merges=(), conflicts=()):
+        self.parents = parents
+        self.squashed = set(squashed)
+        self.merge_tips = set(merges)
+        self.conflicts = set(conflicts)
+
+    def ancestor(self, a, b):
+        todo = [b]
+        while todo:
+            c = todo.pop()
+            if c == a:
+                return True
+            todo += self.parents.get(c, [])
+        return False
+
+    def merged(self, tip, base):
+        return self.ancestor(tip, base) or tip in self.squashed
+
+    def has_merges(self, base, tip):
+        return tip in self.merge_tips
+
+    def replays(self, branch, onto):
+        return branch not in self.conflicts
+
+
+# Base history m0 <- m1 <- m2; every other commit sits on m0 unless noted.
+GRAPH = Graph(
+    {
+        "m1": ["m0"], "m2": ["m1"], "n1": ["m2"],
+        "q1": ["m0"], "b1": ["m0"], "g1": ["m0"], "x1": ["m0"], "w1": ["m0"],
+        "k1": ["m0"], "o1": ["m0"], "r1": ["m0"], "u1": ["m0"],
+        "c0": ["m0"], "c1": ["c0"],
+        "p0": ["m0"], "p1": ["p0"],
+        "d0": ["m0"], "d1": ["d0"], "d2": ["d0"],
+        "s1": ["m0"], "s2": ["s1"],
+    },
+    squashed=["q1"],
+    merges=["x1"],
+    conflicts=["conflict"],
+)
+
+BRANCHES = [
+    ("behind", "b1", ""),          # rebased, then pushed over its remote copy
+    ("busy-merged", "m1", ""),     # merged, but checked out
+    ("conflict", "k1", ""),
+    ("current", "n1", ""),         # already on the base
+    ("diverged", "d1", ""),
+    ("ff", "m1", ""),              # merged by ancestry
+    ("gone", "g1", "[gone]"),      # unmerged with its upstream gone: still rebased
+    ("main", "m2", ""),
+    ("merges", "x1", ""),
+    ("merged-pr", "m1", ""),
+    ("open-pr", "o1", ""),
+    ("pull-first", "p0", ""),
+    ("release/1", "r1", ""),
+    ("s1", "s1", ""),
+    ("s2", "s2", ""),
+    ("squashed", "q1", ""),
+    ("unpushed", "c1", ""),        # ahead of its remote copy
+    ("worktree", "w1", ""),
+]
+
+REMOTE_BRANCHES = {
+    "HEAD": "m2", "behind": "b1", "diverged": "d2", "ff": "m1", "main": "m2",
+    "merged-pr": "m1", "pull-first": "p1", "remote-only": "u1", "unpushed": "c0",
 }
 
+TREES = {"busy-merged": "/wt/a", "worktree": "/wt/b"}
+PRS = {"merged-pr", "open-pr"}
+PREFS = dict(tidy.DEFAULTS, rebase="yes")
 
-def sh(cwd, *args):
-    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
-
-
-def commit(cwd, path, text, msg):
-    (pathlib.Path(cwd) / path).write_text(text)
-    sh(cwd, "add", path)
-    sh(cwd, "commit", "-q", "-m", msg)
-    return sh(cwd, "rev-parse", "HEAD")
-
-
-class Repo(unittest.TestCase):
-    def setUp(self):
-        self._env = {k: os.environ.get(k) for k in [*ENV, "CLAUDE_SKILL_DIR", "CLAUDE_PROJECT_DIR", "HOME"]}
-        os.environ.update(ENV)
-        self.tmp = pathlib.Path(tempfile.mkdtemp())
-        self.home = self.tmp / "home"
-        os.environ["HOME"] = str(self.home)
-        os.environ["CLAUDE_SKILL_DIR"] = str(self.home / ".claude" / "skills" / tidy.NAME)
-        os.environ.pop("CLAUDE_PROJECT_DIR", None)
-        self.origin = self.tmp / "origin.git"
-        self.repo = self.tmp / "repo"
-        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(self.origin)], check=True)
-        subprocess.run(["git", "init", "-q", "-b", "main", str(self.repo)], check=True)
-        r = self.repo
-        sh(r, "remote", "add", "origin", str(self.origin))
-        commit(r, "a.txt", "1\n2\n3\n", "base")
-        sh(r, "push", "-q", "-u", "origin", "main")
-        sh(r, "remote", "set-head", "origin", "main")
-        self.cwd = os.getcwd()
-        os.chdir(r)
-
-    def tearDown(self):
-        os.chdir(self.cwd)
-        for k, v in self._env.items():
-            os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
-
-    def call(self, *argv, stdin=""):
-        out = io.StringIO()
-        old = tidy.sys.stdin
-        tidy.sys.stdin = io.StringIO(stdin)
-        try:
-            with contextlib.redirect_stdout(out):
-                code = tidy.main(list(argv))
-        finally:
-            tidy.sys.stdin = old
-        return code, out.getvalue()
-
-    def report(self):
-        code, out = self.call("report")
-        self.assertEqual(code, 0)
-        return out
+FULL_PLAN = [
+    "auto\tprune-worktrees",
+    "note\tbusy-merged\tmerged into origin/main, but checked out in /wt/a",
+    "ask\tdelete-local\tff\tm1",
+    "note\tmerged-pr\tmerged into origin/main, but its pull request is still open",
+    "ask\tdelete-local\tsquashed\tq1",
+    "auto\trebase\tbehind\tb1\tm2",
+    "auto\tpush\torigin\tbehind\tb1",
+    "note\tconflict\tbehind origin/main; rebasing it conflicts",
+    "note\tdiverged\tdiffers from origin/diverged: each has commits the other lacks",
+    "note\tgone\tits upstream branch is gone, but it isn't merged",
+    "auto\trebase\tgone\tg1\tm2",
+    "note\tmerges\tbehind origin/main, but has merge commits; rebase by hand",
+    "ask\trebase\topen-pr\to1\tm2",
+    "note\tpull-first\torigin/pull-first has commits it lacks; pull first",
+    "note\ts1\tstacked (1 branch on it); restack with a stack tool",
+    "note\ts2\tstacked (on s1); restack with a stack tool",
+    "auto\trebase\tunpushed\tc1\tm2",
+    "note\tunpushed\thas commits not on origin; push it yourself after the rebase",
+    "note\tworktree\tbehind origin/main; checked out in /wt/b, rebase it there",
+    "ask\tdelete-remote\torigin\tff\tm1",
+    "note\torigin/merged-pr\tmerged into origin/main, but its pull request is still open",
+]
 
 
-class Report(Repo):
-    def build(self):
-        r = self.repo
-        # merged by ancestry, also on the remote
-        sh(r, "switch", "-q", "-c", "ff")
-        commit(r, "ff.txt", "ff\n", "ff")
-        sh(r, "push", "-q", "origin", "ff")
-        sh(r, "switch", "-q", "main")
-        sh(r, "merge", "-q", "--ff-only", "ff")
-        # squash-merged: two commits, landed as one
-        sh(r, "switch", "-q", "-c", "squashed")
-        commit(r, "sq.txt", "x\n", "sq 1")
-        commit(r, "sq.txt", "x\ny\n", "sq 2")
-        sh(r, "switch", "-q", "main")
-        commit(r, "sq.txt", "x\ny\n", "squash of squashed")
-        # behind, clean, pushed
-        sh(r, "switch", "-q", "-c", "behind", "HEAD~2")
-        self.behind = commit(r, "b.txt", "b\n", "behind")
-        sh(r, "push", "-q", "origin", "behind")
-        # behind, conflicting
-        sh(r, "switch", "-q", "-c", "conflict", "main~2")
-        commit(r, "a.txt", "1\nX\n3\n", "conflict")
-        # a stack: s2 on s1
-        sh(r, "switch", "-q", "-c", "s1", "main~2")
-        commit(r, "s.txt", "1\n", "s1")
-        sh(r, "switch", "-q", "-c", "s2")
-        commit(r, "s.txt", "1\n2\n", "s2")
-        # diverged from its remote copy
-        sh(r, "switch", "-q", "-c", "diverged", "main~2")
-        commit(r, "d.txt", "local\n", "d local")
-        sh(r, "push", "-q", "origin", "HEAD:refs/heads/diverged")
-        sh(r, "commit", "-q", "--amend", "-m", "d local rewritten")
-        # behind, checked out in another worktree
-        sh(r, "branch", "busy", "main~2")
-        sh(r, "worktree", "add", "-q", str(self.tmp / "busy"), "busy")
-        commit(self.tmp / "busy", "busy.txt", "busy\n", "busy")
-        sh(r, "switch", "-q", "main")
-        main = commit(r, "a.txt", "1\nM\n3\n", "main moves")
-        sh(r, "push", "-q", "origin", "main")
-        return main
-
-    def test_plan(self):
-        main = self.build()
-        lines = self.report().splitlines()
-        self.assertEqual(lines[0], f"base\torigin/main\t{main}")
-        body = lines[1:]
-        actions = {tuple(l.split("\t")[1:3]) for l in body if not l.startswith("note")}
-        notes = {l.split("\t")[1]: l.split("\t")[2] for l in body if l.startswith("note")}
-        self.assertIn(("delete-local", "ff"), actions)
-        self.assertIn(("delete-local", "squashed"), actions)
-        self.assertIn(("delete-remote", "origin"), actions)
-        self.assertIn(("rebase", "behind"), actions)
-        self.assertIn(("push", "origin"), actions)
-        self.assertIn("conflicts", notes["conflict"])
-        self.assertIn("stacked (on s1)", notes["s2"])
-        self.assertIn("stacked (1 branch on it)", notes["s1"])
-        self.assertIn("each has commits", notes["diverged"])
-        self.assertIn("checked out in", notes["busy"])
-        self.assertNotIn("main", {l.split("\t")[2] for l in body if "\tdelete-local\t" in l})
-        for l in body:
-            if not l.startswith("note"):
-                self.assertEqual(l.split("\t")[0], "ask")
-
-    def test_report_moves_no_branch(self):
-        self.build()
-        before = sh(self.repo, "for-each-ref", "refs/heads")
-        self.report()
-        self.assertEqual(sh(self.repo, "for-each-ref", "refs/heads"), before)
-
-    def test_apply(self):
-        main = self.build()
-        plan = self.report()
-        code, out = self.call("apply", stdin=plan)
-        self.assertEqual(code, 0, out)
-        heads = sh(self.repo, "for-each-ref", "--format=%(refname:short)", "refs/heads").split()
-        self.assertNotIn("ff", heads)
-        self.assertNotIn("squashed", heads)
-        self.assertEqual(sh(self.repo, "rev-parse", "behind~1"), main)
-        self.assertEqual(sh(self.origin, "rev-parse", "behind"), sh(self.repo, "rev-parse", "behind"))
-        self.assertNotIn("ff", sh(self.origin, "for-each-ref", "--format=%(refname:short)", "refs/heads").split())
-
-    def test_apply_skips_a_branch_that_moved(self):
-        self.build()
-        plan = self.report()
-        sh(self.repo, "branch", "-f", "behind", "main")
-        code, out = self.call("apply", stdin="\n".join(l for l in plan.splitlines() if "\tbehind\t" in l))
-        self.assertEqual(code, 1)
-        self.assertIn("skipped\trebase behind", out)
-        self.assertIn("moved since the report", out)
-
-    def test_fork_base_is_upstream(self):
-        # A fork's own main holds branches upstream hasn't taken: measured
-        # against it, they'd all look merged.
-        r = self.repo
-        upstream = self.tmp / "upstream.git"
-        subprocess.run(["git", "clone", "-q", "--bare", str(self.origin), str(upstream)], check=True)
-        sh(r, "remote", "add", "upstream", str(upstream))
-        sh(r, "fetch", "-q", "upstream")
-        sh(r, "switch", "-q", "-c", "feature")
-        commit(r, "f.txt", "f\n", "feature")
-        sh(r, "switch", "-q", "main")
-        sh(r, "merge", "-q", "--no-ff", "-m", "integrate", "feature")
-        sh(r, "push", "-q", "origin", "main")
-        out = self.report()
-        self.assertTrue(out.startswith("base\tupstream/main\t"), out)
-        self.assertNotIn("delete-local\tfeature", out)
-
-    def test_preference_no_rebase(self):
-        self.build()
-        self.call("prefs", "set", "--scope", "project", "rebase", "no")
-        out = self.report()
-        self.assertNotIn("\trebase\t", out)
-        self.assertIn("preference rebase: no", out)
-
-    def test_preference_yes_is_auto(self):
-        self.build()
-        self.call("prefs", "set", "--scope", "project", "delete merged", "yes")
-        self.assertIn("auto\tdelete-local\tff\t", self.report())
+def plan(prefs=PREFS, prs=PRS, prunable=True):
+    return tidy.plan(prefs, "origin/main", "main", "m2", BRANCHES, REMOTE_BRANCHES,
+                     trees=TREES, prs=prs, prunable=prunable, graph=GRAPH)
 
 
-class Prefs(Repo):
+class Plan(unittest.TestCase):
+    def test_every_case(self):
+        self.assertEqual(plan(), FULL_PLAN)
+
+    def test_nothing_to_prune(self):
+        self.assertEqual(plan(prunable=False), FULL_PLAN[1:])
+
+    def test_unknown_pull_requests(self):
+        # Without gh, merged-pr is an ordinary merged branch and open-pr an
+        # ordinary behind one, under the `rebase` preference.
+        becomes = {
+            "note\tmerged-pr\tmerged into origin/main, but its pull request is still open":
+                "ask\tdelete-local\tmerged-pr\tm1",
+            "note\torigin/merged-pr\tmerged into origin/main, but its pull request is still open":
+                "ask\tdelete-remote\torigin\tmerged-pr\tm1",
+            "ask\trebase\topen-pr\to1\tm2": "auto\trebase\topen-pr\to1\tm2",
+        }
+        expected = ["note\t-\tgh unavailable: open pull requests unknown"]
+        expected += [becomes.get(line, line) for line in FULL_PLAN]
+        self.assertEqual(plan(prs=None), expected)
+
+    def test_open_pull_requests_have_their_own_mode(self):
+        lines = plan(prefs=dict(PREFS, **{"rebase open pull requests": "no"}))
+        self.assertEqual(lines, ["note\t-\tpreference rebase open pull requests: no"]
+                         + [l for l in FULL_PLAN if "\topen-pr\t" not in l])
+
+    def test_all_no_leaves_only_notes(self):
+        prefs = dict(PREFS, **{k: "no" for k in tidy.MODE_KEYS})
+        lines = plan(prefs=prefs)
+        self.assertEqual(sorted(lines[:3]), sorted(f"note\t-\tpreference {k}: no" for k in tidy.MODE_KEYS))
+        acting = [l for l in lines[3:] if not l.startswith("note")]
+        self.assertEqual(acting, ["auto\tprune-worktrees"])
+        # A rebase that isn't wanted isn't tried, so its conflict isn't reported.
+        self.assertNotIn("note\tconflict\tbehind origin/main; rebasing it conflicts", lines)
+        self.assertIn("note\tworktree\tbehind origin/main; checked out in /wt/b, rebase it there", lines)
+
+    def test_keep_patterns_and_base_name_are_never_touched(self):
+        prefs = dict(PREFS, keep=["re*/*"], **{"delete merged": "yes"})
+        lines = plan(prefs=prefs)
+        touched = {l.split("\t")[2] for l in lines if l.split("\t")[0] in ("ask", "auto") and len(l.split("\t")) > 2}
+        self.assertNotIn("release/1", touched)
+        self.assertNotIn("main", touched)  # the base's own name is always kept
+        self.assertIn("auto\tdelete-local\tff\tm1", lines)
+
+
+class FindStacks(unittest.TestCase):
+    def test_chain_names_nearest_parent_and_count(self):
+        g = Graph({"t2": ["t1"], "t3": ["t2"], "t4": ["t0"]})
+        stacks = tidy.find_stacks({"a": "t1", "b": "t2", "c": "t3", "lone": "t4"}, g.ancestor)
+        self.assertEqual(stacks, {
+            "a": ["2 branches on it"],
+            "b": ["on a", "1 branch on it"],
+            "c": ["on b"],
+        })
+
+    def test_no_stack(self):
+        g = Graph({"t1": ["t0"], "t2": ["t0"]})
+        self.assertEqual(tidy.find_stacks({"a": "t1", "b": "t2"}, g.ancestor), {})
+
+
+class Prefs(unittest.TestCase):
     def test_round_trip(self):
         prefs = {"base": "upstream/main", "keep": ["main", "integration"], "rebase": "no"}
         self.assertEqual(tidy.parse_prefs(tidy.render_prefs(prefs)), prefs)
 
+    def test_render_is_in_defaults_order(self):
+        text = tidy.render_prefs({"rebase": "no", "keep": ["main"], "base": "b"})
+        self.assertEqual(text, "- Base: b\n- Keep:\n  - main\n- Rebase: no\n")
+
     def test_parse_comma_list_and_backticks(self):
         self.assertEqual(tidy.parse_prefs("- Keep: `main`, release/*\n")["keep"], ["main", "release/*"])
 
-    def test_project_scope_writes_file(self):
-        code, out = self.call("prefs", "set", "--scope", "project", "keep", "main,integration")
-        self.assertEqual(code, 0)
-        path = self.repo / ".agents" / "skills" / f"{tidy.NAME}.preferences.md"
-        self.assertEqual(path.read_text(), "- Keep:\n  - main\n  - integration\n")
-        _, shown = self.call("prefs", "show")
-        self.assertIn("pref\tkeep\tmain, integration\tproject", shown)
-
-    def test_user_scope_prints_home_manager_change(self):
-        code, out = self.call("prefs", "set", "rebase", "no")
-        self.assertEqual(code, 0)
-        self.assertIn(f'home.file.".claude/skills/{tidy.NAME}.preferences.md".text', out)
-        self.assertIn("  - Rebase: no\n", out)
-        self.assertFalse((self.home / ".claude" / "skills" / f"{tidy.NAME}.preferences.md").exists())
-
-    def test_installed_in_project_saves_to_project(self):
-        os.environ["CLAUDE_SKILL_DIR"] = str(self.repo / ".claude" / "skills" / tidy.NAME)
-        self.assertEqual(tidy.installed_scope(), "project")
-        self.call("prefs", "set", "rebase", "yes")
-        self.assertTrue((self.repo / ".agents" / "skills" / f"{tidy.NAME}.preferences.md").exists())
-
-    def test_user_file_overridden_by_project(self):
-        user = self.home / ".claude" / "skills" / f"{tidy.NAME}.preferences.md"
-        user.parent.mkdir(parents=True)
-        user.write_text("- Rebase: no\n- Push remote: fork\n")
-        self.call("prefs", "set", "--scope", "project", "rebase", "yes")
-        prefs, source = tidy.load_prefs()
-        self.assertEqual((prefs["rebase"], source["rebase"]), ("yes", "project"))
-        self.assertEqual((prefs["push remote"], source["push remote"]), ("fork", "user"))
+    def test_later_layer_wins_and_records_its_scope(self):
+        prefs, source = tidy.layer_prefs([
+            ("user", {"rebase": "no", "push remote": "fork", "unknown": "x"}),
+            ("project", {"rebase": "yes"}),
+        ])
+        self.assertEqual(prefs, dict(tidy.DEFAULTS, rebase="yes", **{"push remote": "fork"}))
+        self.assertEqual(source, dict({k: "default" for k in tidy.DEFAULTS},
+                                      rebase="project", **{"push remote": "user"}))
 
 
 if __name__ == "__main__":
