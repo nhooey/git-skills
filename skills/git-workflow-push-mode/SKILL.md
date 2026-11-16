@@ -190,12 +190,12 @@ Add a one-line index entry to the project's `MEMORY.md`:
 ## Safety net
 
 The `pull-request-sync-check.sh` PostToolUse hook from
-`github-workflow-pull-request-watcher`, once wired into Claude Code's
-`settings.json`, checks for an open PR on every `git commit --amend`
-and `git push`, and emits a reminder when HEAD's commit message has
-drifted from the PR's title or body. It doesn't block; when it fires,
-re-sync the PR as it says. The watcher skill's "Companion hook" section
-covers the wiring.
+`github-hygiene-pull-request-mirrors-commit`, run by the
+`git-skills-hooks` plugin, checks for an open PR on every
+`git commit --amend` and `git push`, and emits a reminder when HEAD's
+commit message has drifted from the PR's title or body. It doesn't
+block; when it fires, re-sync the PR as it says. That skill's "The sync
+check hook" section covers the plugin.
 
 ## When to apply
 
@@ -222,5 +222,4 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
-- `github-hygiene-pull-request-mirrors-commit`: re-syncing an existing PR's title and body after you amend or reword the commit.
-- `github-workflow-pull-request-watcher`: ships the `pull-request-sync-check.sh` safety-net hook that flags a PR whose title or body has drifted from HEAD.
+- `github-hygiene-pull-request-mirrors-commit`: re-syncing an existing PR's title and body after you amend or reword the commit, and the `pull-request-sync-check.sh` safety-net hook that flags a PR whose title or body has drifted from HEAD.

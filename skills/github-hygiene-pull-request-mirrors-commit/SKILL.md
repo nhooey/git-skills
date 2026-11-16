@@ -7,7 +7,9 @@ description: |
   `create-or-update-pull-request.sh` opens the PR from the commit, reflows
   the body to GFM paragraphs, adds the footer, and after an amend PATCHes
   the open PR back in line, since GitHub never refreshes a PR's title or
-  body itself. Use when opening a PR from an agent session, amending a
+  body itself; the bundled `pull-request-sync-check.sh` PostToolUse hook
+  flags an open PR whose title or body has drifted from HEAD after an
+  amend or push. Use when opening a PR from an agent session, amending a
   commit behind an open PR, or reviewing a PR description that has drifted
   from its commit.
 tags: [workflow, style, team-stance]
@@ -100,9 +102,10 @@ It also re-syncs. GitHub derives a PR's title and body from the commit
 once, at creation; an amend and force-push refreshes the diff but
 leaves the title and body as they were. The script finds an existing
 open PR for the head branch and PATCHes it instead of opening a new
-one, so re-run it after every amend. The `pull-request-sync-check.sh`
-hook from `github-workflow-pull-request-watcher` nudges you when HEAD
-has drifted from the open PR.
+one, so re-run it after every amend. The bundled
+`pull-request-sync-check.sh` hook (see
+[The sync check hook](#the-sync-check-hook-pull-request-sync-checksh))
+nudges you when HEAD has drifted from the open PR.
 
 The re-sync overwrites the whole body. If a reviewer or maintainer may
 have edited the PR description, check first with `safe-body-edit.sh`
@@ -142,6 +145,39 @@ written `owner/repo#123`, and a commit there `owner/repo@abcdef1`.
 `github-hygiene-refer-to-issues-and-pull-requests` covers how to label
 them.
 
+## The sync check hook: `pull-request-sync-check.sh`
+
+A PostToolUse hook for Bash, in `scripts/` beside this SKILL.md, that
+enforces the rule above when skill loading doesn't. On a Bash call
+containing `git commit --amend` or `git push`, it looks up the branch's
+open PR (`gh pr list --head <branch> --state open`), and when HEAD's
+subject or body differs from the PR's title or body it emits a
+`systemMessage` naming the PR and the difference and saying to re-sync
+with `create-or-update-pull-request.sh`.
+
+- **Silent otherwise:** other Bash calls, no git repository, a
+  detached HEAD, no `gh` or `jq`, or no open PR.
+- **Body comparison ignores whitespace** (`tr -s '[:space:]' ' '`), so
+  a 72-column commit body matches its reflowed PR body, and it also
+  matches when the PR body has one extra closing paragraph, the footer
+  that `create-or-update-pull-request.sh` adds.
+- **Never exits non-zero:** it nudges, it doesn't block.
+
+The hook comes from the `git-skills-hooks` Claude Code plugin, which
+this repository builds as its flake package `hooks-plugin`. It's
+installed through agent-plugins-nixpkgs and enabled in managed settings
+by the user's nix-darwin configuration (MyNixOS), so it runs in every
+session and inside subagents, whether or not this skill is loaded.
+Don't add it to `settings.json` as well: it would run twice on every
+Bash call.
+
+- **Without the plugin,** as on a machine not configured through Nix,
+  nothing checks for drift: re-sync after every amend as this skill
+  says, and point the user at the plugin. It's installed by adding
+  `git-skills`' `hooks-plugin` to `services.agent-plugins.plugins`.
+- **Dependencies:** the script finds `jq`, `gh`, `git` and the usual
+  text tools on the user's PATH when the hook runs.
+
 ## When to apply
 
 - About to open a PR: run `create-or-update-pull-request.sh`.
@@ -169,4 +205,4 @@ came from; don't apply it from memory.
 - `git-hygiene-commit-message-format`: the commit message rules (72-character subject, why-focused body) that the PR title and body inherit.
 - `github-hygiene-gh-cli-gotchas`: `gh` CLI traps, and the `safe-body-edit.sh` check to run before overwriting a body someone else may have edited.
 - `github-hygiene-refer-to-issues-and-pull-requests`: how to label issues, PRs and commits, in this repository and across repositories.
-- `github-workflow-pull-request-watcher`: ships the hook that nudges you when HEAD has drifted from an open PR's title and body.
+- `github-workflow-pull-request-watcher`: the background Monitor that watches the PR's checks, comments and state after a push.
