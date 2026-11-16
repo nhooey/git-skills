@@ -280,6 +280,28 @@ class Prefs(RepoFixture):
         self.assertIn("pref\tpush remote\tfork\tuser", shown)
         self.assertIn("pref\tdelete merged\task\tdefault", shown)
 
+    def test_no_preferences_files_runs_on_the_defaults(self):
+        shown = self.shown()
+        self.assertIn(f"file\tdefault\t{HERE / 'tidy-branches.defaults.md'}\texists", shown)
+        self.assertIn(f"file\tproject\t{self.project_file()}\tabsent", shown)
+        prefs = [l for l in shown if l.startswith("pref\t")]
+        self.assertEqual(prefs, [
+            "pref\tbase\t\tdefault",
+            "pref\tpush remote\torigin\tdefault",
+            "pref\tkeep\tmain, master, release/*\tdefault",
+            "pref\tdelete merged\task\tdefault",
+            "pref\trebase\task\tdefault",
+            "pref\trebase open pull requests\task\tdefault",
+        ])
+        code, out = self.tidy("report", "--no-fetch")
+        self.assertEqual(code, 0, out)
+
+    def test_unknown_key_is_refused(self):
+        self.project_file().parent.mkdir(parents=True)
+        self.project_file().write_text("- Rebase: no\n- Push remot: fork\n")
+        code, out = self.tidy("report")
+        self.assertEqual((code, out), (1, ""))
+
     def test_bad_mode_is_refused(self):
         self.project_file().parent.mkdir(parents=True)
         self.project_file().write_text("- Rebase: sometimes\n")

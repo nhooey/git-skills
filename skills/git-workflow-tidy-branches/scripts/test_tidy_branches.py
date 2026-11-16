@@ -8,6 +8,7 @@ test_tidy_branches_git.py.
 
 import importlib.util
 import pathlib
+import tempfile
 import unittest
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -194,12 +195,62 @@ class Prefs(unittest.TestCase):
 
     def test_later_layer_wins_and_records_its_scope(self):
         prefs, source = tidy.layer_prefs([
-            ("user", {"rebase": "no", "push remote": "fork", "unknown": "x"}),
+            ("user", {"rebase": "no", "push remote": "fork"}),
             ("project", {"rebase": "yes"}),
         ])
         self.assertEqual(prefs, dict(tidy.DEFAULTS, rebase="yes", **{"push remote": "fork"}))
         self.assertEqual(source, dict({k: "default" for k in tidy.DEFAULTS},
                                       rebase="project", **{"push remote": "user"}))
+
+    def test_empty_layers_give_the_defaults(self):
+        prefs, source = tidy.layer_prefs([("user", tidy.parse_prefs("")), ("project", {})])
+        self.assertEqual(prefs, tidy.DEFAULTS)
+        self.assertEqual(set(source.values()), {"default"})
+
+    def test_list_replaces_and_empty_value_unsets(self):
+        prefs, _ = tidy.layer_prefs([
+            ("user", {"base": "upstream/main", "keep": ["main", "release/*", "integration"]}),
+            ("project", tidy.parse_prefs("- Base:\n- Keep: trunk\n")),
+        ])
+        self.assertEqual((prefs["base"], prefs["keep"]), ("", ["trunk"]))
+
+    def test_unknown_key_is_refused_with_the_nearest_key(self):
+        with self.assertRaises(SystemExit) as e:
+            tidy.layer_prefs([("user", {"rebse": "no"})])
+        self.assertEqual(str(e.exception), "user: unknown preference 'rebse'; did you mean 'rebase'?")
+
+
+class Defaults(unittest.TestCase):
+    """The shipped defaults file is the only place a default is written."""
+
+    def test_names_every_key_in_schema_order(self):
+        self.assertEqual(list(tidy.parse_prefs(tidy.DEFAULTS_FILE.read_text())), list(tidy.SCHEMA))
+
+    def test_values(self):
+        self.assertEqual(tidy.DEFAULTS, {
+            "base": "",
+            "push remote": "origin",
+            "keep": ["main", "master", "release/*"],
+            "delete merged": "ask",
+            "rebase": "ask",
+            "rebase open pull requests": "ask",
+        })
+
+    def test_every_key_is_described(self):
+        lines = tidy.DEFAULTS_FILE.read_text().splitlines()
+        for i, line in enumerate(lines):
+            if line.startswith("- "):
+                follow = lines[i + 1] if i + 1 < len(lines) else ""
+                self.assertRegex(follow, r"^  [^-* ]", f"no description under {line!r}")
+
+    def test_missing_default_is_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / "defaults.md"
+            path.write_text("- Base:\n- Rebase: ask\n")
+            with self.assertRaises(SystemExit) as e:
+                tidy.read_defaults(path)
+        self.assertIn("no default for push remote, keep, delete merged, rebase open pull requests",
+                      str(e.exception))
 
 
 if __name__ == "__main__":
