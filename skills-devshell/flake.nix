@@ -11,41 +11,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Skill sources. They follow `nixpkgs` but not `agent-skill-flake`, so
-    # each keeps its own compatible builder.
-    coding-agent-skills = {
-      url = "github:nhooey/coding-agent-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    git-skills = {
-      url = "github:nhooey/git-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nix-skills = {
-      url = "github:nhooey/nix-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    python-skills = {
-      url = "github:nhooey/python-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    shell-skills = {
-      url = "github:nhooey/shell-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # Third-party skills skillspkgs vendors, the skill-authoring tooling of
-    # its `authoring` combination.
-    humanizer = {
-      url = "github:nhooey/skillspkgs?dir=pkgs/humanizer";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    skill-creator = {
-      url = "github:nhooey/skillspkgs?dir=pkgs/skill-creator";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    superpowers = {
-      url = "github:nhooey/skillspkgs?dir=pkgs/superpowers";
+    # skillspkgs' per-family combinations. It follows `nixpkgs` but not
+    # `agent-skill-flake`, so its sources keep their own compatible builder;
+    # `mkDevshellSkillsFlake` below still runs from this flake's pinned lib.
+    skillspkgs-combinations = {
+      url = "github:nhooey/skillspkgs?dir=sources/combinations";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -61,37 +31,10 @@
       systems = import inputs.systems;
       name = "git-skills-devshell";
       sources = [
-        # The repository's own git and GitHub skills, as a consumer sees them.
-        { source = inputs.git-skills; }
-        # Writing this flake and each skill's flake.
-        {
-          source = inputs.nix-skills;
-          skills = [ "nix-flakes" ];
-        }
-        # The Python scripts some skills bundle.
-        { source = inputs.python-skills; }
-        # Safe shell commands: named deletes, PIDs, no machine-wide changes.
-        { source = inputs.shell-skills; }
-        # Running as a headless session in a checkout, keeping the scratchpad
-        # tidy, and the cross-repository plan's graph.
-        {
-          source = inputs.coding-agent-skills;
-          skills = [
-            "coding-agent-headless-in-checkout"
-            "coding-agent-plans-as-graph"
-            "coding-agent-scratchpad-scripts"
-          ];
-        }
-        # Writing and testing skills.
-        { source = inputs.humanizer; }
-        {
-          source = inputs.skill-creator;
-          prefix = "anthropic";
-        }
-        {
-          source = inputs.superpowers;
-          prefix = "superpowers";
-        }
+        # The skill-collections family's combination, the one skill set every
+        # skill collection installs. Nothing is added: it already covers the
+        # Python this repository's skills bundle.
+        { source = inputs.skillspkgs-combinations.combinations.skill-collections; }
       ];
     };
 }

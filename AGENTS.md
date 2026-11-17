@@ -7,9 +7,10 @@ bundles; the root `flake.nix` aggregates them into packages and packs.
 
 ## Build and test
 
-`nix develop` enters the dev shell, installs its skills (listed in
-`skills-devshell/flake.nix`) into `.agents/skills/`, and prints `menu`,
-which lists every command below with a line of help.
+`nix develop` enters the dev shell, installs skillspkgs'
+`skill-collections` combination (taken in `skills-devshell/flake.nix`,
+with no additions) into `.agents/skills/`, and prints `menu`, which lists
+every command below with a line of help.
 
 - `check` runs `nix flake check`: every flake output, formatting, the
   skills' tests and `git-skills lint`. It must pass before a change is
