@@ -35,6 +35,9 @@ Every file git tracks, not only source:
 - Config files and their comments.
 - Scripts and their usage text.
 
+Tracked files are snapshots, so the timeless word list from
+`writing-hygiene-declarative-statements` applies to them.
+
 ## What to leave out
 
 - Version notes: "added in v3.2", "new since the refactor".
@@ -97,3 +100,4 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `git-hygiene-commit-message-format`: where the history goes instead, in a body that explains why.
+- `writing-hygiene-declarative-statements`: snapshots and deltas, and the timeless word list a snapshot avoids.

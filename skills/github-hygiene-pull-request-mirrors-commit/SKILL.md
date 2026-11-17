@@ -1,9 +1,10 @@
 ---
 name: github-hygiene-pull-request-mirrors-commit
 description: |
-  Keep each PR a thin wrapper over a single commit: the title is the commit
-  subject and the body is the commit body plus the Claude Code footer, with
-  no `## Summary` or `## Test plan` template. The bundled
+  Keep each PR a thin wrapper over its commit: one commit by default, the
+  title is the commit subject and the body is the commit body plus the
+  Claude Code footer, with no `## Summary` or `## Test plan` template.
+  Gives the generated shape of a multi-commit body. The bundled
   `create-or-update-pull-request.sh` opens the PR from the commit, reflows
   the body to GFM paragraphs, adds the footer, and after an amend PATCHes
   the open PR back in line, since GitHub never refreshes a PR's title or
@@ -21,10 +22,10 @@ allowed-tools:
 
 # Pull requests that mirror their commit
 
-_A PR is one commit: its title is the commit subject, its body the commit body and the attribution footer, kept in sync by the bundled script._
+_A PR is one commit by default: its title is the commit subject, its body the commit body and the attribution footer, kept in sync by the bundled script._
 
-This is a team stance. Teams that want multi-commit PRs with prose
-descriptions independent of the commits should skip this skill.
+This is a team stance. Teams that want PR descriptions written apart
+from the commits should skip this skill.
 Loading it doesn't push or PATCH anything; it applies the next time you
 open a PR or amend a commit behind one.
 
@@ -33,7 +34,9 @@ open a PR or amend a commit behind one.
 GitHub's default for a one-commit PR is title = commit subject, body =
 commit body (trailers included). Match that:
 
-- **One commit per PR.** Squash or amend locally before opening.
+- **One commit per PR, by default,** as
+  `github-hygiene-single-commit-pull-requests` decides. Squash or amend
+  locally before opening.
 - **Title = subject, body = body.** Nothing GitHub wouldn't prefill
   from the commit, apart from the attribution footer.
 
@@ -42,6 +45,20 @@ invisible to `git log`, `git blame`, `git show`, `git format-patch` and
 every fork or mirror. The commit is the durable record; the PR is the
 review surface. If a section is worth having, put it in the commit body
 so both surfaces have it.
+
+## When a PR holds several commits
+
+`github-hygiene-single-commit-pull-requests` decides whether a PR may
+hold several commits. When it does, the body is generated, never
+written by hand:
+
+1. **Title:** the lead commit's subject, the commit that states what the
+   whole PR achieves.
+2. **Synthesis:** the lead commit's body.
+3. **Commits:** a list of each commit's linked short SHA and subject,
+   with its body folded in `<details>`.
+4. **Stacks on:** for a stacked PR, a closing line
+   `Stacks on owner/repo#N "title"`.
 
 ## No default PR template
 
@@ -65,6 +82,10 @@ with a non-obvious rationale gets a paragraph. Write what
 `git-hygiene-commit-message-format` would write, including its "What to
 cut" list: keep the one path not taken a reviewer would otherwise ask
 about, and cut diff paraphrase and test inventories.
+
+The body states the semantic delta: what became true and why. The PR
+body generator adds the lock, config and closure sections from the
+diff; never restate them by hand.
 
 ## Subject length: GitHub truncates at about 72 characters
 
@@ -113,17 +134,17 @@ have edited the PR description, check first with `safe-body-edit.sh`
 from `github-hygiene-gh-cli-gotchas`, and fold their edit into the
 commit message too.
 
-## When the body uses GFM structure, pass `--verbatim`
+## Shape the body for the reflow; `--verbatim` is an escape hatch
 
-The reflow joins every line within a paragraph into one line, which
-mangles fenced or indented code blocks, a `##` heading with no blank
-line below it, and bullets with indented continuation lines. Either:
+The reflow joins the lines of each paragraph into one. Shape the body
+so that join is harmless, as `git-hygiene-commit-message-format`'s
+"Shape the body for a reader who skims" says: prose paragraphs, and
+lists with a blank line between items.
 
-- **Write plain prose** in the commit body, with no headings or
-  bullets, which the default reflow handles. Best for short commits.
-- **Write GFM from the start**, with a blank line after every `##` and
-  each bullet on one long line, then pass `--verbatim` to send the body
-  as-is.
+Pass `--verbatim` only for a body the reflow can't carry, such as one
+holding a fenced code block or a table, and check the rendered PR
+afterwards. Reaching for it on an ordinary body means the body needs
+reshaping instead.
 
 ## Mark code for GFM
 
@@ -215,4 +236,5 @@ came from; don't apply it from memory.
 - `git-hygiene-commit-message-format`: the commit message rules (72-character subject, why-focused body) that the PR title and body inherit.
 - `github-hygiene-gh-cli-gotchas`: `gh` CLI traps, and the `safe-body-edit.sh` check to run before overwriting a body someone else may have edited.
 - `github-hygiene-refer-to-issues-and-pull-requests`: how to label issues, PRs and commits, in this repository and across repositories.
+- `github-hygiene-single-commit-pull-requests`: decides whether a PR may hold several commits, and squashes one that may not.
 - `github-workflow-pull-request-watcher`: the background Monitor that watches the PR's checks, comments and state after a push.

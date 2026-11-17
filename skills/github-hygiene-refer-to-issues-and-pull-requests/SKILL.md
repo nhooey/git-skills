@@ -89,9 +89,14 @@ After:
 > reverting [`3fa09c2` "Quote paths passed to cp"](https://github.com/acme/scaffold/commit/3fa09c2)
 > didn't help.
 
-In a commit message body, which isn't rendered as Markdown, drop the
-link syntax and keep the SHA and subject: `8127188 ("Copy paths with
-cp -R on macOS")`. GitHub autolinks the SHA when it shows the commit.
+A commit body is read raw in `git log` and rendered as GFM on the PR,
+so write forms that read well raw, with no link syntax, and let GitHub
+and the PR generator link them:
+
+- An issue or PR: `owner/repo#N "title"`.
+- A commit: its short SHA and subject, `8127188 "Copy paths with cp -R
+  on macOS"`.
+- Code: `path:line`, as `git-hygiene-commit-message-format` describes.
 
 ## Branches: only in parentheses after their PR
 
@@ -166,4 +171,5 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `writing-hygiene-refer-by-canonical-label`: the general rule this skill applies, one canonical label per thing, used word for word, identifiers in parentheses.
+- `git-hygiene-commit-message-format`: the `path:line` code references a commit body uses.
 - `github-hygiene-pull-request-mirrors-commit`: a PR's title is its commit subject, so a PR's canonical label and its commit's label match.
