@@ -94,17 +94,17 @@ Each per-skill package produces `$out/share/claude-skills/<name>/` containing `S
 
 Curated subsets exposed as flake packages. Build a pack the same way as a single skill. There's no package holding every skill; the `#install` app installs them all.
 
-Five prefix packs partition the 25 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
+Five prefix packs partition the 26 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
 
 | Pack | Contents | Why |
 | --- | --- | --- |
 | `agent-skills-nhooey-git-hygiene` | All 8 `git-hygiene-*` skills | Local style rules: commit format, branch naming, gitignore, no history in tracked files, conventional commits, safe force-push, no sweeping commands, SSH remotes. |
 | `agent-skills-nhooey-git-workflow` | All 4 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, branch tidying, push-mode choice. |
 | `agent-skills-nhooey-git-all` | All 12 `git-*` skills | Everything local. |
-| `agent-skills-nhooey-github-hygiene` | All 3 `github-hygiene-*` skills | PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
+| `agent-skills-nhooey-github-hygiene` | All 4 `github-hygiene-*` skills | Single-commit PRs, PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
 | `agent-skills-nhooey-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
 | `agent-skills-nhooey-github-workflow` | All 6 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; drafting in the browser; a user's activity on a repo. |
-| `agent-skills-nhooey-github-all` | All 13 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-nhooey-github-all` | All 14 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
 
 ```sh
 nix build github:nhooey/git-skills#agent-skills-nhooey-git-hygiene
@@ -164,8 +164,9 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | Name | Tags | What |
 | --- | --- | --- |
 | [github-hygiene-gh-cli-gotchas](skills/github-hygiene-gh-cli-gotchas) | reference | Known `gh` CLI traps: `pr edit` exit 1, `--json merged` invalid, self-approval blocked, branch rename closes PRs. |
-| [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | One commit per PR; title = subject, body = body (reflowed to paragraphs by the bundled `create-or-update-pull-request.sh`); re-sync after every amend. |
+| [github-hygiene-pull-request-mirrors-commit](skills/github-hygiene-pull-request-mirrors-commit) | workflow, style, team-stance | Title = subject, body = body (reflowed to paragraphs by the bundled `create-or-update-pull-request.sh`); re-sync after every amend. |
 | [github-hygiene-refer-to-issues-and-pull-requests](skills/github-hygiene-refer-to-issues-and-pull-requests) | style | Name issues/PRs as `#N "title…"` (or `owner/repo#N "title…"`) and commits as short SHA + subject, linked; branches only in parentheses after their PR. |
+| [github-hygiene-single-commit-pull-requests](skills/github-hygiene-single-commit-pull-requests) | workflow, team-stance | One commit per PR; several only for a reason the preferences allow, declared in a `Multi-commit:` trailer; otherwise squash, force-push with a lease and re-sync. |
 
 ### `github-policy-*` — one-time repo configuration
 

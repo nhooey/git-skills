@@ -41,7 +41,9 @@ Three cases:
 
 Each PR in the stack is still a single-commit PR governed by
 `github-hygiene-pull-request-mirrors-commit`, and every restack
-force-pushes, so `git-hygiene-push-force-safely` applies.
+force-pushes, so `git-hygiene-push-force-safely` applies. A stack isn't
+a multi-commit PR: `github-hygiene-single-commit-pull-requests` decides
+when one PR may hold several commits.
 
 ## Choosing a tool
 
@@ -395,5 +397,6 @@ came from; don't apply it from memory.
 
 - `git-hygiene-push-force-safely`: push restacked branches with `--force-with-lease`, as `gt` does.
 - `github-hygiene-pull-request-mirrors-commit`: one commit per PR, title and body mirroring it; `gh stack submit` sets titles and bodies in its editor, so re-sync them with that skill's script afterwards.
+- `github-hygiene-single-commit-pull-requests`: a stack isn't a multi-commit PR; when one PR may hold several commits.
 - `github-policy-auto-delete-merged-branches`: deletes each merged head branch on the remote, so `gh stack sync` and `gt sync` clean up the local copies.
 - `github-policy-merge-commits-only`: merge commits, which give one merge commit per PR in a native stack and let `gt sync` detect merged PRs by SHA.

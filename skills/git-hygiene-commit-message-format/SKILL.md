@@ -55,6 +55,10 @@ write or amend a commit message.
   landmines hit, and links to issues or discussions. For a fix, the
   previous behavior often carries the why in one clause: "Previously X;
   that broke Y."
+- **A commit is a delta.** The body states what is now true and why,
+  as before → after where it helps (`timeout: 30s → 60s`), never the
+  steps taken to get there. `writing-hygiene-declarative-statements`
+  holds the vocabulary.
 - **Skip the body when the subject is the whole story.** A typo fix,
   dependency bump, or rename needs no body. Always write one for
   breaking changes, security fixes, data migrations, reverts, and any
@@ -108,11 +112,12 @@ Symptoms that the body has drifted into WHAT:
 - **Sub-claim stacking.** Three independent facts packed into one
   parenthetical or clause. Split or cut to one.
 - **Narration filler.** "This commit…", "This change…", "I"/"we",
-  "now", "currently", "As requested by…". The subject already frames
-  the change, and the commit date already says when "now" is. Start
-  at the reason: "X dropped Y because…", not "This commit fixes an
-  issue where X now…". Credit goes in a trailer (`Reported-by:`,
-  `Co-authored-by:`), not prose.
+  "As requested by…", and "now" or "currently" as a time stamp
+  ("currently we…"). The subject already frames the change, and the
+  commit date already says when. Start at the reason: "X dropped Y
+  because…", not "This commit fixes an issue where…". "X now does Y"
+  is a valid delta and stays. Credit goes in a trailer
+  (`Reported-by:`, `Co-authored-by:`), not prose.
 
 **Aim for ≤4 body paragraphs.** Over that, the commit is usually
 either doing too much (split it — see `git-workflow-curate-unpushed`
@@ -121,6 +126,27 @@ diff / PR description (cut it). A change as big as adding a new
 public API knob with full test coverage typically lands in 3
 paragraphs: motivation, ruled-out alternative, one non-obvious
 implementation detail.
+
+## Shape the body for a reader who skims
+
+The body is read raw in `git log` and rendered as GFM on the PR, and
+the PR tooling unwraps each paragraph into one line. Shape it for both:
+
+- **Synthesis first:** the opening paragraph says what became true and
+  why; detail follows for whoever reads on.
+- **One level of lists or tables,** never nested.
+- **No headings in a body under about 15 lines.**
+- **Lists and tables that survive unwrapping:** a blank line between
+  list items, continuation lines indented under the item's text, each
+  table row on one line, and a blank line above and below either.
+- **Code words in backticks:** paths, identifiers, flags, commands.
+
+## Code references
+
+Point at code as plain `path:line` or `path:start-end`, from the
+repository root, in backticks: `src/cache.rs:118-140`. Never a URL:
+the PR generator links each one, pinned to the commit's SHA, so it
+keeps pointing at the lines the commit meant.
 
 ## Worked example
 
@@ -172,3 +198,4 @@ came from; don't apply it from memory.
 - `git-hygiene-conventional-commits`: the `type(scope): subject` prefix to pair with this format when the repo has adopted Conventional Commits.
 - `git-workflow-curate-unpushed`: splitting or squashing commits before push, when a message is hard to write because the commit does too much.
 - `github-hygiene-pull-request-mirrors-commit`: the PR title and body mirror this commit message, so its 72-char subject and body rules carry over to the PR.
+- `writing-hygiene-declarative-statements`: the snapshot-or-delta vocabulary, the before → after notation and the narration word list behind "a commit is a delta".

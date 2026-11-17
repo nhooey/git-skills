@@ -67,3 +67,14 @@ it when you know precisely what you're replacing.
 - About to force-push for any reason.
 - After amending a commit on a branch that's already on the remote.
 - After interactive-rebasing a branch that's already pushed.
+- After squashing a PR's commits into one, as
+  `github-hygiene-single-commit-pull-requests` does.
+
+## Related skills
+
+When one of these applies and it's in your skill listing, load it
+without asking. If it isn't in your listing, tell the user which skill is
+missing and ask whether to install it from the same collection this skill
+came from; don't apply it from memory.
+
+- `github-hygiene-single-commit-pull-requests`: squashes a PR into one commit, then force-pushes it with a lease.

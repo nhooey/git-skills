@@ -86,11 +86,12 @@
           "git-workflow-tidy-branches"
         ];
 
-        # All 13 github-* skills (includes the agent-tagged ones).
+        # All 14 github-* skills (includes the agent-tagged ones).
         agent-skills-nhooey-github-all = [
           "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
           "github-hygiene-refer-to-issues-and-pull-requests"
+          "github-hygiene-single-commit-pull-requests"
           "github-policy-auto-delete-merged-branches"
           "github-policy-codeowners"
           "github-policy-merge-commits-only"
@@ -108,6 +109,7 @@
           "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
           "github-hygiene-refer-to-issues-and-pull-requests"
+          "github-hygiene-single-commit-pull-requests"
         ];
 
         # All github-policy-* skills: one-time repo configuration.
