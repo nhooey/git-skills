@@ -7,11 +7,14 @@ description: |
   and emits one line per change; the agent reacts by event: a red check
   means reading its log, a comment from the session's user is a chat
   instruction, and a merge or close triggers the clean-up the project's
-  preferences file names, asked once and saved there. After a push to a
+  preferences file names, asked once and saved there. The Monitor lasts
+  at most 30 minutes, so the agent re-arms it at each expiry with
+  `--quiet-initial`, which reports only what changed. After a push to a
   branch with an open PR, the `pull-request-sync-check.sh` hook from
   `github-hygiene-pull-request-mirrors-commit` reminds the session to
   arm it. Use after a push to a PR branch, on resuming a session with an
-  open PR and no watcher, and when a watched PR changes state.
+  open PR and no watcher, when a watched PR changes state, and when its
+  Monitor expires.
 tags: [agent, workflow]
 allowed-tools:
   - Bash
@@ -60,7 +63,7 @@ Below, the script is named by its filename; resolve it against the path for your
 
 ## Arming the Monitor
 
-`pull-request-monitor.sh` polls check runs, issue comments, review-thread comments and PR state in one loop. Dry-run it first, then arm it with the `Monitor` tool:
+`pull-request-monitor.sh` polls check runs, issue comments, review-thread comments and PR state in one loop. Dry-run it first, then arm it with the `Monitor` tool and `timeout_ms: 1800000`:
 
 ```bash
 bash pull-request-monitor.sh --dry-run   # each gh call once, stderr intact, then exits
@@ -68,7 +71,10 @@ bash pull-request-monitor.sh             # the loop to arm
 ```
 
 - **Flags,** all optional and detected from the current branch: `--pr <num>` (`gh pr view --json number`), `--repo <owner/repo>` (`gh repo view --json nameWithOwner`), `--sha <sha>` (`git rev-parse HEAD`), `--interval <seconds>` (default 30), `--body-check <path>` (`create-or-update-pull-request.sh` from `github-hygiene-pull-request-mirrors-commit`, found beside this skill or in the user's skills). Pass them to watch a PR other than the current branch's.
-- **Lifetime:** set `persistent: true` where the Monitor tool offers it, since a PR can sit for hours. Where it offers only `timeout_ms`, set the maximum and re-arm on each expiry; a re-armed loop starts fresh and reports the existing checks and comments again, so skip the ones already handled.
+- **Lifetime:** a Monitor can't outlive its timeout. `timeout_ms: 1800000` (30 minutes) is the longest the tool allows, and the `persistent: true` it accepts is ignored, leaving the 5-minute default. A PR can sit for hours, so when the Monitor's expiry notice arrives, arm it again at once with the same flags plus `--quiet-initial` (`bash pull-request-monitor.sh --quiet-initial`):
+  - **What it does:** the first poll's checks, comments, state and `BODY-DRIFT` line become the baseline without being emitted, so the restarted watcher reports only changes instead of repeating `STATE OPEN REVIEW none`.
+  - **What still gets through:** a `MERGED` or `CLOSED` state on that first poll, so a merge that lands across the restart isn't missed.
+  - **When to leave it off:** on the first arming after a push, where the current state is news.
 - **Output lines,** one event each:
   - `CHECK <name>: <conclusion>` when a check completes
   - `COMMENT-<login>: <body>` for a new comment, or `COMMENT-SELF: <body>` when the session's user posted it
