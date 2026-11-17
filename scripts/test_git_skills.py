@@ -22,35 +22,50 @@ name: not-frontmatter
 
 
 def skill(text=GOOD, name="git-hygiene-example", has_tests=False):
-    return Skill(name=name, skill_md=text, has_tests=has_tests)
+    return Skill(
+        name=name,
+        skill_md=text,
+        has_tests=has_tests,
+        frontmatter=git_skills.load_frontmatter(text),
+    )
 
 
-class Frontmatter(unittest.TestCase):
-    def test_reads_top_level_keys_only(self):
+class LoadFrontmatter(unittest.TestCase):
+    def test_parses_yaml(self):
         self.assertEqual(
-            git_skills.frontmatter(GOOD),
-            {"name": "git-hygiene-example", "description": "|", "tags": "[style, safety]"},
+            git_skills.load_frontmatter(GOOD).data,
+            {
+                "name": "git-hygiene-example",
+                "description": "Does a thing.\ntags: [not-a-key, because-indented]\n",
+                "tags": ["style", "safety"],
+            },
         )
 
     def test_none_without_opening_fence(self):
-        self.assertIsNone(git_skills.frontmatter("name: x\n"))
+        self.assertIsNone(git_skills.load_frontmatter("name: x\n"))
 
     def test_none_without_closing_fence(self):
-        self.assertIsNone(git_skills.frontmatter("---\nname: x\n"))
+        self.assertIsNone(git_skills.load_frontmatter("---\nname: x\n"))
 
     def test_none_for_empty_file(self):
-        self.assertIsNone(git_skills.frontmatter(""))
+        self.assertIsNone(git_skills.load_frontmatter(""))
+
+    def test_error_for_invalid_yaml(self):
+        self.assertIsNotNone(git_skills.load_frontmatter("---\ntags: [style\n---\n").error)
 
 
-class FlowList(unittest.TestCase):
-    def test_splits_items(self):
-        self.assertEqual(git_skills.flow_list("[a, b ,c]"), ("a", "b", "c"))
+class StringList(unittest.TestCase):
+    def test_list_of_strings(self):
+        self.assertEqual(git_skills.string_list(["a", "b"]), ("a", "b"))
 
     def test_empty_list(self):
-        self.assertEqual(git_skills.flow_list("[]"), ())
+        self.assertEqual(git_skills.string_list([]), ())
 
     def test_none_for_scalar(self):
-        self.assertIsNone(git_skills.flow_list("style"))
+        self.assertIsNone(git_skills.string_list("style"))
+
+    def test_none_for_nested_list(self):
+        self.assertIsNone(git_skills.string_list(["a", ["b"]]))
 
 
 class Lint(unittest.TestCase):
@@ -94,11 +109,26 @@ class Lint(unittest.TestCase):
             ("tag `shiny` isn't in the README's tag vocabulary",),
         )
 
-    def test_tags_not_a_flow_list(self):
+    def test_quoted_name_with_comment(self):
+        text = GOOD.replace(
+            "name: git-hygiene-example", 'name: "git-hygiene-example"  # the folder'
+        )
+        self.assertEqual(git_skills.lint(skill(text=text)), ())
+
+    def test_block_list_tags(self):
+        text = GOOD.replace("tags: [style, safety]", "tags:\n  - style\n  - 'safety'")
+        self.assertEqual(git_skills.lint(skill(text=text)), ())
+
+    def test_tags_not_a_list(self):
         self.assertEqual(
             git_skills.lint(skill(text=GOOD.replace("[style, safety]", "style"))),
-            ("tags isn't a flow list such as `[style, safety]`",),
+            ("tags isn't a list of tags such as `[style, safety]`",),
         )
+
+    def test_invalid_yaml(self):
+        problems = git_skills.lint(skill(text=GOOD.replace("[style, safety]", "[style")))
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("frontmatter isn't valid YAML: "))
 
 
 class Select(unittest.TestCase):

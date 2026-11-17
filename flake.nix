@@ -202,9 +202,13 @@
         let
           # `git-skills` (scripts/git_skills.py) runs the skills' checks; the
           # dev shell's menu lists it and `nix flake check` runs it below.
+          # yq-go parses SKILL.md frontmatter as YAML for `lint`.
           git-skills = pkgs.writeShellApplication {
             name = "git-skills";
-            runtimeInputs = [ pkgs.python3 ];
+            runtimeInputs = [
+              pkgs.python3
+              pkgs.yq-go
+            ];
             text = ''exec python3 -B ${./scripts/git_skills.py} "$@"'';
           };
 
@@ -253,8 +257,12 @@
 
           apps = base.apps.${system};
 
-          # `bb test` and the bats suites of the PR body program.
-          devshells.default.packages = prBodyInputs pkgs ++ [ pkgs.bats ];
+          # `bb test` and the bats suites of the PR body program. The tool's
+          # own tests parse frontmatter with yq-go.
+          devshells.default.packages = prBodyInputs pkgs ++ [
+            pkgs.bats
+            pkgs.yq-go
+          ];
 
           devshells.default.commands = [
             {
@@ -268,7 +276,8 @@
           # Every skill's bundled unittest suite, the skills' frontmatter, and
           # the tool's own tests. `git` is for tidy-branches' git-side tests,
           # `git`, `jq` and the PR body program's tools for the pull request
-          # sync check hook's tests, which run the program. `pr-body-tests` runs that
+          # sync check hook's tests, which run the program, and `yq-go` for
+          # the tool's tests. `pr-body-tests` runs that
           # program's unit and golden tests, `pr-body-cli`, `pr-body-guard`
           # and `pull-request-monitor` the bats tests of its command line, of
           # the PreToolUse write guard and of the watcher's BODY-DRIFT line. `hooks-plugin` checks the built
@@ -287,6 +296,7 @@
                       pkgs.git
                       pkgs.jq
                       pkgs.python3
+                      pkgs.yq-go
                     ];
                   }
                   ''
