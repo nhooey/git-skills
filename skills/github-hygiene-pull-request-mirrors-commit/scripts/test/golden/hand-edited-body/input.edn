@@ -1,0 +1,20 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :live {:title "Retry a failed upload once"
+        :body "Uploads failed for good on a single dropped connection.
+
+Reviewer note: also covers the resumable endpoint.
+
+[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 0000000000000000000000000000000000000000000000000000000000000000)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :force? false
+ :commits
+ [{:sha "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+   :parents ["abababababababababababababababababababab"]
+   :message "Retry a failed upload once
+
+Uploads failed for good on a single dropped connection; one retry
+covers the common case without hiding a server that is down.
+"
+   :trailers ""}]}

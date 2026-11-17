@@ -9,14 +9,24 @@
 #
 # Usage:
 #   pull-request-monitor.sh [--pr N] [--repo OWNER/REPO] [--sha SHA]
-#                           [--interval SECONDS] [--dry-run] [-h|--help]
+#                           [--interval SECONDS] [--body-check PATH]
+#                           [--dry-run] [-h|--help]
 #
 # All flags are optional; defaults are auto-detected from the current
 # branch and working tree:
-#   --pr        gh pr view --json number   on the current branch
-#   --repo      gh repo view --json nameWithOwner
-#   --sha       git rev-parse HEAD
-#   --interval  30
+#   --pr          gh pr view --json number   on the current branch
+#   --repo        gh repo view --json nameWithOwner
+#   --sha         git rev-parse HEAD
+#   --interval    30
+#   --body-check  create-or-update-pull-request.sh from the
+#                 github-hygiene-pull-request-mirrors-commit skill,
+#                 installed beside this skill or in the user's skills
+#
+# When the pull request's head SHA changes, and once at the start, the
+# loop follows the new head's checks and, when the local branch is at
+# that SHA, runs the body check's `check` mode: a title or body that has
+# drifted from the commits emits a BODY-DRIFT line. Without the body
+# check, it emits none.
 #
 # --dry-run runs each distinct `gh` invocation once with stderr intact
 # and exits. Use this before arming the Monitor — a silent failure
@@ -31,6 +41,7 @@ repo=""
 sha=""
 interval=30
 dry_run=0
+body_check=""
 
 usage() {
   sed -n '2,/^set -u$/p' "$0" | sed -e 's/^# \{0,1\}//' -e '$d'
@@ -52,6 +63,10 @@ while [ $# -gt 0 ]; do
     ;;
   --interval)
     interval=$2
+    shift 2
+    ;;
+  --body-check)
+    body_check=$2
     shift 2
     ;;
   --dry-run)
@@ -91,12 +106,30 @@ if [ -z "$sha" ]; then
   }
 fi
 
+# The body check: create-or-update-pull-request.sh from
+# github-hygiene-pull-request-mirrors-commit, installed as a sibling
+# skill, in the user's skills or in the project's.
+if [ -z "$body_check" ]; then
+  case ${BASH_SOURCE[0]} in */*) here=${BASH_SOURCE[0]%/*} ;; *) here=. ;; esac
+  sibling=github-hygiene-pull-request-mirrors-commit/scripts/create-or-update-pull-request.sh
+  for candidate in \
+    "$here/../../$sibling" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$sibling" \
+    "${CLAUDE_PROJECT_DIR:-.}/.claude/skills/$sibling"; do
+    if [ -f "$candidate" ]; then
+      body_check=$candidate
+      break
+    fi
+  done
+fi
+
 if [ "$dry_run" -eq 1 ]; then
   # Run each distinct gh invocation once with stderr intact. The point
   # is to surface Unknown-JSON-field / auth / repo-resolution errors
   # *before* arming the Monitor, where 2>/dev/null would swallow them.
-  echo "# gh pr view --json state,reviewDecision"
-  gh pr view "$pr" --repo "$repo" --json state,reviewDecision
+  echo "# gh pr view --json state,reviewDecision,headRefOid,headRefName"
+  gh pr view "$pr" --repo "$repo" --json state,reviewDecision,headRefOid,headRefName
+  echo "# body check: ${body_check:-none found, so no BODY-DRIFT lines}"
   echo "# gh api repos/$repo/issues/$pr/comments"
   gh api "repos/$repo/issues/$pr/comments"
   echo "# gh api repos/$repo/pulls/$pr/comments"
@@ -140,6 +173,26 @@ prev_checks=""
 max_issue=0
 max_review=0
 prev_state=""
+prev_head=""
+
+# Runs the body check against the branch `$2` at head `$1`, when the
+# local branch (or its remote-tracking ref) is at that SHA: only then
+# do the local commits match the pull request's. Emits one BODY-DRIFT
+# line for drift (exit 1) or a range with several commits and no
+# allowed reason (exit 4).
+check_body() {
+  local head=$1 branch=$2 local_sha rc
+  [ -n "$body_check" ] || return 0
+  local_sha=$(git rev-parse --verify --quiet "refs/heads/$branch" 2>/dev/null ||
+    git rev-parse --verify --quiet "refs/remotes/origin/$branch" 2>/dev/null)
+  [ "$local_sha" = "$head" ] || return 0
+  bash "$body_check" check --quiet --repo "$repo" --head "$branch" >/dev/null 2>&1
+  rc=$?
+  case $rc in
+  1) echo "BODY-DRIFT PR #$pr's title or body differs from its commits at ${head:0:7}: run create-or-update-pull-request.sh sync" ;;
+  4) echo "BODY-DRIFT PR #$pr holds several commits without an allowed Multi-commit reason at ${head:0:7}: squash them" ;;
+  esac
+}
 
 # Shared jq filter for both comment sources — emits one line per new
 # comment, flagging self-comments distinctly. $cutoff and $user are jq
@@ -149,6 +202,20 @@ fmt_comments='.[] | select(.id > $cutoff)
   | "COMMENT-\(if .user.login==$user then "SELF" else .user.login end): \(.body | gsub("\n"; " "))"'
 
 while :; do
+  # PR state, review decision and head, read first so that a new head
+  # moves the check-run polling to it before this round's fetch.
+  view=$(gh pr view "$pr" --repo "$repo" --json state,reviewDecision,headRefOid,headRefName \
+    --jq '"\(.headRefOid)\t\(.headRefName)\tSTATE \(.state) REVIEW \(.reviewDecision | if . == null or . == "" then "none" else . end)"' 2>/dev/null)
+  IFS=$'\t' read -r head head_branch state <<<"$view"
+  if [ -n "$head" ] && [ "$head" != "$prev_head" ]; then
+    if [ -n "$prev_head" ]; then
+      sha=$head
+      prev_checks=""
+    fi
+    prev_head=$head
+    check_body "$head" "$head_branch"
+  fi
+
   # Check completions — guard against transient empty fetch.
   # Not $(fetch_checks): a subshell would lose the switch to Actions runs.
   fetch_checks >"$checks_file"
@@ -172,9 +239,6 @@ while :; do
     max_review=$(jq '[.[].id, 0] | max' <<<"$review")
   fi
 
-  # PR state + review decision.
-  state=$(gh pr view "$pr" --repo "$repo" --json state,reviewDecision \
-    --jq '"STATE \(.state) REVIEW \(.reviewDecision | if . == null or . == "" then "none" else . end)"' 2>/dev/null)
   if [ -n "$state" ] && [ "$state" != "$prev_state" ]; then
     echo "$state"
     prev_state=$state

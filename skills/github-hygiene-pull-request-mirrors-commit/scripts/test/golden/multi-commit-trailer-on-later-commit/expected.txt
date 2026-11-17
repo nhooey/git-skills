@@ -1,0 +1,11 @@
+Resolve imports lazily
+
+Imports resolve on first use, so a module that is never read costs nothing; the split before this commit makes that change one function.
+
+## Commits (2)
+
+- [`aaaaaaa`](https://github.com/octo/widgets/commit/aaaaaaa000000000000000000000000000000001) Split the parser into a reader and a resolver
+- [`aaaaaaa`](https://github.com/octo/widgets/commit/aaaaaaa000000000000000000000000000000002) Resolve imports lazily
+
+[//]: # (pr-body: generated from aaaaaaa000000000000000000000000000000002; digest 05725f60d34ec5856e679040f16de350d332aea0903ae669f1757f367bd8766e)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

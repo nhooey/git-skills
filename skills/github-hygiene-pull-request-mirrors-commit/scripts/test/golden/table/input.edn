@@ -1,0 +1,20 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "3333333333333333333333333333333333333333"
+   :parents ["2222222222222222222222222222222222222222"]
+   :message "Raise the request timeouts to match the upstream's
+
+The upstream's own timeouts are longer than ours, so we gave up on
+requests it would have answered:
+
+| Endpoint  | Before | After |
+| --------- | ------ | ----- |
+| `/search` | 2 s    | 5 s   |
+| `/export` | 10 s   | 30 s  |
+
+Nothing else
+changes.
+"
+   :trailers ""}]}

@@ -77,8 +77,10 @@ boundary. Never push commits directly to main.
   is to move the commits to a feature branch (`git switch -c <branch>`),
   reset main to its remote tip, push the branch and open a PR.
 - *On a feature branch, with new commits:* push the branch, then follow
-  the saved on-branch answer (Q3), asking whether to open a PR
-  (`gh pr create`) if there is none. If a PR for the branch already
+  the saved on-branch answer (Q3), asking whether to open a PR (with
+  `github-hygiene-pull-request-mirrors-commit`'s
+  `create-or-update-pull-request.sh`, never `gh pr create`) if there is
+  none. If a PR for the branch already
   exists (`gh pr list --head <branch>`), just push: its diff updates,
   but its title and body don't, so after an amend or reword re-sync
   them per `github-hygiene-pull-request-mirrors-commit`.
@@ -142,7 +144,8 @@ saved on-branch answer.
 > you're on feature branch `[branch-name]` and ask Claude to push?
 >
 > - **Push branch + open PR:** Push the branch and, if no PR is open
->   for it yet, open one with `gh pr create`. If a PR already exists,
+>   for it yet, open one with `create-or-update-pull-request.sh` from
+>   `github-hygiene-pull-request-mirrors-commit`. If a PR already exists,
 >   just push — the diff updates, but re-sync the title and body per
 >   `github-hygiene-pull-request-mirrors-commit` if you amended the commit message.
 > - **Push branch only:** Just push the branch. Don't auto-open a PR —

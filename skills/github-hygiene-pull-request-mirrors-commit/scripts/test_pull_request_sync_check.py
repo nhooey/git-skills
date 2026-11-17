@@ -3,8 +3,11 @@
 Each test runs the script as Claude Code would, a JSON payload on stdin,
 in a throwaway repository. PATH holds only wrappers for the tools the
 script needs and, when a test gives one, a `gh` stub that logs its
-arguments and prints a fixture in place of `gh pr list --jq` output:
-nothing reaches the network.
+arguments, prints a fixture in place of `gh pr list --jq` output, and
+answers the generator's `gh api` reads and PATCHes from that fixture:
+nothing reaches the network. The generator itself,
+`create-or-update-pull-request.sh`, runs for real, so `bb` must be on
+PATH.
 """
 
 import json
@@ -20,8 +23,10 @@ SCRIPT = Path(__file__).resolve().parent / "pull-request-sync-check.sh"
 
 TOOLS = [
     "awk", "bash", "cat", "date", "diff", "dirname", "find", "git", "grep",
-    "head", "jq", "mkdir", "rm", "sed", "sh", "tr", "uname",
+    "head", "jq", "mkdir", "mv", "rm", "sed", "sh", "tr", "uname", "bb",
+    "cmark-gfm",
 ]
+GENERATOR = SCRIPT.parent / "create-or-update-pull-request.sh"
 
 URL = "https://github.com/octo/widgets/pull/7"
 SUBJECT = "Add the widget"
@@ -29,7 +34,9 @@ BODY = "The widget does a thing."
 PREFERENCES = Path(".agents", "skills", "git-workflow-push-mode.preferences.md")
 
 
-def pull_request(title=SUBJECT, body=BODY, number=7, url=URL):
+def pull_request(title=SUBJECT, body=None, number=7, url=URL):
+    """A pull request; with no `body`, the stub gives it the body the
+    generator renders, so it starts in sync."""
     return {"number": number, "title": title, "body": body, "url": url}
 
 
@@ -76,18 +83,40 @@ class HookTest(unittest.TestCase):
         self.git("switch", "-q", "-c", "feature")
         self.git("commit", "-q", "--allow-empty", "-m", f"{SUBJECT}\n\n{BODY}")
 
+    def rendered_body(self):
+        """The body the generator renders for the branch's commits; its
+        `gh` calls go to a log of their own, so the hook's stay countable."""
+        out = subprocess.run(
+            ["bash", str(GENERATOR), "render", "--base", "main", "--repo", "octo/widgets"],
+            cwd=self.repo, env=self.env(GH_LOG=str(self.tmp / "render-gh.log")),
+            check=True, capture_output=True, text=True,
+        ).stdout
+        return out.split("\n\n", 1)[1].removesuffix("\n")
+
     def gh(self, pr=None, fail=False):
-        """Put a `gh` stub on PATH; `pr` is what `gh pr list` prints."""
+        """Put a `gh` stub on PATH: `pr` is what `gh pr list` prints, and
+        what `gh api` reads and PATCHes."""
         exit_line = "exit 1" if fail else 'cat "$GH_FIXTURE" 2>/dev/null; exit 0'
         self._write_exec(self.bin / "gh", textwrap.dedent(f"""\
             #!{shutil.which("sh")}
             printf '%s\\n' "$*" >>"$GH_LOG"
-            case "$1 $2" in
-            "pr list") {exit_line} ;;
+            case "$1 $2 $3" in
+            "pr list "*) {exit_line} ;;
+            "repo view "*)
+              printf '%s' '{{"owner": {{"login": "octo"}}, "name": "widgets",
+                "url": "https://github.com/octo/widgets", "defaultBranchRef": {{"name": "main"}}}}'
+              exit 0 ;;
+            "api --method PATCH")
+              jq --argjson in "$(cat)" '. + {{title: $in.title, body: $in.body, html_url: .url}}' \\
+                "$GH_FIXTURE" >"$GH_FIXTURE.new" && mv "$GH_FIXTURE.new" "$GH_FIXTURE"
+              cat "$GH_FIXTURE"; exit 0 ;;
+            "api repos/"*"/pulls/"*) jq '. + {{html_url: .url}}' "$GH_FIXTURE"; exit 0 ;;
             esac
             exit 1
             """))
         if pr is not None:
+            if pr.get("body") is None:
+                pr = {**pr, "body": self.rendered_body()}
             self.gh_fixture.write_text(json.dumps(pr))
 
     def env(self, **extra):
@@ -152,7 +181,7 @@ class HookTest(unittest.TestCase):
     def test_amend_alone_gives_no_reminder(self):
         self.gh(pull_request())
         self.assertIsNone(self.run_hook("git commit --amend --no-edit"))
-        self.assertEqual(len(self.gh_calls()), 1)
+        self.assertEqual([c for c in self.gh_calls() if c.startswith("api --method")], [])
 
     def test_failed_push_gives_no_reminder(self):
         self.gh(pull_request())
@@ -240,23 +269,46 @@ class HookTest(unittest.TestCase):
 
     # -- the sync check, beside the reminder -----------------------------
 
-    def test_drifted_title_on_push_gives_both(self):
+    def test_drifted_title_on_push_is_synced(self):
         self.gh(pull_request(title="Old title"))
         output = self.run_hook("git push")
-        self.assertIn("out of sync", output["systemMessage"])
-        self.assertIn("Old title", output["systemMessage"])
+        self.assertIn("Re-synced PR #7 (octo/widgets)", output["systemMessage"])
         self.assertIn("create-or-update-pull-request.sh", output["systemMessage"])
+        self.assertIn("api --method PATCH repos/octo/widgets/pulls/7 --input -", self.gh_calls())
+        self.assertEqual(json.loads(self.gh_fixture.read_text())["title"], SUBJECT)
         self.assertIsNotNone(self.reminder(output))
 
-    def test_drift_after_amend_gives_sync_message_only(self):
-        self.gh(pull_request(body="Something else entirely."))
-        output = self.run_hook("git commit --amend --no-edit")
-        self.assertIn("out of sync", output["systemMessage"])
-        self.assertIsNone(self.reminder(output))
+    def test_hand_edited_body_on_push_is_reported_not_overwritten(self):
+        self.gh(pull_request(body="Written by a reviewer."))
+        output = self.run_hook("git push")
+        self.assertIn("edited by hand", output["systemMessage"])
+        self.assertIn("--force", output["systemMessage"])
+        self.assertEqual(json.loads(self.gh_fixture.read_text())["body"], "Written by a reviewer.")
 
-    def test_body_with_footer_is_in_sync(self):
-        self.gh(pull_request(body=f"{BODY}\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)"))
+    def test_drift_after_amend_gives_check_diff_only(self):
+        self.gh(pull_request())
+        self.git("commit", "-q", "--amend", "--allow-empty", "-m", f"{SUBJECT}\n\nA reworded body.")
+        output = self.run_hook("git commit --amend -m reworded")
+        self.assertIn("no longer matches its commits", output["systemMessage"])
+        self.assertIn("+A reworded body.", output["systemMessage"])
+        self.assertIsNone(self.reminder(output))
+        self.assertEqual([c for c in self.gh_calls() if c.startswith("api --method")], [])
+
+    def test_added_commit_is_drift(self):
+        self.gh(pull_request())
+        self.git("commit", "-q", "--allow-empty", "-m", "fixup! Add the widget")
+        output = self.run_hook("git commit --amend --no-edit")
+        self.assertIn("is a fixup! commit", output["systemMessage"])
+
+    def test_rendered_body_is_in_sync(self):
+        self.gh(pull_request())
         self.assertIsNone(self.run_hook("git commit --amend --no-edit"))
+
+    def test_unwrapped_body_without_marker_is_drift(self):
+        # The old reflow's output: the words match, but there's no marker.
+        self.gh(pull_request(body=f"{BODY}\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)"))
+        output = self.run_hook("git commit --amend --no-edit")
+        self.assertIn("no longer matches its commits", output["systemMessage"])
 
 
 if __name__ == "__main__":

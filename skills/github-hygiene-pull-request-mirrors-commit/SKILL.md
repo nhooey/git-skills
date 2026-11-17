@@ -5,14 +5,16 @@ description: |
   title is the commit subject and the body is the commit body plus the
   Claude Code footer, with no `## Summary` or `## Test plan` template.
   Gives the generated shape of a multi-commit body. The bundled
-  `create-or-update-pull-request.sh` opens the PR from the commit, reflows
-  the body to GFM paragraphs, adds the footer, and after an amend PATCHes
-  the open PR back in line, since GitHub never refreshes a PR's title or
-  body itself; the bundled `pull-request-sync-check.sh` PostToolUse hook
-  flags an open PR whose title or body has drifted from HEAD after an
-  amend or push. Use when opening a PR from an agent session, amending a
-  commit behind an open PR, or reviewing a PR description that has drifted
-  from its commit.
+  `create-or-update-pull-request.sh` renders the title and body from the
+  commits (unwrapped to GFM, code references linked, trailers dropped, a
+  flake.lock section, the footer), opens the PR, and after an amend
+  PATCHes it back in line, since GitHub never refreshes a PR's title or
+  body itself; `gh pr create --fill` and hand-written bodies are never
+  used, and a bundled PreToolUse hook denies them. The bundled
+  `pull-request-sync-check.sh` PostToolUse hook re-syncs the open PR
+  after a push and flags drift after an amend. Use when opening a PR from
+  an agent session, amending a commit behind an open PR, or reviewing a
+  PR description that has drifted from its commit.
 tags: [workflow, style, team-stance]
 allowed-tools:
   - Bash
@@ -32,13 +34,15 @@ open a PR or amend a commit behind one.
 ## The rule
 
 GitHub's default for a one-commit PR is title = commit subject, body =
-commit body (trailers included). Match that:
+commit body. Match that, through the bundled script:
 
 - **One commit per PR, by default,** as
   `github-hygiene-single-commit-pull-requests` decides. Squash or amend
   locally before opening.
 - **Title = subject, body = body.** Nothing GitHub wouldn't prefill
-  from the commit, apart from the attribution footer.
+  from the commit, apart from the generated sections and the attribution
+  footer. The commit's trailers stay in the commit and are left out of
+  the body.
 
 Anything in the PR description that isn't in the commit message is
 invisible to `git log`, `git blame`, `git show`, `git format-patch` and
@@ -52,13 +56,33 @@ so both surfaces have it.
 hold several commits. When it does, the body is generated, never
 written by hand:
 
-1. **Title:** the lead commit's subject, the commit that states what the
-   whole PR achieves.
+1. **Title:** the lead commit's subject. The lead commit is the one
+   carrying the `Multi-commit:` trailer, and it states what the whole PR
+   achieves.
 2. **Synthesis:** the lead commit's body.
-3. **Commits:** a list of each commit's linked short SHA and subject,
-   with its body folded in `<details>`.
+3. **Commits (N):** each commit's linked short SHA and subject, and
+   nothing more.
 4. **Stacks on:** for a stacked PR, a closing line
    `Stacks on owner/repo#N "title"`.
+
+The body references what's in the commits, with enough context to
+understand it, without repeating it: each commit is one click away.
+
+- **A commit** is referenced by its linked SHA and its subject, its
+  canonical label as `writing-hygiene-refer-by-canonical-label` says,
+  never by a copy of its body.
+- **The synthesis** says only what no single commit says: how the
+  commits relate, why they share a PR, and what to review across them.
+  It names a commit by its subject when it points at one. Write the
+  lead commit's body as that synthesis, not as a copy of any one
+  commit; `check` warns when a paragraph of it repeats another
+  commit's body, whitespace aside.
+- **What the script adds** reads on its own: a stacked-on PR is
+  `owner/repo#N "title"`, a flake input is its name and its old → new
+  revisions with a compare link, and an added input links its revision.
+
+A one-commit PR is the commit mirrored: title = subject, body = body.
+That isn't repetition: it's what the merge commit carries.
 
 ## No default PR template
 
@@ -71,11 +95,12 @@ This rule overrides the Claude Code system prompt's default PR template:
   refactor, anything where the test approach is the most interesting
   decision), or the team's checked-in PR template requires it.
 
-Attribution to Claude Code is kept: end the PR description with the
+Attribution to Claude Code is kept: the commit ends with the
+`Co-Authored-By: Claude …` trailer and the PR description with the
 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
-footer and the commit with the `Co-Authored-By: Claude …` trailer, as
-the session's attribution instructions give them. The footer is the
-one line the PR description has that the commit body doesn't.
+footer, as the session's attribution instructions give them. The
+footer is the description's one attribution line: the script drops
+`Co-Authored-By:` and every other trailer from the body.
 
 Default to terse: a typo fix gets a one-line body or none, a new rule
 with a non-obvious rationale gets a paragraph. Write what
@@ -86,6 +111,21 @@ about, and cut diff paraphrase and test inventories.
 The body states the semantic delta: what became true and why. The PR
 body generator adds the lock, config and closure sections from the
 diff; never restate them by hand.
+
+The PR body comes from the commit, so the commit body holds the
+structure the PR renders, as `git-hygiene-commit-message-format` says:
+
+- **An enumeration of three or more items, or parallel options,** is a
+  `-` list, nested where there's a hierarchy
+  (`writing-hygiene-prose-to-lists`), with the list syntax of
+  `markdown-hygiene-lists-headings-tables`.
+- **A comparison** is a table (`writing-hygiene-tables-for-comparison`).
+
+The script keeps flat and nested lists, hanging-indent continuation
+lines and tables intact as it unwraps, and `check` warns, without
+changing its exit code, about a sentence that lists three or more
+comma-separated items. `- Prose list warning: off` in this skill's
+preferences file silences it.
 
 ## Subject length: GitHub truncates at about 72 characters
 
@@ -102,18 +142,44 @@ scope carries the classification.
 
 ## Open or re-sync the PR with `create-or-update-pull-request.sh`
 
-Don't hand-build the `gh pr create` call. The script lives in
+Never open or edit a PR with `gh pr create`, `gh pr edit` or `gh api`
+with a title or body, and never with `--fill`: `--fill` copies the
+trailers into the body and keeps the 72-column hard wrap, which GitHub
+renders as a line break at every wrapped line, and a hand-written body
+drifts from the commit at the next amend. The script lives in
 `scripts/` beside this SKILL.md:
 
 ```bash
-create-or-update-pull-request.sh [--base <branch>] [--head <branch>] [--repo <owner/repo>] [--draft] [--verbatim] [--footer <text> | --no-footer]
+create-or-update-pull-request.sh [render|sync|check] [--base <branch>] [--head <branch> | --pr <N>] [--repo <owner/repo>] [--range <a>..<b>] [--lead <sha>] [--stack-parent <N>] [--trailers keep|drop] [--footer <text> | --no-footer] [--draft] [--force] [--verbatim] [--quiet]
 ```
 
-It sets the PR title to the HEAD commit's subject and the body to its
-body, reflowed from 72-column wrap to GFM paragraphs, ends the body
-with the Claude Code footer, then checks that the body landed and
-prints `created` or `synced`, the URL and the body length. It exits 1
-with a warning if the PR body comes back empty.
+Modes: `render` prints the title and body, `sync` (the default) creates or PATCHes the PR and verifies it, `check` reports drift byte for byte. Exit codes: 0 in sync or synced, 1 drift, 2 usage error or a refused range, 3 a body edited by hand (sync refused), 4 several commits without an allowed `Multi-commit:` reason. `--help` gives the rest.
+
+`render` writes nothing to GitHub, so it previews any PR:
+`create-or-update-pull-request.sh render --pr <N> --repo <owner/repo>`.
+
+It sets the PR title to the lead commit's subject and renders the body
+from the commits:
+
+- **Unwrapped:** each paragraph and list item joined onto one line,
+  with code blocks, tables and hard breaks kept as they are.
+- **Linked:** `path:line` references pinned to the commit's SHA, and
+  `#N` references checked against the repository.
+- **Sections:** the Commits list for several commits, a "What changes"
+  section for a changed `flake.lock` (a table of moved revisions with
+  compare links, then one line each for inputs added and removed), and
+  the `Stacks on` line.
+- **Footer:** an invisible marker holding the head SHA and a digest of
+  the body, then the attribution line.
+
+`sync` then writes the PR, reads it back and prints `created` or
+`synced` and the URL, or exits 1 when it didn't read back as sent.
+
+A PR whose base isn't the default branch belongs in a linked GitHub
+stack, as `github-workflow-pull-request-stacked` says. `sync` links the
+chain of open PRs below and above it with `gh stack link`, bottom to
+top, when it isn't linked yet, and `check` reports an unlinked one as
+drift with that command.
 
 - `--footer <text>`: the session's own attribution line, when it
   differs from the default.
@@ -124,27 +190,29 @@ It also re-syncs. GitHub derives a PR's title and body from the commit
 once, at creation; an amend and force-push refreshes the diff but
 leaves the title and body as they were. The script finds an existing
 open PR for the head branch and PATCHes it instead of opening a new
-one, so re-run it after every amend. The bundled
+one, so re-run it after every amend and push. The bundled
 `pull-request-sync-check.sh` hook (see
 [The sync check hook](#the-sync-check-hook-pull-request-sync-checksh))
-nudges you when HEAD has drifted from the open PR.
+re-syncs after a push and flags drift after an amend.
 
-The re-sync overwrites the whole body. If a reviewer or maintainer may
-have edited the PR description, check first with `safe-body-edit.sh`
-from `github-hygiene-gh-cli-gotchas`, and fold their edit into the
-commit message too.
+The re-sync overwrites the whole body, but only a body it can tell was
+generated: one whose marker digest still matches, or one that is,
+whitespace aside, what the old script or `gh pr create --fill` wrote
+from these commits (`check` reports it as safe to re-sync). Any other
+body was edited by hand, so `sync` exits 3 with the diff: fold the edit
+into the commit message and sync again, or pass `--force` to discard it.
 
-## Shape the body for the reflow; `--verbatim` is an escape hatch
+## Shape the body for unwrapping; `--verbatim` is an escape hatch
 
-The reflow joins the lines of each paragraph into one. Shape the body
-so that join is harmless, as `git-hygiene-commit-message-format`'s
-"Shape the body for a reader who skims" says: prose paragraphs, and
-lists with a blank line between items.
+The script unwraps each paragraph and list item onto one line and
+leaves fenced and indented code, tables, HTML blocks and lines ending
+in a hard break as they are. Shape the body as
+`git-hygiene-commit-message-format`'s "Shape the body for a reader who
+skims" says: prose paragraphs, and lists with a blank line between
+items.
 
-Pass `--verbatim` only for a body the reflow can't carry, such as one
-holding a fenced code block or a table, and check the rendered PR
-afterwards. Reaching for it on an ordinary body means the body needs
-reshaping instead.
+Pass `--verbatim` only for a body the unwrapping still misreads, and
+check the rendered PR afterwards with `render`.
 
 ## Mark code for GFM
 
@@ -172,10 +240,13 @@ them.
 A PostToolUse hook for Bash, in `scripts/` beside this SKILL.md, that
 enforces the rule above when skill loading doesn't. On a Bash call
 containing `git commit --amend` or `git push`, it looks up the branch's
-open PR (`gh pr list --head <branch> --state open`), and when HEAD's
-subject or body differs from the PR's title or body it emits a
-`systemMessage` naming the PR and the difference and saying to re-sync
-with `create-or-update-pull-request.sh`.
+open PR (`gh pr list --head <branch> --state open`):
+
+- **After a push that succeeded,** it runs
+  `create-or-update-pull-request.sh sync` and reports the re-sync, a
+  refused body edited by hand, or a failure as a `systemMessage`.
+- **After an amend,** it runs `check --quiet` and, on drift, reports
+  `check`'s diff and says to push and re-sync.
 
 - **The watcher reminder,** from the same `gh pr list` call: after a
   `git push` that succeeded, it adds `additionalContext` naming the PR
@@ -188,13 +259,31 @@ with `create-or-update-pull-request.sh`.
 - **Silent otherwise:** other Bash calls, which it tests before any
   other process starts; no git repository, a detached HEAD, no `gh` or
   `jq`, no token, or no open PR.
-- **Body comparison ignores whitespace** (`tr -s '[:space:]' ' '`), so
-  a 72-column commit body matches its reflowed PR body, and it also
-  matches when the PR body has one extra closing paragraph, the footer
-  that `create-or-update-pull-request.sh` adds.
+- **Compared byte for byte** with what `render` gives, so a lost line
+  break or a hand edit is drift.
 - **Never exits non-zero:** it nudges, it doesn't block.
 
-The hook comes from the `git-skills-hooks` Claude Code plugin, which
+## The write guard: `pull-request-write-guard.sh`
+
+A PreToolUse hook for Bash, in `scripts/` beside this SKILL.md, that
+denies a command writing a PR's title or body by hand: `gh pr create`
+or `gh pr edit` with `--body`, `--body-file`, `--fill`, `--fill-first`
+or `--title`, and `gh api` POST or PATCH to a `pulls` endpoint with a
+title or body. The denial names `create-or-update-pull-request.sh` and
+how to run it. It reads the command line's syntax tree from `shfmt`,
+so a commit message or here-document that only mentions these commands
+passes. The script's own `gh api` calls run inside its process, which
+the hook never sees. It also denies retargeting a PR onto a branch
+other than the default one (`gh pr edit --base`, or `gh api` with a
+`base` field) and names `gh stack link`, which links the chain and
+sets each base.
+`- Write guard: remind` in this skill's preferences file lets the
+command run and adds the message as context instead; `off` silences
+it.
+
+## The hooks plugin
+
+Both hooks come from the `git-skills-hooks` Claude Code plugin, which
 this repository builds as its flake package `hooks-plugin`. It's
 installed through agent-plugins-nixpkgs and enabled in managed settings
 by the user's nix-darwin configuration (MyNixOS), so it runs in every
@@ -203,15 +292,21 @@ Don't add it to `settings.json` as well: it would run twice on every
 Bash call.
 
 - **Without the plugin,** as on a machine not configured through Nix,
-  nothing checks for drift: re-sync after every amend as this skill
-  says, and point the user at the plugin. It's installed by adding
+  nothing checks for drift or blocks `gh pr create --fill`: re-sync
+  after every amend as this skill says, and point the user at the
+  plugin. It's installed by adding
   `git-skills`' `hooks-plugin` to `services.agent-plugins.plugins`.
-- **Dependencies:** the script finds `jq`, `gh`, `git` and the usual
-  text tools on the user's PATH when the hook runs.
+- **Dependencies:** the plugin and the Nix-installed skill put `bb`
+  (Babashka), `cmark-gfm` and `shfmt` on the scripts' PATH, as
+  `script-inputs.nix` lists them; elsewhere, install them, or
+  `create-or-update-pull-request.sh` exits 2 saying which is missing,
+  and the write guard allows everything. The scripts find `jq`, `gh`
+  and `git` on the user's PATH.
 
 ## When to apply
 
-- About to open a PR: run `create-or-update-pull-request.sh`.
+- About to open a PR: push, then run `create-or-update-pull-request.sh`,
+  never `gh pr create`.
 - Just amended a commit on a branch with an open PR: re-run the script.
 - Reviewing a PR description with `## Summary` or `## Test plan` blocks
   that aren't in the commit message: propose moving them into the commit
@@ -237,4 +332,9 @@ came from; don't apply it from memory.
 - `github-hygiene-gh-cli-gotchas`: `gh` CLI traps, and the `safe-body-edit.sh` check to run before overwriting a body someone else may have edited.
 - `github-hygiene-refer-to-issues-and-pull-requests`: how to label issues, PRs and commits, in this repository and across repositories.
 - `github-hygiene-single-commit-pull-requests`: decides whether a PR may hold several commits, and squashes one that may not.
+- `github-workflow-pull-request-stacked`: a PR based on another branch is always in a linked GitHub stack, which `sync` links and `check` checks.
 - `github-workflow-pull-request-watcher`: the background Monitor that watches the PR's checks, comments and state after a push.
+- `markdown-hygiene-lists-headings-tables`: the list and table syntax the commit body, and so the PR body, uses.
+- `writing-hygiene-prose-to-lists`: a sentence enumerating three or more items becomes a list, which `check` warns about.
+- `writing-hygiene-refer-by-canonical-label`: a commit is named by its subject, its canonical label, in a multi-commit synthesis.
+- `writing-hygiene-tables-for-comparison`: a comparison in the body goes in a table.

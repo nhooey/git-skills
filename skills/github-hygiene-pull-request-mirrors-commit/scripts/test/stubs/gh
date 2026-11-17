@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# A stand-in for `gh` in the CLI tests: it answers the calls
+# create-or-update-pull-request.sh makes from files in $GH_STATE, and
+# logs each call to $GH_STATE/log. Nothing reaches the network.
+#
+#   pr.json      the open pull request, REST-shaped plus `head`, `base`
+#                and `headRefOid`; absent when none is open
+#   parent.json  the open pull request of the base branch, for stacks
+#   issues/<N>   the title of issue N
+#   others.json  more open pull requests, as a list shaped like pr.json
+#   stacks.json  the repository's stacks, as GET repos/{o}/{r}/stacks
+#                gives them; `gh stack link` adds one, and a file
+#                `stack-link-fails` makes it fail
+#
+# `gh repo view` names octo/widgets, whose default branch is main.
+set -euo pipefail
+
+printf '%s\n' "$*" >>"$GH_STATE/log"
+pr=$GH_STATE/pr.json
+
+arg_after() {
+  local want=$1 prev=
+  shift
+  for arg in "$@"; do
+    if [ "$prev" = "$want" ]; then
+      printf '%s' "$arg"
+      return
+    fi
+    prev=$arg
+  done
+}
+
+case "$1 $2" in
+"pr list")
+  head=$(arg_after --head "$@")
+  if [ -z "$head" ]; then
+    # Every open pull request.
+    {
+      if [ -f "$pr" ]; then cat "$pr"; fi
+      if [ -f "$GH_STATE/parent.json" ]; then cat "$GH_STATE/parent.json"; fi
+      if [ -f "$GH_STATE/others.json" ]; then jq '.[]' "$GH_STATE/others.json"; fi
+    } |
+      jq -s 'map({number, headRefName: .head, baseRefName: .base})'
+    exit 0
+  fi
+  for file in "$pr" "$GH_STATE/parent.json"; do
+    if [ -f "$file" ] && [ "$(jq -r .head "$file")" = "$head" ]; then
+      jq '{number, url: .html_url, title, body, baseRefName: .base, headRefOid}' "$file"
+      exit 0
+    fi
+  done
+  ;;
+"pr view")
+  jq '{number, title}' "$GH_STATE/parent.json"
+  ;;
+"repo view")
+  jq -n '{owner: {login: "octo"}, name: "widgets", url: "https://github.com/octo/widgets",
+    defaultBranchRef: {name: "main"}}'
+  ;;
+"stack link")
+  [ ! -f "$GH_STATE/stack-link-fails" ] || { echo "stack link failed" >&2; exit 1; }
+  shift 2
+  stacks=$GH_STATE/stacks.json
+  [ -f "$stacks" ] || echo '[]' >"$stacks"
+  jq --args '. + [{number: 900, open: true, pull_requests: ($ARGS.positional | map({number: tonumber}))}]' \
+    "$@" <"$stacks" >"$stacks.new"
+  mv "$stacks.new" "$stacks"
+  ;;
+"api --paginate")
+  case "$3" in
+  repos/*/stacks) if [ -f "$GH_STATE/stacks.json" ]; then jq -c '.[]' "$GH_STATE/stacks.json"; fi ;;
+  *) exit 1 ;;
+  esac
+  ;;
+"api --method")
+  input=$(cat)
+  if [ "$3" = POST ]; then
+    jq --argjson n 7 '{number: $n, html_url: "https://github.com/octo/widgets/pull/7",
+      title, body, head, base, draft: (.draft // false), headRefOid: ""}' <<<"$input" >"$pr"
+  else
+    jq --argjson in "$input" '. + {title: $in.title, body: $in.body}' "$pr" >"$pr.new"
+    mv "$pr.new" "$pr"
+  fi
+  cat "$pr"
+  ;;
+*)
+  path=$2
+  case "$path" in
+  repos/*/pulls/*) cat "$pr" ;;
+  repos/*/issues/*)
+    file=$GH_STATE/issues/${path##*/}
+    [ -f "$file" ] || exit 1
+    jq -n --arg t "$(cat "$file")" '{title: $t}'
+    ;;
+  *) exit 1 ;;
+  esac
+  ;;
+esac

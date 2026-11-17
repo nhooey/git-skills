@@ -47,7 +47,11 @@ cp base.md new.md   # ...edit new.md...
 safe-body-edit.sh <owner>/<repo> <num> base.md new.md
 ```
 
-- It works for PRs too: the issues endpoint serves a PR's body.
+- It works for PRs too, since the issues endpoint serves a PR's body,
+  but a PR whose body mirrors its commits is re-synced with
+  `github-hygiene-pull-request-mirrors-commit`'s
+  `create-or-update-pull-request.sh` instead, which checks for a hand
+  edit itself.
 - It PATCHes through REST, so the old `gh pr edit` trap below doesn't apply.
 - Unchanged live body: it saves `new.md` and exits 0.
 - Changed live body: it prints the diff, writes `new.md.merged`, saves
@@ -169,11 +173,10 @@ gh pr view <num> --json title,body,baseRefName > pr.json
 git branch -m <old> <new>
 git push -u origin <new>
 
-# 3. Open a new PR with the captured content.
-gh pr create --base "$(jq -r .baseRefName pr.json)" \
-  --head <new> \
-  --title "$(jq -r .title pr.json)" \
-  --body "$(jq -r .body pr.json)"
+# 3. Open a new PR from the commits, with create-or-update-pull-request.sh
+#    from github-hygiene-pull-request-mirrors-commit. pr.json keeps the
+#    old body: fold any hand edit in it into the commit message first.
+create-or-update-pull-request.sh sync --base "$(jq -r .baseRefName pr.json)" --head <new>
 
 # 4. Comment on the old PR pointing at the new one, then close it.
 gh pr comment <old-num> --body "Superseded by #<new-num> after \
@@ -202,5 +205,6 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
+- `github-hygiene-pull-request-mirrors-commit`: opens and re-syncs a PR from its commits with `create-or-update-pull-request.sh`, never `gh pr create`.
 - `github-workflow-pull-request-stacked`: merging a stacked PR with `gh stack merge`, which `gh pr merge` refuses.
 - `github-policy-auto-delete-merged-branches`: enables GitHub's delete-on-merge setting, which makes `gh pr merge --delete-branch` unnecessary.

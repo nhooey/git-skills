@@ -1,0 +1,16 @@
+Retry a failed upload once
+
+Uploads failed for good on a single dropped connection; one retry covers the common case without hiding a server that is down.
+
+[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 1e47004b0310233d3289b3ed7023b53631ee13160ac63d93975c1ab431cce7c1)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+--- sync: refuse (edited) ---
+PR #7 (octo/widgets)'s body was edited by hand since it was generated, so it wasn't overwritten.
+Fold the edit into the commit message and sync again, or rerun with --force to discard it.
+body diff (PR vs render, first 8 lines):
+-Uploads failed for good on a single dropped connection.
++Uploads failed for good on a single dropped connection; one retry covers the common case without hiding a server that is down.
+-Reviewer note: also covers the resumable endpoint.
+-
+-[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 0000000000000000000000000000000000000000000000000000000000000000)
++[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 1e47004b0310233d3289b3ed7023b53631ee13160ac63d93975c1ab431cce7c1)

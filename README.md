@@ -116,7 +116,8 @@ The skills' Claude Code hooks ship as one hooks-only plugin, `git-skills-hooks`,
 
 | Hook | Event | Skill | Does |
 | --- | --- | --- | --- |
-| `pull-request-sync-check.sh` | `PostToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | After `git commit --amend` or `git push`, flags an open PR whose title or body differs from HEAD's commit; after a successful `git push` to a branch with an open PR, reminds the session once to arm `pull-request-monitor.sh`. |
+| `pull-request-write-guard.sh` | `PreToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | Denies `gh pr create` or `gh pr edit` with a title, body or `--fill` flag, and `gh api` POST or PATCH to `pulls` with a title or body, naming `create-or-update-pull-request.sh` instead, and `gh pr edit --base` onto a branch other than the default one, naming `gh stack link`. `- Write guard: deny\|remind\|off` in the skill's preferences file turns it down. |
+| `pull-request-sync-check.sh` | `PostToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | After a successful `git push`, re-syncs the branch's open PR from its commits with `create-or-update-pull-request.sh sync`, which also links a PR on another branch into a stack; after `git commit --amend`, flags drift with `check`; after a successful `git push` to a branch with an open PR, reminds the session once to arm `pull-request-monitor.sh`. |
 
 ```sh
 nix build github:nhooey/git-skills#hooks-plugin

@@ -1,5 +1,5 @@
 {
-  description = "github-hygiene-pull-request-mirrors-commit: Claude Code skill — one commit per PR; title = subject, body = body (unwrapped via fmt -w 2500); re-sync title/body after every amend";
+  description = "github-hygiene-pull-request-mirrors-commit: Claude Code skill — one commit per PR; title = subject, body = body, rendered by a Babashka program; re-sync title/body after every amend";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -17,5 +17,8 @@
       skillName = "github-hygiene-pull-request-mirrors-commit";
       packagePrefix = "agent-skill-";
       src = ./.;
+      # create-or-update-pull-request.sh runs a Babashka program, which
+      # runs cmark-gfm and shfmt.
+      scriptInputs = import ./script-inputs.nix;
     };
 }

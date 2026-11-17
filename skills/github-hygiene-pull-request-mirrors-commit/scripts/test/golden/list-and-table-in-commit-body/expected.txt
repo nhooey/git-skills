@@ -1,0 +1,20 @@
+Cache the parsed feed between runs
+
+The importer parsed the whole feed on every run. It now keeps the parsed records and reparses only what changed:
+
+- Records are keyed by their source file and its modification time, so a touched file is reparsed even when its content is the same.
+  - A deleted source file drops its records on the next run.
+  - A renamed one counts as a deletion and an addition.
+- The cache lives under `$XDG_CACHE_HOME/widgets`, and a version mismatch empties it.
+
+The two options considered:
+
+| Option            | Cold run | Warm run | Disk  |
+| ----------------- | -------- | -------- | ----- |
+| Reparse every run | 40 s     | 40 s     | 0     |
+| Cache by mtime    | 41 s     | 3 s      | 80 MB |
+
+Hashing contents instead of reading the modification time would cost about as much as the parse it saves.
+
+[//]: # (pr-body: generated from bbbbbbb000000000000000000000000000000001; digest 82b16eec3e16632caa8f3e958bbafe7fc039c2c0a8799ea4a0c977978fce4951)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

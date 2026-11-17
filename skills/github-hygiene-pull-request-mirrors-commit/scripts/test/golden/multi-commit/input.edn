@@ -1,0 +1,37 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+        :line-counts {["8888888888888888888888888888888888888882" "src/cursor.clj"] 60}
+        :issue-titles {50 "Cursor drifts on resize"}}
+ :commits
+ [{:sha "8888888888888888888888888888888888888881"
+   :parents ["7777777777777777777777777777777777777777"]
+   :message "Move the cursor into its own namespace
+
+A pure move, so the change after it reads as a change: no line in the
+cursor's code differs.
+
+Multi-commit: refactor-split
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Multi-commit: refactor-split
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}
+  {:sha "8888888888888888888888888888888888888882"
+   :parents ["8888888888888888888888888888888888888881"]
+   :message "Reset the cursor on resize
+
+The cursor kept its old offset after a resize (#50), so the next page
+skipped rows; `src/cursor.clj:20-24` resets it now.
+
+Fixes: #50
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Fixes: #50
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}
+  {:sha "8888888888888888888888888888888888888883"
+   :parents ["8888888888888888888888888888888888888882"]
+   :message "Name the cursor's fields after the API's
+"
+   :trailers ""}]}

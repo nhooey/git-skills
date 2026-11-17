@@ -1,0 +1,10 @@
+{:paths ["src"]
+ :tasks
+ {test {:doc "Run the unit and golden tests"
+        :extra-paths ["test"]
+        :requires ([pr-body.test-runner :as runner])
+        :task (runner/run)}
+  golden {:doc "Rewrite the golden files from the current render, after reading the diff"
+          :extra-paths ["test"]
+          :requires ([pr-body.golden-test :as golden])
+          :task (golden/write-all)}}}

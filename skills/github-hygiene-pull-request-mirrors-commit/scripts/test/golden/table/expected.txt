@@ -1,0 +1,13 @@
+Raise the request timeouts to match the upstream's
+
+The upstream's own timeouts are longer than ours, so we gave up on requests it would have answered:
+
+| Endpoint  | Before | After |
+| --------- | ------ | ----- |
+| `/search` | 2 s    | 5 s   |
+| `/export` | 10 s   | 30 s  |
+
+Nothing else changes.
+
+[//]: # (pr-body: generated from 3333333333333333333333333333333333333333; digest 8a19949ce8d447db085c9a3e07a37ed83e0896611eefd52b25a680d34332a3bf)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

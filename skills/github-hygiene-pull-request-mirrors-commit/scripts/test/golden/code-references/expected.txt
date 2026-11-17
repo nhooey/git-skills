@@ -1,0 +1,14 @@
+Point the pager at the shared cursor
+
+The pager kept its own cursor ([`src/pager.clj:40-52`](https://github.com/octo/widgets/blob/6666666666666666666666666666666666666666/src/pager.clj#L40-L52)), which drifted from the shared one; it reads the shared one now, as [`src/pager.clj:88`](https://github.com/octo/widgets/blob/6666666666666666666666666666666666666666/src/pager.clj#L88) does.
+
+https://github.com/octo/widgets/blob/6666666666666666666666666666666666666666/src/pager.clj#L12-L14
+
+`src/gone.clj:3` names a file that isn't in the commit, `README.md:40` names lines past the end of one, and `https://example.com/src/pager.clj:40` and
+
+    src/pager.clj:40
+
+are code, so all four stay as they are.
+
+[//]: # (pr-body: generated from 6666666666666666666666666666666666666666; digest 107bca191905fe0c7a20f5b36b891f05f261757c4d8a84e2905773dab34db92e)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

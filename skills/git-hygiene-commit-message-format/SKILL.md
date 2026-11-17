@@ -134,11 +134,18 @@ the PR tooling unwraps each paragraph into one line. Shape it for both:
 
 - **Synthesis first:** the opening paragraph says what became true and
   why; detail follows for whoever reads on.
-- **One level of lists or tables,** never nested.
+- **Enumerations as lists:** a body that enumerates three or more
+  items, or parallel options, uses a `-` list rather than one sentence
+  of commas (`writing-hygiene-prose-to-lists`), nested where the items
+  have a hierarchy, with the list syntax of
+  `markdown-hygiene-lists-headings-tables`.
+- **Comparisons as tables:** options weighed against the same criteria
+  go in a table (`writing-hygiene-tables-for-comparison`).
 - **No headings in a body under about 15 lines.**
-- **Lists and tables that survive unwrapping:** a blank line between
-  list items, continuation lines indented under the item's text, each
-  table row on one line, and a blank line above and below either.
+- **Lists and tables that survive unwrapping:** each item wrapped at 72
+  columns with its continuation lines indented under the item's text
+  (a hanging indent), each table row on one line, and a blank line
+  above and below either.
 - **Code words in backticks:** paths, identifiers, flags, commands.
 
 ## Code references
@@ -198,4 +205,7 @@ came from; don't apply it from memory.
 - `git-hygiene-conventional-commits`: the `type(scope): subject` prefix to pair with this format when the repo has adopted Conventional Commits.
 - `git-workflow-curate-unpushed`: splitting or squashing commits before push, when a message is hard to write because the commit does too much.
 - `github-hygiene-pull-request-mirrors-commit`: the PR title and body mirror this commit message, so its 72-char subject and body rules carry over to the PR.
+- `markdown-hygiene-lists-headings-tables`: the list and table syntax a body's lists and tables use, so they render as meant on the PR.
 - `writing-hygiene-declarative-statements`: the snapshot-or-delta vocabulary, the before → after notation and the narration word list behind "a commit is a delta".
+- `writing-hygiene-prose-to-lists`: rewriting a sentence that enumerates three or more items, or parallel options, as a list.
+- `writing-hygiene-tables-for-comparison`: when a comparison goes in a table, and how to shape it.

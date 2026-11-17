@@ -1,0 +1,23 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "5555555555555555555555555555555555555555"
+   :parents ["4444444444444444444444444444444444444444"]
+   :message "Fix the off-by-one in the pager
+
+The last page was dropped when the item count was a multiple of the
+page size.
+
+Fixes: #31
+Change-Id: I0123456789abcdef
+Signed-off-by: Ada <ada@example.com>
+Co-Authored-By: Ada <ada@example.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Fixes: #31
+Change-Id: I0123456789abcdef
+Signed-off-by: Ada <ada@example.com>
+Co-Authored-By: Ada <ada@example.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}]}

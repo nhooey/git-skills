@@ -1,0 +1,12 @@
+Wrap the widget cache in a read-write lock
+
+The cache was read under a plain mutex, so every lookup serialised behind the rare writer and the p99 latency of a page render tracked the slowest refresh. A read-write lock lets lookups run side by side.
+
+A second paragraph wrapped at seventy-two columns, with a hard break  
+kept where the line ends in two spaces, and one kept by a backslash\
+too. octo/widgets#12 is qualified, nhooey/other#3 stays as it is, and #4 is warned about.
+
+[//]: # (pr-body: generated from 1111111111111111111111111111111111111111; digest fa383bff3b17a04f643fd3881e5962ef1e0964259830a19675eff91985bc5e88)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+--- warnings ---
+#4 names no issue or pull request with a title in this repository

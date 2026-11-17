@@ -1,0 +1,45 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+        :flake-locks
+        [{:path "flake.lock"
+          :old {"version" 7
+                "root" "root"
+                "nodes" {"root" {"inputs" {"nixpkgs" "nixpkgs" "tools" "tools"}}
+                         "nixpkgs" {"locked" {"type" "github" "owner" "NixOS" "repo" "nixpkgs"
+                                              "rev" "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                                              "narHash" "sha256-old" "lastModified" 1760000000}}
+                         "tools" {"inputs" {"nixpkgs" "nixpkgs_2"}
+                                  "locked" {"type" "github" "owner" "octo" "repo" "tools"
+                                            "rev" "cccccccccccccccccccccccccccccccccccccccc"
+                                            "narHash" "sha256-tools" "lastModified" 1759000000}}
+                         "nixpkgs_2" {"locked" {"type" "github" "owner" "NixOS" "repo" "nixpkgs"
+                                                "rev" "dddddddddddddddddddddddddddddddddddddddd"
+                                                "narHash" "sha256-old2" "lastModified" 1750000000}}}}
+          :new {"version" 7
+                "root" "root"
+                "nodes" {"root" {"inputs" {"nixpkgs" "nixpkgs" "tools" "tools"}}
+                         "nixpkgs" {"locked" {"type" "github" "owner" "NixOS" "repo" "nixpkgs"
+                                              "rev" "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                                              "narHash" "sha256-new" "lastModified" 1761036800}}
+                         "tools" {"inputs" {"nixpkgs" ["nixpkgs"]}
+                                  "locked" {"type" "github" "owner" "octo" "repo" "tools"
+                                            "rev" "cccccccccccccccccccccccccccccccccccccccc"
+                                            "narHash" "sha256-tools" "lastModified" 1759000000}}}}}
+         {:path "sub/flake.lock"
+          :old nil
+          :new {"version" 7
+                "root" "root"
+                "nodes" {"root" {"inputs" {"src" "src"}}
+                         "src" {"locked" {"type" "tarball" "url" "https://example.com/src.tar.gz"
+                                          "narHash" "sha256-0123456789abcdef"
+                                          "lastModified" 1761000000}}}}}]}
+ :commits
+ [{:sha "abababababababababababababababababababab"
+   :parents ["9999999999999999999999999999999999999992"]
+   :message "Bump nixpkgs and let tools follow it
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}]}

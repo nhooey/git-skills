@@ -1,0 +1,30 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "bbbbbbb000000000000000000000000000000001"
+   :parents ["bbbbbbb000000000000000000000000000000000"]
+   :message "Cache the parsed feed between runs
+
+The importer parsed the whole feed on every run. It now keeps the
+parsed records and reparses only what changed:
+- Records are keyed by their source file and its modification time,
+  so a touched file is reparsed even when its content is the same.
+  - A deleted source file drops its records on the next run.
+  - A renamed one counts as a deletion and an addition.
+- The cache lives under `$XDG_CACHE_HOME/widgets`, and a version
+  mismatch empties it.
+
+The two options considered:
+| Option            | Cold run | Warm run | Disk  |
+| ----------------- | -------- | -------- | ----- |
+| Reparse every run | 40 s     | 40 s     | 0     |
+| Cache by mtime    | 41 s     | 3 s      | 80 MB |
+
+Hashing contents instead of reading the modification time would cost
+about as much as the parse it saves.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}]}

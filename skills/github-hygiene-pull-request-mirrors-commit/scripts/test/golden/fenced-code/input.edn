@@ -1,0 +1,27 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "4444444444444444444444444444444444444444"
+   :parents ["3333333333333333333333333333333333333333"]
+   :message "Document the migration command
+
+Run the migration from the repository root, where the config file
+lives:
+
+```bash
+widgets migrate \\
+  --from 3 \\
+  --to   4   # two spaces kept
+```
+
+An indented block stays as it is too:
+
+    widgets status
+    widgets status --verbose
+
+## Rollback
+The rollback is the same command
+with the versions swapped.
+"
+   :trailers ""}]}
