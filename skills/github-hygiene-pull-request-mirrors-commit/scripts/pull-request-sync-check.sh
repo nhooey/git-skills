@@ -9,12 +9,14 @@
 # Both of its messages start from one `gh pr list --head <branch>
 # --state open` call:
 #
-# - Sync check: after `git commit --amend` or `git push`, when the
-#   open pull request's title or body has drifted from HEAD's commit
-#   message, a `systemMessage` saying to re-sync it with
-#   `create-or-update-pull-request.sh`, from the same skill as this
-#   script, `github-hygiene-pull-request-mirrors-commit`. Skill loading
-#   is heuristic; this hook is the deterministic safety net.
+# - Sync: `create-or-update-pull-request.sh`, beside this script in
+#   `github-hygiene-pull-request-mirrors-commit`, renders the pull
+#   request from the branch's commits. After a `git push` that
+#   succeeded, the hook runs its `sync` mode and reports a re-sync, a
+#   refusal (a body edited by hand) or a failure as a `systemMessage`.
+#   After `git commit --amend`, it runs `check --quiet` and, on drift,
+#   reports `check`'s diff. Skill loading is heuristic; this hook is the
+#   deterministic safety net.
 # - Watcher reminder: after a `git push` that succeeded, an
 #   `additionalContext` naming the pull request and the command that
 #   arms `pull-request-monitor.sh` from
@@ -30,10 +32,10 @@ export GIT_OPTIONAL_LOCKS=0
 IFS= read -r -d '' payload || true
 
 # Every session runs this on every Bash call, so the common case (no
-# `git commit` or `git push` anywhere in the payload) exits here, on
-# builtins alone, before forking jq.
+# `git push` or `git commit --amend` anywhere in the payload) exits
+# here, on builtins alone, before forking jq.
 case "$payload" in
-*"git commit"* | *"git push"*) ;;
+*"git push"* | *"git commit"*"--amend"*) ;;
 *) exit 0 ;;
 esac
 
@@ -78,6 +80,7 @@ branch=$(git symbolic-ref --short -q HEAD) || exit 0
 # user's `git-workflow-push-mode` preferences files, then in the
 # project's auto-memory as `push-workflow-mode.md`. Prints the mode's
 # value in lower case, such as `1 (direct to main)`.
+# Compromise: plan node move-sync-check-hook-parsing-into-the-program
 push_mode() {
   local project_dir config_dir file value
   project_dir=${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
@@ -115,13 +118,11 @@ fi
 command -v gh >/dev/null 2>&1 || exit 0
 
 pr=$(gh pr list --head "$branch" --state open \
-  --json number,title,body,url --jq '.[0] // empty' 2>/dev/null)
+  --json number,url --jq '.[0] // empty' 2>/dev/null)
 [ -n "$pr" ] || exit 0
 
 pr_num=$(jq -r '.number' <<<"$pr")
 pr_url=$(jq -r '.url // ""' <<<"$pr")
-pr_title=$(jq -r '.title' <<<"$pr")
-pr_body=$(jq -r '.body // ""' <<<"$pr" | tr -d '\r')
 # https://github.com/<owner>/<repo>/pull/<num>
 repo=$(printf '%s' "$pr_url" | sed -nE 's|^https?://[^/]+/([^/]+/[^/]+)/pull/[0-9]+.*$|\1|p')
 pr_label="#${pr_num}${repo:+ ($repo)}"
@@ -153,49 +154,39 @@ fi
 
 # --- Sync check ---------------------------------------------------------
 
-commit_subject=$(git log -1 --pretty=%s)
-commit_body_raw=$(git log -1 --pretty=%b)
-
-# Whitespace-normalised body comparison: kills line-wrap-width
-# sensitivity (PR body authored via `fmt -w 2500` vs raw 72-col
-# commit body should compare equal if the words are identical).
-normalize() { tr -s '[:space:]' ' ' | sed -e 's/^ //' -e 's/ $//'; }
-pr_body_norm=$(printf '%s' "$pr_body" | normalize)
-commit_body_norm=$(printf '%s' "$commit_body_raw" | normalize)
-# create-or-update-pull-request.sh ends the PR body with a footer
-# paragraph the commit doesn't have, so the body also matches when
-# only its last paragraph is dropped.
-pr_body_sans_footer_norm=$(printf '%s\n' "$pr_body" |
-  awk 'BEGIN { RS = "" } { p[NR] = $0 } END { for (i = 1; i < NR; i++) print p[i] "\n" }' |
-  normalize)
-
-if [ "$pr_body_norm" = "$commit_body_norm" ] ||
-  [ "$pr_body_sans_footer_norm" = "$commit_body_norm" ]; then
-  body_in_sync=1
-else
-  body_in_sync=0
-fi
+# The generator compares byte for byte against the render of every
+# commit on the branch, not only HEAD, so an added commit or a lost
+# line break counts as drift, as does a pull request on a branch other
+# than the default one that isn't in a linked GitHub stack; `sync`
+# links it. Its exit codes: 0 in sync or synced, 1 drift or a failed
+# sync, 2 usage or a refused range, 3 a body edited
+# by hand, 4 several commits without an allowed reason.
+generator=${BASH_SOURCE[0]%/*}/create-or-update-pull-request.sh
+tool='`create-or-update-pull-request.sh` from `github-hygiene-pull-request-mirrors-commit`'
+generator_args=(--head "$branch")
+[ -n "$repo" ] && generator_args+=(--repo "$repo")
 
 sync_msg=
-if [ "$pr_title" != "$commit_subject" ] || [ "$body_in_sync" -eq 0 ]; then
-  diff_summary=$(
-    {
-      if [ "$pr_title" != "$commit_subject" ]; then
-        printf 'title:\n  PR:     %s\n  commit: %s\n' "$pr_title" "$commit_subject"
-      fi
-      if [ "$body_in_sync" -eq 0 ]; then
-        printf 'body diff (PR vs commit, first 8 lines):\n'
-        diff <(printf '%s\n' "$pr_body") <(printf '%s\n' "$commit_body_raw") | head -n 8
-      fi
-    }
-  )
-  sync_msg=$(
-    cat <<EOF
-PR ${pr_label} on branch \`${branch}\` is out of sync with HEAD's commit message. Re-sync it by running \`create-or-update-pull-request.sh\` from the \`github-hygiene-pull-request-mirrors-commit\` skill on this branch; it PATCHes the open PR's title and body.
-
-${diff_summary}
-EOF
-  )
+if [ -f "$generator" ] && [ "$is_push" -eq 1 ] && [ "$outcome" = ok ]; then
+  out=$(bash "$generator" sync "${generator_args[@]}" 2>&1)
+  rc=$?
+  case $rc in
+  0)
+    case "$out" in
+    *"synced "*) sync_msg="Re-synced PR ${pr_label}'s title and body with the commits on \`${branch}\`, by running ${tool} in sync mode." ;;
+    esac
+    case "$out" in
+    *"linked stack: "*) sync_msg="${sync_msg:+$sync_msg }Linked PR ${pr_label} into a GitHub stack: ${out##*linked stack: }." ;;
+    esac
+    ;;
+  3) sync_msg="PR ${pr_label}'s body was edited by hand, so ${tool} didn't overwrite it after this push. Fold the edit into the commit message and run its sync mode again, or rerun it with --force to discard the edit."$'\n\n'"$out" ;;
+  *) sync_msg="Syncing PR ${pr_label} with the commits on \`${branch}\` after this push failed (exit ${rc} from ${tool}):"$'\n\n'"$out" ;;
+  esac
+elif [ -f "$generator" ] && [ "$is_amend" -eq 1 ]; then
+  if ! bash "$generator" check --quiet "${generator_args[@]}" >/dev/null 2>&1; then
+    out=$(bash "$generator" check "${generator_args[@]}" 2>&1)
+    sync_msg="PR ${pr_label} on branch \`${branch}\` no longer matches its commits, or isn't linked into its stack. Push, then re-sync it by running ${tool} in sync mode, which links the stack too."$'\n\n'"$out"
+  fi
 fi
 
 [ -n "$reminder" ] || [ -n "$sync_msg" ] || exit 0

@@ -1,0 +1,8 @@
+Page the export through the shared cursor
+
+The export walked the table on its own; with the shared cursor from the pull request below it pages like every other reader.
+
+Stacks on octo/widgets#41 "Add the shared cursor"
+
+[//]: # (pr-body: generated from 7777777777777777777777777777777777777777; digest 9fc2d36628c767479d1ac3ae55929ca4c1e7910eb61c28eb040100e1a17054fd)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

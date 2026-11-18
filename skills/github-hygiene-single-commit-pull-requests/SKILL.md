@@ -51,6 +51,19 @@ the reason in a trailer, so a program reads it without guessing:
 Multi-commit: refactor-split
 ```
 
+The lead commit's subject is the PR's title and its body the PR's
+synthesis, above a list of every commit's linked SHA and subject. Write
+that body as the synthesis, not as a copy of any one commit, since each
+commit is one click away:
+
+- **What it says:** what no single commit says, such as how the
+  commits relate, why they share a PR, and what to review across them.
+- **How it names a commit:** by its subject, the commit's canonical
+  label, never by restating its body.
+
+`github-hygiene-pull-request-mirrors-commit`'s `check` warns when a
+paragraph of the synthesis repeats another commit's body.
+
 ## Never in a PR
 
 - `fixup!` or `squash!` commits.
@@ -128,3 +141,4 @@ came from; don't apply it from memory.
 - `git-hygiene-push-force-safely`: the `--force-with-lease` push after a squash.
 - `git-hygiene-commit-message-format`: the single-delta message a squashed commit gets.
 - `github-workflow-pull-request-stacked`: chaining dependent single-commit PRs instead of one multi-commit PR.
+- `writing-hygiene-refer-by-canonical-label`: naming a commit by its subject in the synthesis.

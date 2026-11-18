@@ -1,0 +1,28 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "aaaaaaa000000000000000000000000000000001"
+   :parents ["aaaaaaa000000000000000000000000000000000"]
+   :message "Split the parser into a reader and a resolver
+
+A pure move: no line of either half differs from the parser it came
+from.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}
+  {:sha "aaaaaaa000000000000000000000000000000002"
+   :parents ["aaaaaaa000000000000000000000000000000001"]
+   :message "Resolve imports lazily
+
+Imports resolve on first use, so a module that is never read costs
+nothing; the split before this commit makes that change one function.
+
+Multi-commit: refactor-split
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Multi-commit: refactor-split
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}]}

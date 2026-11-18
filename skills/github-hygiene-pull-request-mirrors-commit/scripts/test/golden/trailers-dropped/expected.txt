@@ -1,0 +1,6 @@
+Fix the off-by-one in the pager
+
+The last page was dropped when the item count was a multiple of the page size.
+
+[//]: # (pr-body: generated from 5555555555555555555555555555555555555555; digest dce3970c890c3e3f6b5279143216dd1f021c05887dc3e5175a1fe7ac738c6545)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

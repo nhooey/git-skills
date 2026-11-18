@@ -1,0 +1,7 @@
+Retry a failed upload once
+
+Uploads failed for good on a single dropped connection; one retry covers the common case without hiding a server that is down.
+
+[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 1e47004b0310233d3289b3ed7023b53631ee13160ac63d93975c1ab431cce7c1)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+--- sync: patch (generated) ---

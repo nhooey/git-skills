@@ -67,12 +67,13 @@ bash pull-request-monitor.sh --dry-run   # each gh call once, stderr intact, the
 bash pull-request-monitor.sh             # the loop to arm
 ```
 
-- **Flags,** all optional and detected from the current branch: `--pr <num>` (`gh pr view --json number`), `--repo <owner/repo>` (`gh repo view --json nameWithOwner`), `--sha <sha>` (`git rev-parse HEAD`), `--interval <seconds>` (default 30). Pass them to watch a PR other than the current branch's.
+- **Flags,** all optional and detected from the current branch: `--pr <num>` (`gh pr view --json number`), `--repo <owner/repo>` (`gh repo view --json nameWithOwner`), `--sha <sha>` (`git rev-parse HEAD`), `--interval <seconds>` (default 30), `--body-check <path>` (`create-or-update-pull-request.sh` from `github-hygiene-pull-request-mirrors-commit`, found beside this skill or in the user's skills). Pass them to watch a PR other than the current branch's.
 - **Lifetime:** set `persistent: true` where the Monitor tool offers it, since a PR can sit for hours. Where it offers only `timeout_ms`, set the maximum and re-arm on each expiry; a re-armed loop starts fresh and reports the existing checks and comments again, so skip the ones already handled.
 - **Output lines,** one event each:
   - `CHECK <name>: <conclusion>` when a check completes
   - `COMMENT-<login>: <body>` for a new comment, or `COMMENT-SELF: <body>` when the session's user posted it
   - `STATE <state> REVIEW <decision>` when the state or review decision changes, with `none` before any review
+  - `BODY-DRIFT <message>` when, at the start or after the PR's head SHA changes, the body check's `check` mode finds the title or body drifted from the commits, or several commits without an allowed reason; it runs only when the local branch is at that SHA. Re-sync with `create-or-update-pull-request.sh sync`. The loop also moves its check polling to the new head.
 - **End:** the loop exits when the state reaches `MERGED` or `CLOSED`.
 
 ### Why the dry-run matters

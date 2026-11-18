@@ -39,6 +39,32 @@ Three cases:
   often `users/<username>/`. The branches live upstream, so it works
   like §A plus the prefix.
 
+## A PR based on another branch is always in a linked stack
+
+Branches that depend on each other are always submitted as a linked
+GitHub stack: a PR whose base isn't the default branch is a member of
+one, and a PR based on another branch outside a stack is never opened.
+Dependence counts either way: a branch built on another branch's
+commits, or a change that only works once another one lands.
+
+Merging the top PR of a linked stack merges the whole stack into the
+default branch. A PR merely based on the branch below, with no stack
+linking it, merges only into that branch, and its change never reaches
+the default branch unless every PR below is merged in turn.
+
+- **A new chain:** `gh stack submit`, or
+  `create-or-update-pull-request.sh sync` from
+  `github-hygiene-pull-request-mirrors-commit` on each branch, bottom
+  first, which links the chain of open PRs as it opens each one.
+- **Branches `gh stack` already tracks:** `gh stack init` adopts them.
+- **Branches managed without `gh stack` tracking:**
+  `gh stack link <bottom> … <top>`, by branch names or PR numbers.
+
+`create-or-update-pull-request.sh check` reports a PR on another branch
+that isn't in a stack, with the `gh stack link` command that fixes it,
+and the bundled write guard denies `gh pr edit --base <branch>` onto a
+branch other than the default one, pointing at `gh stack link`.
+
 Each PR in the stack is still a single-commit PR governed by
 `github-hygiene-pull-request-mirrors-commit`, and every restack
 force-pushes, so `git-hygiene-push-force-safely` applies. A stack isn't
@@ -60,7 +86,11 @@ The rule:
 
 - **Same repository, linear chain:** `gh stack`.
 - **Fork-only, or a stack that branches:** plain git, or `gt` if the
-  user already uses Graphite.
+  user already uses Graphite. A fork-only chain has every PR based on
+  the upstream default branch. A PR belongs to one linked stack only,
+  so a stack that branches links one line, and the other branch's PR
+  waits, as a draft, until the shared base merges and it can be rebased
+  onto the default branch.
 - **The user already runs Graphite on this repo:** keep `gt`; don't
   switch tools mid-stack (see [Mixing tools](#mixing-tools)).
 
@@ -135,8 +165,9 @@ gh stack view                             # branches, PR links and states
 **From an agent session,** where there is no terminal for the editor,
 `gh stack submit` needs `--auto`: it skips the editor, uses generated
 titles and opens new PRs as drafts unless `--open` is given. Re-sync
-each PR's title and body with
-`github-hygiene-pull-request-mirrors-commit`'s script afterwards.
+each PR's title and body afterwards with
+`github-hygiene-pull-request-mirrors-commit`'s script, run on each
+branch: `create-or-update-pull-request.sh sync --base <branch below>`.
 
 Each PR's base is the branch below it, so child diffs are incremental
 and reviewers see only the per-PR change. GitHub marks each PR with its
@@ -195,11 +226,13 @@ merges into the trunk. Choose by the rule:
 
 - **Force-pushing PR branches is allowed** (with a lease): use
   `gh stack` as above.
-- **It isn't:** don't stack with a tool. Open each PR with
-  `gh pr create --base <branch below>`, and when a branch below
-  changes, `git merge` it into each branch above and push normally.
-  The child branches gain merge commits, and the PRs are never linked
-  as a stack on GitHub.
+- **It isn't:** don't restack with a tool. Open each PR with
+  `create-or-update-pull-request.sh sync --base <branch below>` from
+  `github-hygiene-pull-request-mirrors-commit`, which writes the
+  `Stacks on` line and links the chain into a stack, never
+  `gh pr create`; when a branch below changes, `git merge` it into each
+  branch above and push normally. The child branches gain merge
+  commits, and the PRs stay linked.
 - **Unsure:** ask before the first restack, since a force-push can't
   be taken back once a reviewer has fetched the branch.
 

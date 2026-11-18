@@ -1,0 +1,25 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :keep
+        :lead "9999999"
+        :attribution nil}
+ :commits
+ [{:sha "9999999999999999999999999999999999999991"
+   :parents ["8888888888888888888888888888888888888883"]
+   :message "Vendor the parser at 2.4.0
+
+Multi-commit: vendored-import
+Signed-off-by: Ada <ada@example.com>
+"
+   :trailers "Multi-commit: vendored-import
+Signed-off-by: Ada <ada@example.com>
+"}
+  {:sha "9999999999999999999999999999999999999992"
+   :parents ["9999999999999999999999999999999999999991"]
+   :message "Patch the vendored parser for our dialect
+
+Two lines, kept apart from the import so the patch is reviewable.
+
+Signed-off-by: Ada <ada@example.com>
+"
+   :trailers "Signed-off-by: Ada <ada@example.com>
+"}]}

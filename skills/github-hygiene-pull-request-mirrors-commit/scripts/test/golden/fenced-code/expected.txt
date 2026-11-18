@@ -1,0 +1,20 @@
+Document the migration command
+
+Run the migration from the repository root, where the config file lives:
+
+```bash
+widgets migrate \
+  --from 3 \
+  --to   4   # two spaces kept
+```
+
+An indented block stays as it is too:
+
+    widgets status
+    widgets status --verbose
+
+## Rollback
+The rollback is the same command with the versions swapped.
+
+[//]: # (pr-body: generated from 4444444444444444444444444444444444444444; digest c7557ddd49bd65cf935008d826c4f9f4e0e98119600f07d53be2523a951de18b)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)

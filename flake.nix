@@ -46,7 +46,13 @@
         source = import ./source.nix;
         skillsDir = ./skills;
         packagePrefix = "agent-skill-";
+        # create-or-update-pull-request.sh runs a Babashka program; the
+        # built skill's scripts find it and the tools it runs without the
+        # user installing them.
+        scriptInputs.github-hygiene-pull-request-mirrors-commit = prBodyInputs;
       };
+
+      prBodyInputs = import ./skills/github-hygiene-pull-request-mirrors-commit/script-inputs.nix;
 
       packs = {
         # All 12 git-* skills.
@@ -156,6 +162,17 @@
       # plugin/hooks/hooks.json runs it from there.
       hookScripts = [
         ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-sync-check.sh
+        ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-write-guard.sh
+      ];
+
+      # The PR body program the hooks run, copied beside them: the Bash
+      # entry point and the Babashka project it starts. The write guard
+      # names the entry point in its denial, so it gets `bb` too.
+      mirrorsCommitScripts = ./skills/github-hygiene-pull-request-mirrors-commit/scripts;
+      hookPrograms = [
+        "create-or-update-pull-request.sh"
+        "bb.edn"
+        "src"
       ];
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -192,14 +209,27 @@
           };
 
           # `git-skills-hooks`: a hooks-only Claude Code plugin, installed
-          # through agent-plugins-nixpkgs.
+          # through agent-plugins-nixpkgs: the PostToolUse sync check and
+          # the PreToolUse write guard. Each script gets the PR body
+          # program's tools on its PATH, for the program it runs.
           hooks-plugin = claudePlugins.mkClaudePlugin pkgs {
             src = ./plugin;
+            # The tools go on each script's PATH by a line after the shebang,
+            # not makeWrapper: hooks.json runs `bash <script>`, and the
+            # bash on PATH may be macOS's 3.2, which misreads
+            # makeWrapper's PATH edits.
             postPatch = ''
               mkdir -p scripts
+              ${pkgs.lib.concatMapStrings (name: ''
+                cp -r ${mirrorsCommitScripts}/${name} scripts/${name}
+              '') hookPrograms}
               ${pkgs.lib.concatMapStrings (script: ''
                 cp ${script} scripts/${builtins.baseNameOf script}
               '') hookScripts}
+              chmod -R u+w scripts
+              for script in scripts/*.sh; do
+                sed -i '1a PATH=${pkgs.lib.makeBinPath (prBodyInputs pkgs)}''${PATH:+:$PATH}; export PATH' "$script"
+              done
             '';
           };
         in
@@ -223,6 +253,9 @@
 
           apps = base.apps.${system};
 
+          # `bb test` and the bats suites of the PR body program.
+          devshells.default.packages = prBodyInputs pkgs ++ [ pkgs.bats ];
+
           devshells.default.commands = [
             {
               category = "ci";
@@ -234,17 +267,23 @@
 
           # Every skill's bundled unittest suite, the skills' frontmatter, and
           # the tool's own tests. `git` is for tidy-branches' git-side tests,
-          # `git` and `jq` for the pull request sync check hook's tests.
-          # `hooks-plugin` checks the built plugin's manifest and hooks.json,
-          # and that each Bash hook stays silent for a command it ignores.
+          # `git`, `jq` and the PR body program's tools for the pull request
+          # sync check hook's tests, which run the program. `pr-body-tests` runs that
+          # program's unit and golden tests, `pr-body-cli`, `pr-body-guard`
+          # and `pull-request-monitor` the bats tests of its command line, of
+          # the PreToolUse write guard and of the watcher's BODY-DRIFT line. `hooks-plugin` checks the built
+          # plugin's manifest and hooks.json, and that each Bash hook stays
+          # silent for a command it ignores; `hooks-plugin-bb` that its
+          # write guard finds `bb` with no PATH at all.
           checks =
             builtins.mapAttrs
               (
                 name: command:
                 pkgs.runCommand "git-skills-${name}"
                   {
-                    nativeBuildInputs = [
+                    nativeBuildInputs = prBodyInputs pkgs ++ [
                       git-skills
+                      pkgs.bats
                       pkgs.git
                       pkgs.jq
                       pkgs.python3
@@ -260,7 +299,16 @@
                 skill-tests = "git-skills --root ${./.} test";
                 skill-lint = "git-skills --root ${./.} lint";
                 tool-tests = "cd ${./scripts} && python3 -B -m unittest discover --verbose";
+                pr-body-tests = "cd ${mirrorsCommitScripts} && bb test";
+                pr-body-cli = "bats ${mirrorsCommitScripts}/test/cli.bats";
+                pr-body-guard = "bats ${mirrorsCommitScripts}/test/guard.bats";
+                pull-request-monitor = "bats ${./skills/github-workflow-pull-request-watcher/scripts}/test/monitor.bats";
                 hooks-plugin = "bash ${./scripts/check-hooks-plugin.sh} ${hooks-plugin} git-skills-hooks";
+                hooks-plugin-bb = ''
+                  decision=$(printf '%s' '{"tool_input":{"command":"gh pr create --fill"}}' |
+                    env -i ${pkgs.bash}/bin/bash ${hooks-plugin}/scripts/pull-request-write-guard.sh)
+                  case $decision in *'"permissionDecision":"deny"'*) ;; *) echo "the plugin's guard found no bb: $decision" >&2; exit 1 ;; esac
+                '';
               };
 
           treefmt = {

@@ -1,0 +1,18 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "1111111111111111111111111111111111111111"
+   :parents ["0000000000000000000000000000000000000000"]
+   :message "Wrap the widget cache in a read-write lock
+
+The cache was read under a plain mutex, so every lookup serialised
+behind the rare writer and the p99 latency of a page render tracked the
+slowest refresh. A read-write lock lets lookups run side by side.
+
+A second paragraph wrapped at seventy-two columns, with a hard break\u0020\u0020
+kept where the line ends in two spaces, and one kept by a backslash\\
+too. widgets#12 is qualified, nhooey/other#3 stays as it is, and #4
+is warned about.
+"
+   :trailers ""}]}

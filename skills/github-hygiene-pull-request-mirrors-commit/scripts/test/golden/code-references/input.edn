@@ -1,0 +1,27 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+        :line-counts {["6666666666666666666666666666666666666666" "src/pager.clj"] 120
+                      ["6666666666666666666666666666666666666666" "README.md"] 10
+                      ["6666666666666666666666666666666666666666" "src/gone.clj"] nil}
+        :issue-titles {}}
+ :commits
+ [{:sha "6666666666666666666666666666666666666666"
+   :parents ["5555555555555555555555555555555555555555"]
+   :message "Point the pager at the shared cursor
+
+The pager kept its own cursor (`src/pager.clj:40-52`), which drifted
+from the shared one; it reads the shared one now, as src/pager.clj:88
+does.
+
+src/pager.clj:12-14
+
+`src/gone.clj:3` names a file that isn't in the commit, `README.md:40`
+names lines past the end of one, and
+`https://example.com/src/pager.clj:40` and
+
+    src/pager.clj:40
+
+are code, so all four stay as they are.
+"
+   :trailers ""}]}

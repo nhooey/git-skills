@@ -1,0 +1,16 @@
+Split the importer into a reader and a writer
+
+What moves where:
+
+- The reader parses the feed and validates each record against the schema, rejecting a record whose timestamp is in the future.
+  - Rejected records go to the dead-letter queue, with the reason attached.
+  - Accepted records go on.
+- The writer batches records and commits them in one transaction.
+
+  It retries a batch once on a serialisation failure, then gives up and reports the batch.
+
+1. Run the reader alone first, against a copy of yesterday's feed, to see what it rejects.
+2. Then the two together.
+
+[//]: # (pr-body: generated from 2222222222222222222222222222222222222222; digest 883476f01926f824312bfe8f37e8c16cb194df39a3c34b5a83ce946cffc6fd32)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
