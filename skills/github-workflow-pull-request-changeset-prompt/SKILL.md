@@ -1,14 +1,12 @@
 ---
 name: github-workflow-pull-request-changeset-prompt
 description: |
-  After finishing a change-set in the work tree, ask the user what to do
-  with it in a multi-select `AskUserQuestion` prompt, split into Local,
-  Push and Follow-up questions to fit the 4-option cap, covering Stage,
-  Commit, Amend, Push, Force, Open Pull Request, Re-derive PR and
-  Monitor. Options are pre-selected from the last answer to the same
-  question in the session, or from context on the first ask. Use after
-  every change-set, instead of deciding yourself whether to stage,
-  commit, push or follow up on the PR.
+  Load on finishing a set of edits, before staging or committing. Asks
+  the user whether to stage, commit or follow up on the PR, rather than
+  deciding yourself. `git-workflow-push-mode` decides whether a push or
+  new PR is asked about; `coding-agent-questions-as-first-class-prompts`
+  has the general asking rules; `git-workflow-inspect-before-commit`
+  loads before the commit.
 tags: [agent, interactive]
 allowed-tools:
   - Bash
@@ -18,11 +16,32 @@ allowed-tools:
 
 # Change-set prompt
 
-_Once a change-set lands in the work tree, the user picks what happens to it from one multi-select prompt; the agent never decides on its own whether to stage, commit, push or follow up on the PR._
+_Once a change-set lands in the work tree, the user picks what happens to it from one multi-select prompt; the agent never decides on its own whether to stage, commit or follow up on the PR, and pushes as the saved push mode says._
 
 Loading this skill doesn't fire the prompt; the prompt fires after a
 change-set lands in the work tree. It is always multi-select
 (`multiSelect: true`), never single-select.
+
+## The saved push mode decides whether to ask about pushing
+
+`git-workflow-push-mode` owns whether a push is asked about first. Read
+the saved mode as that skill says before building the prompt:
+
+- **Mode 1 or Mode 2 saved, normal state:** leave Q2 out and push as
+  the mode and its saved on-branch answer say. Leave Open Pull Request
+  out of Q3 too, unless that on-branch answer is to ask.
+- **Mode 3 saved:** ask Q2 and Q3 in full. Together they are the
+  per-push question Mode 3 calls for, so don't ask it a second time.
+- **No mode saved:** ask Q2 and Q3 in full. If the user picks Push or
+  Force, `git-workflow-push-mode` asks its question script and saves
+  the mode before the push.
+- **The push needs Force, or the state is anomalous** (on main in
+  Mode 2, a detached HEAD, mid-rebase): ask Q2 whatever the mode. A saved
+  mode covers ordinary pushes, not rewriting published history or
+  pushing from a state that skill says to stop in.
+
+Q1 (Local actions), Re-derive PR name + title and Monitor + react are
+not push decisions, so they are asked in every mode.
 
 ## The eight options, in order
 
@@ -139,6 +158,9 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `coding-agent-questions-as-first-class-prompts`: the general rules for asking through `AskUserQuestion`, and the `All` and `None` options this prompt leaves out.
+- `git-workflow-push-mode`: the saved push mode that decides whether Q2 and the Open Pull Request option are asked at all.
 - `git-hygiene-push-force-safely`: how the Force option pushes, with `--force-with-lease`.
+- `git-workflow-inspect-before-commit`: inspecting, staging and reviewing the diff before the Commit or Amend option commits.
+- `git-hygiene-commit-message-format`: the message the Commit and Amend options write.
 - `github-hygiene-pull-request-mirrors-commit`: how the Open Pull Request and Re-derive PR name + title options create or re-sync the PR from the commit.
 - `github-workflow-pull-request-watcher`: the Monitor that the Monitor + react option arms or re-arms.
