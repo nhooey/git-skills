@@ -1,15 +1,12 @@
 ---
 name: github-hygiene-refer-to-issues-and-pull-requests
 description: |
-  Refer to GitHub issues, pull requests and commits by their canonical
-  label, linked: `#206 "Fix new_project.bats on macOS…"` for an issue or
-  PR in the same repo, `owner/repo#N "title…"` across repos, and a short
-  SHA plus subject for a commit. A branch name only ever appears in
-  parentheses after the PR it belongs to, never as the reference. Titles
-  and subjects are fetched with `gh pr view`, `gh issue view` and
-  `git log` rather than guessed. Use whenever you mention an issue, PR,
-  commit or branch in a status report, PR body, review comment, commit
-  message or reply.
+  Load before mentioning a GitHub issue, PR, commit or branch in a report,
+  issue, PR body, review, commit message or reply. Gives the linked label
+  format, with titles fetched, not guessed, and a branch only after its
+  PR. For files, people and other things,
+  `writing-hygiene-refer-by-canonical-label`; for a PR's status line or
+  table, `github-workflow-pull-request-status-line`.
 tags: [style]
 ---
 
@@ -173,3 +170,4 @@ came from; don't apply it from memory.
 - `writing-hygiene-refer-by-canonical-label`: the general rule this skill applies, one canonical label per thing, used word for word, identifiers in parentheses.
 - `git-hygiene-commit-message-format`: the `path:line` code references a commit body uses.
 - `github-hygiene-pull-request-mirrors-commit`: a PR's title is its commit subject, so a PR's canonical label and its commit's label match.
+- `github-workflow-pull-request-status-line`: the status line and aligned table a reply uses to report each PR's live state.

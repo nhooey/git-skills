@@ -1,12 +1,12 @@
 ---
 name: git-workflow-inspect-before-commit
 description: |
-  Before turning working-tree changes into a commit, walk three steps:
-  inspect (`git status` / `git diff`), stage only what belongs (named paths,
-  or hunks with `git add -p` for mixed changes), and review the cached diff
-  (`git diff --cached`) for secrets, debug logging and unintended formatting
-  churn. Ships a non-blocking hook that scans the diff on `git commit`. Use
-  whenever about to `git commit`.
+  Load before every `git commit`, ahead of staging. Inspects the working
+  tree, stages only what belongs and reviews the cached diff for secrets,
+  debug logging and formatting churn. For sweeping staging commands,
+  `git-hygiene-avoid-sweeping-operations`; for the message,
+  `git-hygiene-commit-message-format`; for whether to commit,
+  `github-workflow-pull-request-changeset-prompt`.
 tags: [workflow, safety]
 allowed-tools:
   - Bash
@@ -131,3 +131,5 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `git-hygiene-avoid-sweeping-operations`: name the paths a git command acts on, the rule behind staging by path rather than `git add -A`.
+- `git-hygiene-commit-message-format`: the subject and body of the commit message, written once the staged diff is reviewed.
+- `github-workflow-pull-request-changeset-prompt`: asking the user whether to stage, commit or push a finished change-set at all.
