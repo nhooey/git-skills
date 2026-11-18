@@ -29,7 +29,7 @@ code reference links to, the footer and its digest, the single-commit
 policy, the stack rule, the `flake.lock` section, what the guard denies,
 and the words of each message.
 
-A Python port shares `test/golden/` and the bats suites with the
+A Python port shares `tests/github-hygiene-pull-request-mirrors-commit/golden/` and the bats suites with the
 Babashka program. The 2 rows marked none are where a port has to ship
 its own reader, and are the reason the Babashka program is the real one.
 
@@ -48,4 +48,4 @@ Each is a proposed node, with what it would save and cost:
 
 - No namespace under `src/pr_body/` parses a command line, JSON, XML, a
   diff or a commit message by hand.
-- `bb test`, `bats test` and `nix flake check` pass.
+- `bb test`, `bats tests/github-hygiene-pull-request-mirrors-commit` and `nix flake check` pass.

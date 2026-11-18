@@ -2,18 +2,15 @@
 """Offline self-check for github-repo-activity.py: a fake `gh api` stands in
 for GitHub, so this runs without a network or a token.
 
-    python3 test_github_repo_activity.py
+    git-skills test github-workflow-repo-activity
 """
 
-import importlib.util
-import pathlib
 import unittest
 from datetime import datetime, timezone
 
-HERE = pathlib.Path(__file__).resolve().parent
-spec = importlib.util.spec_from_file_location("activity", HERE / "github-repo-activity.py")
-activity = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(activity)
+from skill_scripts import load_script
+
+activity = load_script("github-workflow-repo-activity", "github-repo-activity.py")
 
 SINCE = datetime(2026, 10, 18, tzinfo=timezone.utc)
 R = "o/r"

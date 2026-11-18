@@ -19,7 +19,9 @@ import textwrap
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent / "pull-request-sync-check.sh"
+from skill_scripts import scripts_dir
+
+SCRIPT = scripts_dir("github-hygiene-pull-request-mirrors-commit") / "pull-request-sync-check.sh"
 
 TOOLS = [
     "awk", "bash", "cat", "date", "diff", "dirname", "find", "git", "grep",

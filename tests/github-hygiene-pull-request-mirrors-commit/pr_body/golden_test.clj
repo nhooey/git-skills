@@ -1,5 +1,5 @@
 (ns pr-body.golden-test
-  "Golden files: each `test/golden/<case>/input.edn` renders to its
+  "Golden files: each `golden/<case>/input.edn` renders to its
   `expected.txt`, as the `render` mode prints it. A case with a `:live`
   pull request also records what `sync` decides about it.
 
@@ -19,7 +19,7 @@
             [pr-body.render :as render]
             [pr-body.sync :as sync]))
 
-(def golden-dir "test/golden")
+(def golden-dir "golden")
 
 (def ^:private empty-tree "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
 

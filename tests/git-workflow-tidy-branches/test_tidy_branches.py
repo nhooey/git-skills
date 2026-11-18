@@ -3,18 +3,16 @@
 preferences, fed values instead of a repository. The git-backed tests are in
 test_tidy_branches_git.py.
 
-    python3 test_tidy_branches.py
+    git-skills test git-workflow-tidy-branches
 """
 
-import importlib.util
 import pathlib
 import tempfile
 import unittest
 
-HERE = pathlib.Path(__file__).resolve().parent
-spec = importlib.util.spec_from_file_location("tidy", HERE / "tidy-branches.py")
-tidy = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(tidy)
+from skill_scripts import load_script
+
+tidy = load_script("git-workflow-tidy-branches", "tidy-branches.py")
 
 
 class Graph:

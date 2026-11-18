@@ -21,8 +21,8 @@ name: not-frontmatter
 """
 
 
-def skill(text=GOOD, name="git-hygiene-example", has_tests=False):
-    return Skill(name=name, skill_md=text, has_tests=has_tests)
+def skill(text=GOOD, name="git-hygiene-example"):
+    return Skill(name=name, skill_md=text)
 
 
 class Frontmatter(unittest.TestCase):
@@ -120,15 +120,12 @@ class Parser(unittest.TestCase):
     def parse(self, *argv):
         return git_skills.parser().parse_args(argv)
 
-    def test_test_with_skills(self):
-        args = self.parse("test", "x", "y")
-        self.assertEqual((args.command, args.skills), ("test", ["x", "y"]))
+    def test_lint_with_skills(self):
+        args = self.parse("lint", "x", "y")
+        self.assertEqual((args.command, args.skills), ("lint", ["x", "y"]))
 
     def test_lint_without_skills(self):
         self.assertEqual(self.parse("lint").skills, [])
-
-    def test_list_tested(self):
-        self.assertTrue(self.parse("list", "--tested").tested)
 
     def test_root(self):
         self.assertEqual(self.parse("--root", "/r", "lint").root, pathlib.Path("/r"))
@@ -140,7 +137,7 @@ class Parser(unittest.TestCase):
 
     def test_help_lists_commands(self):
         text = git_skills.parser().format_help()
-        for command in ("test", "lint", "list", "--root"):
+        for command in ("lint", "--root"):
             self.assertIn(command, text)
 
 

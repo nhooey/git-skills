@@ -4,7 +4,7 @@
 
 setup() {
   export CLAUDE_CONFIG_DIR="$BATS_TEST_TMPDIR/none" CLAUDE_PROJECT_DIR="$BATS_TEST_TMPDIR/none"
-  hook="$BATS_TEST_DIRNAME/../pull-request-write-guard.sh"
+  hook="$BATS_TEST_DIRNAME/../../skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-write-guard.sh"
 }
 
 # Runs the hook on a Bash tool call of the command "$1".

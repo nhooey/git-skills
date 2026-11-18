@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Run this repository's skill checks: `git-skills <command> [SKILL...]`.
+"""Lint this repository's skills: `git-skills lint [SKILL...]`.
 
-    git-skills test [SKILL...]   run each skill's bundled unittest suite
     git-skills lint [SKILL...]   check each skill's folder name and frontmatter
-    git-skills list [--tested]   print the skills, or those with test suites
 
-With no SKILL, a command covers every skill under `skills/`. The repository
-root is `--root`, else `$PRJ_ROOT` (set by the dev shell), else the current
-git work tree. Exit status: 0 when every check passes, 1 when one fails,
-2 for a usage error.
+With no SKILL, it covers every skill under `skills/`. The repository root
+is `--root`, else `$PRJ_ROOT` (set by the dev shell), else the current git
+work tree. Exit status: 0 when every check passes, 1 when one fails, 2 for
+a usage error. `git-skills test`, which runs the tests in `tests/`, is the
+dev shell command's own shell, in `flake.nix`.
 
 Python 3.9+ standard library.
 """
@@ -36,14 +35,12 @@ PACKS = (
 REQUIRED_KEYS = ("name", "description", "tags")
 FOLDER_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 TOP_LEVEL_KEY = re.compile(r"([A-Za-z_][\w-]*):(.*)")
-TEST_FILE = "test_*.py"
 
 
 @dataclass(frozen=True)
 class Skill:
     name: str
     skill_md: Optional[str]  # SKILL.md's text, or None when it is missing
-    has_tests: bool
 
 
 # --- core --------------------------------------------------------------------
@@ -117,7 +114,7 @@ def select(skills, names):
 def parser():
     p = argparse.ArgumentParser(
         prog="git-skills",
-        description="Run this repository's skill checks.",
+        description="Lint this repository's skills.",
     )
     p.add_argument(
         "--root",
@@ -125,12 +122,8 @@ def parser():
         help="repository root (default: $PRJ_ROOT, else the git work tree)",
     )
     sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
-    test = sub.add_parser("test", help="run each skill's bundled unittest suite")
-    test.add_argument("skills", nargs="*", metavar="SKILL")
     check = sub.add_parser("lint", help="check each skill's folder name and frontmatter")
     check.add_argument("skills", nargs="*", metavar="SKILL")
-    ls = sub.add_parser("list", help="print the skills, one per line")
-    ls.add_argument("--tested", action="store_true", help="only skills with test suites")
     return p
 
 
@@ -154,28 +147,9 @@ def read_skills(root):
         Skill(
             name=d.name,
             skill_md=(d / "SKILL.md").read_text() if (d / "SKILL.md").is_file() else None,
-            has_tests=any((d / "scripts").glob(TEST_FILE)),
         )
         for d in dirs
     )
-
-
-def run_suite(root, skill):
-    print(f"== {skill.name}", flush=True)
-    return subprocess.run(
-        [sys.executable, "-B", "-m", "unittest", "discover", "-p", TEST_FILE],
-        cwd=root / "skills" / skill.name / "scripts",
-    ).returncode
-
-
-def run_tests(root, skills):
-    tested = tuple(s for s in skills if s.has_tests)
-    failed = tuple(s.name for s in tested if run_suite(root, s))
-    print(
-        f"{len(tested) - len(failed)} of {len(tested)} skill suite(s) passed"
-        + (f"; failed: {', '.join(failed)}" if failed else "")
-    )
-    return 1 if failed else 0
 
 
 def report_lint(skills):
@@ -190,16 +164,11 @@ def main(argv=None):
     if not (root / "skills").is_dir():
         print(f"git-skills: no skills/ directory under {root}", file=sys.stderr)
         return 2
-    chosen, unknown = select(read_skills(root), getattr(args, "skills", ()))
+    chosen, unknown = select(read_skills(root), args.skills)
     if unknown:
         print(f"git-skills: no such skill: {', '.join(unknown)}", file=sys.stderr)
         return 2
-    if args.command == "test":
-        return run_tests(root, chosen)
-    if args.command == "lint":
-        return report_lint(chosen)
-    print("\n".join(s.name for s in chosen if s.has_tests or not args.tested))
-    return 0
+    return report_lint(chosen)
 
 
 if __name__ == "__main__":
