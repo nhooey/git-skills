@@ -4,7 +4,7 @@
 # The stub `gh` reports the pull request MERGED, so the loop runs once.
 
 setup() {
-  monitor="$BATS_TEST_DIRNAME/../pull-request-monitor.sh"
+  monitor="$BATS_TEST_DIRNAME/../../skills/github-workflow-pull-request-watcher/scripts/pull-request-monitor.sh"
   export GIT_CONFIG_NOSYSTEM=1 HOME="$BATS_TEST_TMPDIR/home"
   mkdir -p "$HOME" "$BATS_TEST_TMPDIR/bin"
   cd "$BATS_TEST_TMPDIR"

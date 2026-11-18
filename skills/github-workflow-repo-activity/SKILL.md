@@ -24,8 +24,7 @@ _Answer "what has this person done on this repo since then?" from the endpoints 
 
 ## The bundled script
 
-`github-repo-activity.py` and its offline self-check
-`test_github_repo_activity.py` are in `scripts/` beside this `SKILL.md`
+`github-repo-activity.py` is in `scripts/` beside this `SKILL.md`
 (`~/.claude/skills/github-workflow-repo-activity/scripts/` for a user
 install). Below, the script is named by its filename alone. It needs Python 3.9+ and an authenticated
 `gh`; it never handles a token itself.
@@ -116,11 +115,15 @@ record:
 
 ## Checking it works
 
+The script's tests are in the git-skills repository, in
+`tests/github-workflow-repo-activity/`, not in the installed skill. In
+that repository's dev shell (`nix develop`):
+
 ```bash
-python3 test_github_repo_activity.py
+git-skills test github-workflow-repo-activity
 ```
 
-This runs offline against a fake `gh api`. It covers the merger-versus-
+They run offline against a fake `gh api`. They cover the merger-versus-
 author attribution, a commit made before `--since` but pushed after it,
 the commit-date fallback, and bot filtering.
 

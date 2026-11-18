@@ -3,7 +3,7 @@
 repositories with a local bare remote and a fake `gh` on PATH, so they need
 git 2.44+ but no network and no GitHub login.
 
-    python3 test_tidy_branches_git.py
+    git-skills test git-workflow-tidy-branches
 """
 
 import json
@@ -15,9 +15,11 @@ import sys
 import tempfile
 import unittest
 
-HERE = pathlib.Path(__file__).resolve().parent
-SCRIPT = HERE / "tidy-branches.py"
+from skill_scripts import scripts_dir
+
 NAME = "git-workflow-tidy-branches"
+SCRIPTS = scripts_dir(NAME)
+SCRIPT = SCRIPTS / "tidy-branches.py"
 PREFS_FILE = f"{NAME}.preferences.md"
 
 GIT_ENV = {
@@ -282,7 +284,7 @@ class Prefs(RepoFixture):
 
     def test_no_preferences_files_runs_on_the_defaults(self):
         shown = self.shown()
-        self.assertIn(f"file\tdefault\t{HERE / 'tidy-branches.defaults.md'}\texists", shown)
+        self.assertIn(f"file\tdefault\t{SCRIPTS / 'tidy-branches.defaults.md'}\texists", shown)
         self.assertIn(f"file\tproject\t{self.project_file()}\tabsent", shown)
         prefs = [l for l in shown if l.startswith("pref\t")]
         self.assertEqual(prefs, [

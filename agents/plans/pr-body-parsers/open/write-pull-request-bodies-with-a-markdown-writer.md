@@ -20,7 +20,7 @@ the 2 `cmark-gfm` position corrections go: about 240 lines of
 ## Why the program slices instead
 
 A writer normalises everything it writes, so the body stops being the
-commit's own text. Run on the commit bodies in `test/golden/`:
+commit's own text. Run on the commit bodies in `tests/github-hygiene-pull-request-mirrors-commit/golden/`:
 
 - **`pandoc --from gfm --to gfm --wrap=none`** escapes `#4` at a line
   start as `\#4`, writes `1.  ` for `1. `, turns ```` ```bash ```` into
@@ -45,5 +45,5 @@ A writer exists that escapes only what must be escaped and parses as
 ## Done when
 
 `markdown.clj` holds no source positions, and every `expected.txt` in
-`test/golden/` is unchanged or differs only in bytes GitHub renders the
+`tests/github-hygiene-pull-request-mirrors-commit/golden/` is unchanged or differs only in bytes GitHub renders the
 same.

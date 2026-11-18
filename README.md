@@ -233,6 +233,6 @@ tags: [style]
 ---
 ```
 
-Write the `description` so an agent can decide whether to invoke the skill from that one line — describe both *what it does* and *when to use it*. Pick `tags` from the vocabulary above. In the dev shell (`nix develop`), `git-skills lint` checks these rules and `git-skills test` runs the skills' bundled tests; `menu` lists every dev-shell command.
+Write the `description` so an agent can decide whether to invoke the skill from that one line — describe both *what it does* and *when to use it*. Pick `tags` from the vocabulary above. In the dev shell (`nix develop`), `git-skills lint` checks these rules and `git-skills test [SKILL...]` runs the skills' tests, which live in `tests/<skill>/` rather than in the skill's folder; `menu` lists every dev-shell command.
 
 To make a new skill installable via Nix in isolation, drop a `flake.nix` into the skill folder modeled on `skills/git-hygiene-push-force-safely/flake.nix`. The top-level flake auto-discovers any subdirectory of `skills/` that contains a `SKILL.md`, so a new skill gets its `agent-skill-nhooey-<name>` package and joins the apps without further changes. If the new skill belongs in a starter pack, add its name to the pack's list in the top-level `flake.nix`.

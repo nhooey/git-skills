@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
 # The command line of create-or-update-pull-request.sh, run against a
-# throwaway repository with the `gh` stub in test/stubs/ on PATH.
+# throwaway repository with the `gh` stub in stubs/ on PATH.
 
 setup() {
-  script="$BATS_TEST_DIRNAME/../create-or-update-pull-request.sh"
+  script="$BATS_TEST_DIRNAME/../../skills/github-hygiene-pull-request-mirrors-commit/scripts/create-or-update-pull-request.sh"
   export GH_STATE="$BATS_TEST_TMPDIR/gh"
   export CLAUDE_CONFIG_DIR="$BATS_TEST_TMPDIR/claude"
   export CLAUDE_PROJECT_DIR="$BATS_TEST_TMPDIR/repo"

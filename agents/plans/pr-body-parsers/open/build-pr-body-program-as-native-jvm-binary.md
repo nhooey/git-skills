@@ -43,4 +43,4 @@ The program needs a second Java library that Babashka can't load, or
 ## Done when
 
 `create-or-update-pull-request.sh` runs the binary, `cmark-gfm` is gone
-from `script-inputs.nix`, and `test/golden/` passes unchanged.
+from `script-inputs.nix`, and `tests/github-hygiene-pull-request-mirrors-commit/golden/` passes unchanged.

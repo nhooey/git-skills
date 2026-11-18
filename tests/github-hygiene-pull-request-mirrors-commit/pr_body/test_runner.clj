@@ -6,7 +6,7 @@
             [clojure.test :as t]))
 
 (defn run []
-  (let [namespaces (for [file (sort (fs/glob "test/pr_body" "*_test.clj"))]
+  (let [namespaces (for [file (sort (fs/glob "pr_body" "*_test.clj"))]
                      (symbol (str "pr-body." (str/replace (fs/strip-ext (fs/file-name file)) "_" "-"))))
         _ (apply require namespaces)
         {:keys [fail error]} (apply t/run-tests namespaces)]
