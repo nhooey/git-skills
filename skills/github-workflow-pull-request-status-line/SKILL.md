@@ -1,15 +1,12 @@
 ---
 name: github-workflow-pull-request-status-line
 description: |
-  Show each PR that comes up in a reply on its own line,
-  `<status> <url> — **PR #<num>: <title>**`, where the status is one of
-  🟡/🟢/🔴/🟣/⚪ for the live PR and check state, and show a set of PRs
-  as an aligned table from the bundled `pull-request-table.sh`. Defines
-  a three-line comment block (🔲/✅, 🗣, 🤖) for reporting reactions to
-  PR comments without posting them publicly, and a linked References
-  section (owner/repo: #num title) that opens any reply mentioning PRs
-  or issues. Use on every PR creation, every Monitor event and every
-  reply that mentions a PR or issue.
+  Load when a reply reports on pull requests (on creating one, each
+  Monitor event, before and after a push, label or merge, listing
+  several, reacting to PR comments) or names any PR or issue, which then
+  opens with a References list. Live status lines, a table for a set,
+  comment blocks. For the inline label,
+  `github-hygiene-refer-to-issues-and-pull-requests`.
 tags: [agent, style]
 allowed-tools:
   - Bash
@@ -97,17 +94,22 @@ pull-request-table.sh \
 ## References section at the top of the reply
 
 When a reply mentions any PR or issue, open it with a **References**
-list, one entry per entity, each part linked to its own page:
+list, one entry per entity: a status circle, then the entity's
+cross-repo label as `github-hygiene-refer-to-issues-and-pull-requests`
+sets it out, linked to the PR or issue:
 
 ```
-<status> [<owner>](…)/[<repo>](…): [#<num> <title>](…)
+<status> [<owner>/<repo>#<num> "<title>"](<url>)
 ```
 
 Example:
 
 ```
-- 🔴 [jlesquembre](https://github.com/jlesquembre)/[clj-nix](https://github.com/jlesquembre/clj-nix): [#181 Update babashka version](https://github.com/jlesquembre/clj-nix/pull/181)
+- 🔴 [jlesquembre/clj-nix#181 "Update babashka version"](https://github.com/jlesquembre/clj-nix/pull/181)
 ```
+
+The list always uses the `owner/repo#N` form, even for the current
+repo, so each entry reads the same and names its repo on its own.
 
 Keep the status circle, recomputed from live state each time: a stale
 🟡 on a PR that has gone red is worse than no circle. Issues use 🟢
@@ -186,5 +188,5 @@ without asking. If it isn't in your listing, tell the user which skill is
 missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
-- `github-hygiene-refer-to-issues-and-pull-requests`: how to name each PR and issue in the body of a reply, by number and title.
+- `github-hygiene-refer-to-issues-and-pull-requests`: the `owner/repo#N "title"` label each References entry uses, and how to name each PR and issue in the body of a reply.
 - `github-workflow-pull-request-watcher`: the Monitor whose every event is surfaced with this status line and comment-block format.
