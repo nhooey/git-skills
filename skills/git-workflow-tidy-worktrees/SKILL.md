@@ -132,7 +132,7 @@ package of its flake, or run as `python3 -m worktrees` from a clone.
 
 ## Your preferences
 
-!`cat "${CLAUDE_SKILL_DIR}/../git-workflow-tidy-worktrees.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/git-workflow-tidy-worktrees.preferences.md" 2>/dev/null || true`
+!`cat "$(dirname "${CLAUDE_SKILL_DIR}")/git-workflow-tidy-worktrees.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/git-workflow-tidy-worktrees.preferences.md" 2>/dev/null || true`
 
 If your agent doesn't run the line above, read these files yourself if they
 exist: `git-workflow-tidy-worktrees.preferences.md` next to this skill's folder, then

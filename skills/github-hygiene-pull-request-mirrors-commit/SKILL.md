@@ -340,7 +340,7 @@ Bash call.
 
 ## Your preferences
 
-!`cat "${CLAUDE_SKILL_DIR}/../github-hygiene-pull-request-mirrors-commit.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/github-hygiene-pull-request-mirrors-commit.preferences.md" 2>/dev/null || true`
+!`cat "$(dirname "${CLAUDE_SKILL_DIR}")/github-hygiene-pull-request-mirrors-commit.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/github-hygiene-pull-request-mirrors-commit.preferences.md" 2>/dev/null || true`
 
 If your agent doesn't run the line above, read these files yourself if they
 exist: `github-hygiene-pull-request-mirrors-commit.preferences.md` next to this skill's folder, then

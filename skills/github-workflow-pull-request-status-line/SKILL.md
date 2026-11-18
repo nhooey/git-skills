@@ -174,7 +174,7 @@ the same reply where the underlying work is reported.
 
 ## Your preferences
 
-!`cat "${CLAUDE_SKILL_DIR}/../github-workflow-pull-request-status-line.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/github-workflow-pull-request-status-line.preferences.md" 2>/dev/null || true`
+!`cat "$(dirname "${CLAUDE_SKILL_DIR}")/github-workflow-pull-request-status-line.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/github-workflow-pull-request-status-line.preferences.md" 2>/dev/null || true`
 
 If your agent doesn't run the line above, read these files yourself if they
 exist: `github-workflow-pull-request-status-line.preferences.md` next to this skill's folder, then
