@@ -55,7 +55,7 @@
       prBodyInputs = import ./skills/github-hygiene-pull-request-mirrors-commit/script-inputs.nix;
 
       packs = {
-        # All 12 git-* skills.
+        # All 13 git-* skills.
         agent-skills-nhooey-git-all = [
           "git-hygiene-avoid-sweeping-operations"
           "git-hygiene-branch-naming"
@@ -69,6 +69,7 @@
           "git-workflow-inspect-before-commit"
           "git-workflow-push-mode"
           "git-workflow-tidy-branches"
+          "git-workflow-tidy-worktrees"
         ];
 
         # All git-hygiene-* skills: rules-of-thumb (commit/branch style,
@@ -90,6 +91,7 @@
           "git-workflow-inspect-before-commit"
           "git-workflow-push-mode"
           "git-workflow-tidy-branches"
+          "git-workflow-tidy-worktrees"
         ];
 
         # All 14 github-* skills (includes the agent-tagged ones).
