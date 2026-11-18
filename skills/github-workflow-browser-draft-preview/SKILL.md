@@ -1,16 +1,12 @@
 ---
 name: github-workflow-browser-draft-preview
 description: |
-  Draft GitHub text in the user's own browser with Claude in Chrome (a
-  new pull request, an issue or PR comment, a review reply, or an edit
-  to an existing PR body or comment) and leave it unsubmitted for the
-  user to check. After filling the editor, switch it from Write to
-  Preview, draw a red box around the rendered draft
-  (`highlight-preview.js`), bring that browser tab and window to the front
-  (`focus-chrome-tab.sh`), and ask the user to check it before anything
-  is submitted. Use when the user asks to draft, write up or edit a PR,
-  comment or reply "in the browser" or "in Chrome", or wants to see the
-  rendered GitHub Markdown before it posts.
+  Load before writing GitHub text that people other than the user will
+  read: a new PR or issue, a comment or review reply, or an edit to a PR
+  body or comment, even unasked. The GitHub part of
+  `coding-agent-draft-in-browser`, loaded with it: drafted in the user's
+  browser, in GitHub's Preview, for the user to send. Not for a PR that
+  mirrors its commit unless the user wants it rendered.
 tags: [agent, workflow, interactive]
 allowed-tools:
   - Bash
@@ -29,18 +25,25 @@ allowed-tools:
 
 # Draft GitHub text in the browser
 
-_Write the draft where it will be posted, show it rendered in GitHub's own Preview with the part to read boxed in red, bring it to the front, and post nothing until the user says so._
+_Write the draft where it will be posted, show it rendered in GitHub's own Preview with the part to read boxed in red, bring it to the front, and leave it for the user to send._
+
+`coding-agent-draft-in-browser` owns when text is drafted in the browser
+(whenever people other than the user will read it), keeping personal
+details out of public drafts, and the rule that only the user sends.
+This skill is its GitHub part: the surfaces, their editors, Preview and
+the red box.
 
 Load it before the first Claude in Chrome call of a GitHub drafting task,
-together with `chrome-browser`, which covers loading the browser tools
+together with `coding-agent-draft-in-browser`, `chrome-browser`, which
+covers loading the browser tools
 in one `ToolSearch` call and working in a new tab, and
 `coding-agent-browser-selection`, which makes sure the session drives the
-user's preferred browser. This skill only drafts; it never clicks a
-submit button without the user's answer from step 6.
+user's preferred browser. This skill only drafts: it never clicks a
+submit button, and never sends the text another way, such as with `gh`.
 
 For a PR that should mirror a commit (`github-hygiene-pull-request-mirrors-commit`),
 that skill's script is the default. Use this one when the user wants to
-see or adjust the rendered text before it posts.
+see or adjust the rendered text before it is sent.
 
 ## The bundled scripts
 
@@ -104,21 +107,21 @@ parameters, even where GitHub accepts `title=` and `body=`.
    answers, so the window has to be raised before the question rather
    than after it. Name the surface and the target by its canonical
    label, e.g. "Comment on jlesquembre/clj-nix#214 "Format Clojure and
-   Nix files…" is drafted in Chrome, boxed in red. Post it?",
-   with these options:
-   - **Post it**: submit exactly what is in the editor now.
-   - **I edited it in the browser, post that**: read the editor's
-     current value back, show it in chat, then submit.
+   Nix files…" is drafted in Chrome, boxed in red, ready for you to
+   send.", with these options:
+   - **I'll send it**: the draft is ready as it is, or with the user's
+     own edits in the browser.
    - **Change it**: the user says what to change; go back to step 2.
-   - **Leave it unposted**: keep the tab open and the draft unsent.
-7. **Submit only on a Post answer.** Remove the boxes first
-   (`javascript_tool`: `clearDraftHighlight()`), then click the one
-   button that posts this surface: **Create pull request** or **Create
-   draft pull request**, as the user chose, for a new PR; **Comment** for
-   a comment; **Update comment** for an edit; **Reply** for a thread.
-   Never **Close with comment**, **Approve** or **Request changes**
-   unless the user asked for exactly that. Take a screenshot, confirm
-   the text posted, and give the user its URL.
+   - **Discard it**: go to step 8.
+7. **Hand it over; the user sends it.** On an "I'll send it" answer,
+   remove the boxes (`javascript_tool`: `clearDraftHighlight()`) and
+   tell the user which button sends this surface: **Create pull
+   request** or **Create draft pull request** for a new PR, **Create**
+   for an issue, **Comment** for a comment, **Update comment** for an
+   edit, **Reply** for a thread. Never click it, or any other button
+   that sends, closes, approves or requests changes, and never press a
+   key that submits the form. If the user says they sent it, take a
+   screenshot to confirm the text landed and give them its URL.
 8. **To discard a draft**, clear the textarea rather than just closing the
    tab, since GitHub keeps unsent comment text and restores it on the next
    visit. Use `javascript_tool` to set the value through the native setter,
@@ -131,8 +134,9 @@ parameters, even where GitHub accepts `title=` and `body=`.
    t.value.length;
    ```
 
-9. **Close the tab** you opened, unless the user chose to leave the draft
-   unposted or asked to keep the tab.
+9. **Leave the tab open** while the draft waits for the user to send
+   it. Close the tab you opened only once the draft is sent or
+   discarded, or when the user asks.
 
 ## Why this shape
 
@@ -144,15 +148,17 @@ parameters, even where GitHub accepts `title=` and `body=`.
 - **Raise the window.** Claude in Chrome works in its own tab group, often
   in a window behind the terminal. A question about a draft the user
   cannot see gets answered without the draft being read.
-- **Ask, then click.** Posting is public and outward-facing. The user's
-  answer to the question is the permission for that one post; it does not
-  carry over to the next draft.
+- **The user sends.** Posting is public and outward-facing, so the user
+  reads the draft where it lands and clicks the button themselves;
+  `coding-agent-draft-in-browser` owns that rule.
 
 ## When to apply
 
-- The user asks to draft, write or edit a PR, PR description, comment,
-  reply or issue in the browser or in Chrome.
-- The user wants to see GitHub's rendering before something posts.
+- The agent is about to write GitHub text that people other than the
+  user will read: a PR, PR description, issue, comment or review reply,
+  whether or not the user asked for a draft or for the browser
+  (`coding-agent-draft-in-browser` decides by the readers).
+- The user wants to see GitHub's rendering before something is sent.
 - Editing someone's existing comment or PR body, where seeing the result
   in place matters more than the raw diff of the text.
 
@@ -165,4 +171,5 @@ came from; don't apply it from memory.
 
 - `chrome-browser`: loading the Claude in Chrome tools and working in a new tab of the user's browser.
 - `coding-agent-browser-selection`: making sure the session drives the user's preferred browser and window before the first Claude in Chrome call.
+- `coding-agent-draft-in-browser`: when text for other people is drafted in the browser, keeping personal details out of public drafts, and only the user sends.
 - `github-hygiene-pull-request-mirrors-commit`: the default way to open a PR that mirrors a commit, and `owner/repo#N` references.
