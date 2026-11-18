@@ -103,10 +103,8 @@ footer is the description's one attribution line: the script drops
 `Co-Authored-By:` and every other trailer from the body.
 
 Default to terse: a typo fix gets a one-line body or none, a new rule
-with a non-obvious rationale gets a paragraph. Write what
-`git-hygiene-commit-message-format` would write, including its "What to
-cut" list: keep the one path not taken a reviewer would otherwise ask
-about, and cut diff paraphrase and test inventories.
+with a non-obvious rationale gets a paragraph.
+Write what `git-hygiene-commit-message-format` would write.
 
 The body states the semantic delta: what became true and why. The PR
 body generator adds the lock, config and closure sections from the
