@@ -77,12 +77,6 @@
   (when (zero? (:exit (run ["git" "cat-file" "-e" (str sha ":" path)])))
     (some-> (git "cat-file" "-p" (str sha ":" path)) str/split-lines count)))
 
-(defn- flake-locks [from to]
-  (vec (for [path (str/split (or (git "diff" "-z" "--name-only" from to) "") #"\x00")
-             :when (= "flake.lock" (fs/file-name path))
-             :let [read (fn [rev] (some-> (git "show" (str rev ":" path)) json/parse-string))]]
-         {:path path :old (read from) :new (read to)})))
-
 ;; --- facts from GitHub ------------------------------------------------
 
 (def ^:private pr-fields "number,url,title,body,baseRefName,headRefOid")
@@ -106,15 +100,6 @@
     (run ["git" "fetch" "--quiet" "origin" (str "+refs/heads/" base ":refs/remotes/origin/" base)]))
   (when-not (ref-exists? head-sha)
     (fail 2 (str "can't fetch pull request #" n "'s head " head-sha " from origin"))))
-
-(defn- stack-parent [slug opts base default]
-  (let [pr (cond (:stack-parent opts)
-                 (gh-json ["pr" "view" (str (:stack-parent opts)) "--repo" slug "--json" "number,title"])
-                 (and base default (not= base default))
-                 (gh-json ["pr" "list" "--repo" slug "--head" base "--state" "open"
-                           "--json" "number,title" "--jq" ".[0] // empty"]))]
-    (cond pr {:number (get pr "number") :title (get pr "title")}
-          (:stack-parent opts) {:number (:stack-parent opts)})))
 
 (defn- open-prs
   "The repository's open pull requests, as `{:number :head :base}`."
@@ -192,7 +177,6 @@
                   (let [b (or (base-ref base) (fail 2 (str "no branch " base " to diff against")))]
                     (str (or (git "merge-base" b head-ref) (fail 2 (str "no merge base of " base " and " head)))
                          ".." head-ref)))
-        [from to] (str/split range #"\.\.")
         commits (commits/read-range "." range)
         _ (when (empty? commits) (fail 2 (str "no commits in " range)))
         problems (message/range-problems commits)
@@ -205,9 +189,7 @@
                                         :else footer/default-attribution)}
         wanted (render/lookups commits render-opts)
         facts {:line-counts (into {} (for [[sha path :as k] (:paths wanted)] [k (line-count sha path)]))
-               :issue-titles (into {} (for [n (:issues wanted)] [n (issue-title slug n)]))
-               :flake-locks (flake-locks from to)
-               :stack-parent (stack-parent slug opts base default)}]
+               :issue-titles (into {} (for [n (:issues wanted)] [n (issue-title slug n)]))}]
     {:slug slug :repo repo :head head :base base :default default :pr pr :commits commits
      :rendered (render/render commits (select-keys repo [:owner :name :url]) (merge render-opts facts))}))
 
@@ -243,7 +225,8 @@
           unstacked (stack-verdict slug (get pr "number") base default)]
       (when-not in-sync
         (say (:quiet opts) (sync/drift-report (label slug pr) (live pr) rendered
-                                               (sync/status (:body (live pr)) commits))))
+                                               (sync/status (:body (live pr)) commits (:body rendered))
+                                               (sync/save-command slug (get pr "number")))))
       (when unstacked (say (:quiet opts) (:message unstacked)))
       (if (or (not in-sync) unstacked)
         1
@@ -261,8 +244,17 @@
     (link-stack! slug v quiet?)
     code))
 
+(defn- saved
+  "`{:text :number}` for `sync/plan`: the `--dropped-text-saved` file's
+  text and the open pull request's number, or nil without the option."
+  [opts pr]
+  (when-let [path (:dropped-text-saved opts)]
+    (if (and (fs/regular-file? path) (fs/readable? path))
+      {:text (slurp path) :number (get pr "number")}
+      (fail 2 (str "can't read " path ", the --dropped-text-saved file")))))
+
 (defn- sync! [{:keys [slug head base default pr rendered commits]} opts]
-  (let [{:keys [action status]} (sync/plan (live pr) rendered (:force opts) commits)
+  (let [{:keys [action status]} (sync/plan (live pr) rendered commits (when pr (saved opts pr)))
         quiet? (:quiet opts)]
     (when (and pr (not= (get pr "headRefOid") (:sha (last commits))))
       (warn quiet? "the pull request's head is " (get pr "headRefOid")
@@ -270,7 +262,10 @@
     (case action
       :none (do (say quiet? "in sync: " (get pr "url"))
                 (then-stack 0 slug (get pr "number") base default quiet?))
-      :refuse (do (say quiet? (sync/refusal (label slug pr) (live pr) rendered status)) 3)
+      :refuse (do (say quiet? (sync/refusal {:label (label slug pr) :live (live pr) :rendered rendered
+                                             :status status :saved-path (:dropped-text-saved opts)
+                                             :save-command (sync/save-command slug (get pr "number"))}))
+                  3)
       (let [written (if (= action :create)
                       (write-pr! slug "POST" (str "repos/" slug "/pulls")
                                  (cond-> {:title (:title rendered) :body (:body rendered)
@@ -286,7 +281,7 @@
               (then-stack 0 slug number base default quiet?))
           (do (say quiet? (sync/drift-report (str "PR #" number " (" slug ") as read back")
                                              {:title (get back "title") :body (or (get back "body") "")}
-                                             rendered nil))
+                                             rendered nil nil))
               1))))))
 
 (defn- run-mode [{:keys [mode opts]}]

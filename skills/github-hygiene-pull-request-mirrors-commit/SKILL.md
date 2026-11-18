@@ -4,10 +4,10 @@ description: |
   Keep each PR a thin wrapper over its commit: one commit by default, the
   title is the commit subject and the body is the commit body plus the
   Claude Code footer, with no `## Summary` or `## Test plan` template.
-  Gives the generated shape of a multi-commit body. The bundled
+  A multi-commit body is its lead commit's body. The bundled
   `create-or-update-pull-request.sh` renders the title and body from the
-  commits (unwrapped to GFM, code references linked, trailers dropped, a
-  flake.lock section, the footer), opens the PR, and after an amend
+  commit (unwrapped to GFM, code references linked, trailers dropped, the
+  footer) and nothing else, opens the PR, and after an amend
   PATCHes it back in line, since GitHub never refreshes a PR's title or
   body itself; `gh pr create --fill` and hand-written bodies are never
   used, and a bundled PreToolUse hook denies them. The bundled
@@ -40,15 +40,24 @@ commit body. Match that, through the bundled script:
   `github-hygiene-single-commit-pull-requests` decides. Squash or amend
   locally before opening.
 - **Title = subject, body = body.** Nothing GitHub wouldn't prefill
-  from the commit, apart from the generated sections and the attribution
-  footer. The commit's trailers stay in the commit and are left out of
-  the body.
+  from the commit, apart from the attribution footer. The commit's
+  trailers stay in the commit and are left out of the body.
 
 Anything in the PR description that isn't in the commit message is
 invisible to `git log`, `git blame`, `git show`, `git format-patch` and
 every fork or mirror. The commit is the durable record; the PR is the
 review surface. If a section is worth having, put it in the commit body
 so both surfaces have it.
+
+**When a PR's body holds something its commit message doesn't, move it
+into the commit message.** Edit the message (`git commit --amend`),
+push with `--force-with-lease`, and sync again: `sync` then overwrites
+the body, since its text is in the commit. Never leave a body out of
+sync with its commit, and never discard a hand-written body unsaved.
+Text that is no longer true of the commits, such as a description of
+commits a squash replaced, is dropped rather than folded, once a backup
+file holds the live body
+([Bodies edited by hand](#bodies-edited-by-hand)).
 
 ## When a PR holds several commits
 
@@ -59,27 +68,20 @@ written by hand:
 1. **Title:** the lead commit's subject. The lead commit is the one
    carrying the `Multi-commit:` trailer, and it states what the whole PR
    achieves.
-2. **Synthesis:** the lead commit's body.
-3. **Commits (N):** each commit's linked short SHA and subject, and
-   nothing more.
-4. **Stacks on:** for a stacked PR, a closing line
-   `Stacks on owner/repo#N "title"`.
+2. **Body:** the lead commit's body, the synthesis, and the footer.
+   Nothing else: the PR's commits tab lists the commits.
 
-The body references what's in the commits, with enough context to
+The synthesis references what's in the commits, with enough context to
 understand it, without repeating it: each commit is one click away.
 
-- **A commit** is referenced by its linked SHA and its subject, its
-  canonical label as `writing-hygiene-refer-by-canonical-label` says,
-  never by a copy of its body.
+- **A commit** is referenced by its subject, its canonical label as
+  `writing-hygiene-refer-by-canonical-label` says, never by a copy of
+  its body.
 - **The synthesis** says only what no single commit says: how the
   commits relate, why they share a PR, and what to review across them.
-  It names a commit by its subject when it points at one. Write the
-  lead commit's body as that synthesis, not as a copy of any one
-  commit; `check` warns when a paragraph of it repeats another
+  Write the lead commit's body as that synthesis, not as a copy of any
+  one commit; `check` warns when a paragraph of it repeats another
   commit's body, whitespace aside.
-- **What the script adds** reads on its own: a stacked-on PR is
-  `owner/repo#N "title"`, a flake input is its name and its old → new
-  revisions with a compare link, and an added input links its revision.
 
 A one-commit PR is the commit mirrored: title = subject, body = body.
 That isn't repetition: it's what the merge commit carries.
@@ -106,9 +108,10 @@ Default to terse: a typo fix gets a one-line body or none, a new rule
 with a non-obvious rationale gets a paragraph.
 Write what `git-hygiene-commit-message-format` would write.
 
-The body states the semantic delta: what became true and why. The PR
-body generator adds the lock, config and closure sections from the
-diff; never restate them by hand.
+The body states the semantic delta: what became true and why. It
+refers to the diff and doesn't repeat it, so it never restates a lock,
+config or closure change, and links a file and line pinned to a SHA
+(`path:line`) only where that line matters.
 
 The PR body comes from the commit, so the commit body holds the
 structure the PR renders, as `git-hygiene-commit-message-format` says:
@@ -148,25 +151,22 @@ drifts from the commit at the next amend. The script lives in
 `scripts/` beside this SKILL.md:
 
 ```bash
-create-or-update-pull-request.sh [render|sync|check] [--base <branch>] [--head <branch> | --pr <N>] [--repo <owner/repo>] [--range <a>..<b>] [--lead <sha>] [--stack-parent <N>] [--trailers keep|drop] [--footer <text> | --no-footer] [--draft] [--force] [--verbatim] [--quiet]
+create-or-update-pull-request.sh [render|sync|check] [--base <branch>] [--head <branch> | --pr <N>] [--repo <owner/repo>] [--range <a>..<b>] [--lead <sha>] [--stack-parent <N>] [--trailers keep|drop] [--footer <text> | --no-footer] [--draft] [--dropped-text-saved <file>] [--verbatim] [--quiet]
 ```
 
-Modes: `render` prints the title and body, `sync` (the default) creates or PATCHes the PR and verifies it, `check` reports drift byte for byte. Exit codes: 0 in sync or synced, 1 drift, 2 usage error or a refused range, 3 a body edited by hand (sync refused), 4 several commits without an allowed `Multi-commit:` reason. `--help` gives the rest.
+Modes: `render` prints the title and body, `sync` (the default) creates or PATCHes the PR and verifies it, `check` reports drift byte for byte. Exit codes: 0 in sync or synced, 1 drift, 2 usage error or a refused range, 3 a body holding text its commit message doesn't (sync refused), 4 several commits without an allowed `Multi-commit:` reason. `--help` gives the rest.
 
 `render` writes nothing to GitHub, so it previews any PR:
 `create-or-update-pull-request.sh render --pr <N> --repo <owner/repo>`.
 
 It sets the PR title to the lead commit's subject and renders the body
-from the commits:
+from that commit's body, adding nothing but the footer:
 
 - **Unwrapped:** each paragraph and list item joined onto one line,
   with code blocks, tables and hard breaks kept as they are.
-- **Linked:** `path:line` references pinned to the commit's SHA, and
-  `#N` references checked against the repository.
-- **Sections:** the Commits list for several commits, a "What changes"
-  section for a changed `flake.lock` (a table of moved revisions with
-  compare links, then one line each for inputs added and removed), and
-  the `Stacks on` line.
+- **Linked:** `path:line` references pinned to the commit's SHA,
+  `repo#N` qualified to `owner/repo#N`, and `#N` references checked
+  against the repository.
 - **Footer:** an invisible marker holding the head SHA and a digest of
   the body, then the attribution line.
 
@@ -193,12 +193,35 @@ one, so re-run it after every amend and push. The bundled
 [The sync check hook](#the-sync-check-hook-pull-request-sync-checksh))
 re-syncs after a push and flags drift after an amend.
 
-The re-sync overwrites the whole body, but only a body it can tell was
-generated: one whose marker digest still matches, or one that is,
-whitespace aside, what the old script or `gh pr create --fill` wrote
-from these commits (`check` reports it as safe to re-sync). Any other
-body was edited by hand, so `sync` exits 3 with the diff: fold the edit
-into the commit message and sync again, or pass `--force` to discard it.
+The re-sync overwrites the whole body when nothing in it would be lost:
+a body whose marker digest still matches, one that is, whitespace
+aside, what the old script or `gh pr create --fill` wrote from these
+commits, or one edited by hand whose text is all in the commit message.
+`check` reports each as safe to re-sync.
+
+### Bodies edited by hand
+
+`sync` compares a body edited by hand with the render through the
+Markdown parser: each paragraph, list item, heading, code block and
+table row of the live body, whitespace normalised, a link read as its
+text, must be part of a block of the render. It leaves out the footer
+and a closing trailer block, which the program generates or the commit
+keeps apart, and a `Stacks on` line and `Commits (N)` and "What changes"
+sections, which describe commits an amend or squash may have replaced.
+
+- **All of it is in the commit message:** `sync` overwrites the body.
+- **Some of it isn't:** `sync` exits 3 and lists that text; `check`
+  says the same. Fold it into the commit message, push with
+  `--force-with-lease` and sync again.
+- **Some of it is no longer true of the commits:** save the live body
+  first, with the `gh pr view <N> --json …` command the refusal names,
+  then `sync --dropped-text-saved <file>`. `sync` overwrites the body
+  only when the file holds it: `gh pr view --json` output whose `body`
+  is the live body and whose `number` is the PR's, or a file holding
+  the body's text whole. Otherwise it exits 3 and changes nothing.
+
+There is no option to overwrite a body without one of these: a
+hand-written body is either in the commit or in a backup.
 
 ## Shape the body for unwrapping; `--verbatim` is an escape hatch
 
@@ -242,7 +265,8 @@ open PR (`gh pr list --head <branch> --state open`):
 
 - **After a push that succeeded,** it runs
   `create-or-update-pull-request.sh sync` and reports the re-sync, a
-  refused body edited by hand, or a failure as a `systemMessage`.
+  refused body holding text its commit message doesn't, or a failure as
+  a `systemMessage`.
 - **After an amend,** it runs `check --quiet` and, on drift, reports
   `check`'s diff and says to push and re-sync.
 
@@ -306,6 +330,10 @@ Bash call.
 - About to open a PR: push, then run `create-or-update-pull-request.sh`,
   never `gh pr create`.
 - Just amended a commit on a branch with an open PR: re-run the script.
+- `sync` refused a body holding text its commit message doesn't: fold
+  that text into the commit message, push with `--force-with-lease` and
+  sync again, or save the body and drop the text no longer true with
+  `--dropped-text-saved`.
 - Reviewing a PR description with `## Summary` or `## Test plan` blocks
   that aren't in the commit message: propose moving them into the commit
   body or removing them.

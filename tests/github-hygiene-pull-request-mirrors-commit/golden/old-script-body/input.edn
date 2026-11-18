@@ -7,7 +7,6 @@
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
- :force? false
  :commits
  [{:sha "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
    :parents ["abababababababababababababababababababab"]

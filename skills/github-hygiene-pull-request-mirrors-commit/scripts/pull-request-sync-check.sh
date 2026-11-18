@@ -13,7 +13,8 @@
 #   `github-hygiene-pull-request-mirrors-commit`, renders the pull
 #   request from the branch's commits. After a `git push` that
 #   succeeded, the hook runs its `sync` mode and reports a re-sync, a
-#   refusal (a body edited by hand) or a failure as a `systemMessage`.
+#   refusal (a body holding text its commit message doesn't) or a
+#   failure as a `systemMessage`.
 #   After `git commit --amend`, it runs `check --quiet` and, on drift,
 #   reports `check`'s diff. Skill loading is heuristic; this hook is the
 #   deterministic safety net.
@@ -159,8 +160,8 @@ fi
 # line break counts as drift, as does a pull request on a branch other
 # than the default one that isn't in a linked GitHub stack; `sync`
 # links it. Its exit codes: 0 in sync or synced, 1 drift or a failed
-# sync, 2 usage or a refused range, 3 a body edited
-# by hand, 4 several commits without an allowed reason.
+# sync, 2 usage or a refused range, 3 a body holding text its commit
+# message doesn't, 4 several commits without an allowed reason.
 generator=${BASH_SOURCE[0]%/*}/create-or-update-pull-request.sh
 tool='`create-or-update-pull-request.sh` from `github-hygiene-pull-request-mirrors-commit`'
 generator_args=(--head "$branch")
@@ -179,7 +180,7 @@ if [ -f "$generator" ] && [ "$is_push" -eq 1 ] && [ "$outcome" = ok ]; then
     *"linked stack: "*) sync_msg="${sync_msg:+$sync_msg }Linked PR ${pr_label} into a GitHub stack: ${out##*linked stack: }." ;;
     esac
     ;;
-  3) sync_msg="PR ${pr_label}'s body was edited by hand, so ${tool} didn't overwrite it after this push. Fold the edit into the commit message and run its sync mode again, or rerun it with --force to discard the edit."$'\n\n'"$out" ;;
+  3) sync_msg="PR ${pr_label}'s body holds text its commit message doesn't, so ${tool} didn't overwrite it after this push. Fold that text into the commit message, push with --force-with-lease and run its sync mode again; text no longer true of the commits may be dropped once saved, with --dropped-text-saved."$'\n\n'"$out" ;;
   *) sync_msg="Syncing PR ${pr_label} with the commits on \`${branch}\` after this push failed (exit ${rc} from ${tool}):"$'\n\n'"$out" ;;
   esac
 elif [ -f "$generator" ] && [ "$is_amend" -eq 1 ]; then

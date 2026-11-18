@@ -285,8 +285,12 @@ preferences() {
   gh_stub
   open_pr --body "Written by a reviewer."
   hook "git push"
-  [[ $(message) == *"edited by hand"* ]]
-  [[ $(message) == *"--force"* ]]
+  local text
+  text=$(message)
+  [[ $text == *"holds text its commit message doesn't"* ]]
+  [[ $text == *"Fold that text into the commit message"* ]]
+  [[ $text == *"--dropped-text-saved"* ]]
+  [[ ${text//--force-with-lease/} != *"--force"* ]]
   [ "$(jq -r .body "$GH_STATE/pr.json")" = "Written by a reviewer." ]
 }
 

@@ -165,7 +165,9 @@ Choose by the rule:
 
 - **Force-pushing PR branches is allowed** (with a lease): use `gh stack` as above.
 - **It isn't:** don't restack with a tool.
-  Open each PR with `create-or-update-pull-request.sh sync --base <branch below>` from `github-hygiene-pull-request-mirrors-commit`, which writes the `Stacks on` line and links the chain into a stack, never `gh pr create`; when a branch below changes, `git merge` it into each branch above and push normally.
+  Open each PR with `create-or-update-pull-request.sh sync --base <branch below>` from `github-hygiene-pull-request-mirrors-commit`, which links the chain into a stack with `gh stack link`, never `gh pr create`.
+  The stack shows through each PR's base branch and that link, not in the body.
+  When a branch below changes, `git merge` it into each branch above and push normally.
   The child branches gain merge commits, and the PRs stay linked.
 - **Unsure:** ask before the first restack, since a force-push can't be taken back once a reviewer has fetched the branch.
 

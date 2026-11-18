@@ -52,9 +52,9 @@ Multi-commit: refactor-split
 ```
 
 The lead commit's subject is the PR's title and its body the PR's
-synthesis, above a list of every commit's linked SHA and subject. Write
-that body as the synthesis, not as a copy of any one commit, since each
-commit is one click away:
+body, the synthesis, with only the footer after it; the PR's commits
+tab lists the commits. Write that body as the synthesis, not as a copy
+of any one commit, since each commit is one click away:
 
 - **What it says:** what no single commit says, such as how the
   commits relate, why they share a PR, and what to review across them.

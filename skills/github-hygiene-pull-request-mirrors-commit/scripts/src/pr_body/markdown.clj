@@ -55,12 +55,15 @@
       (mapv parse-long (concat (str/split from #":") (str/split to #":"))))))
 
 (defn- node
-  "A tree node, `{:type :pos :literal :children}`, from an XML element."
+  "A tree node, `{:type :pos :literal :children}`, from an XML element,
+  with a heading's `:level`."
   [el]
-  (let [children (filter map? (:content el))]
+  (let [children (filter map? (:content el))
+        level (get-in el [:attrs :level])]
     (cond-> {:type (keyword (name (:tag el)))
              :pos (sourcepos (get-in el [:attrs :sourcepos]))
              :children (mapv node children)}
+      level (assoc :level (parse-long level))
       (empty? children) (assoc :literal (apply str (filter string? (:content el)))))))
 
 (defn- backslash-break? [line]

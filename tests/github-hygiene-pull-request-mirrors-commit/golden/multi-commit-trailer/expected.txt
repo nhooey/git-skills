@@ -1,10 +1,5 @@
 Vendor the parser at 2.4.0
 
-## Commits (2)
-
-- [`9999999`](https://github.com/octo/widgets/commit/9999999999999999999999999999999999999991) Vendor the parser at 2.4.0
-- [`9999999`](https://github.com/octo/widgets/commit/9999999999999999999999999999999999999992) Patch the vendored parser for our dialect
-
 Signed-off-by: Ada <ada@example.com>
 
-[//]: # (pr-body: generated from 9999999999999999999999999999999999999992; digest 5fadeda0e96be6244bd34f64281d620580298b629eaf936409abac9e053056b9)
+[//]: # (pr-body: generated from 9999999999999999999999999999999999999992; digest edd90621323bb314739670715e446c7571d7a969390a080869a0dc54b34a1c3c)
