@@ -29,5 +29,5 @@ misreads turns up.
 ## Done when
 
 The hook holds no `sed` or `awk` over its inputs, its tests in
-`test_pull_request_sync_check.py` pass unchanged, and no comment names
-this node.
+`tests/github-hygiene-pull-request-mirrors-commit/sync-check.bats` pass
+unchanged, and no comment names this node.

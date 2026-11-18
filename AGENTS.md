@@ -46,4 +46,12 @@ no further wiring:
 `tests/test_layout.py` fails when a test file or folder sits under
 `skills/`, when a folder in `tests/` names no skill, or when a skill's
 Python script imports anything but the standard library and its sibling
-scripts. `tests/test_git_skills.py` tests the lint.
+scripts. The repository's own tools in `scripts/` have their tests at
+the top of `tests/`, a `.bats` file reaching them through
+`$BATS_TEST_DIRNAME/../scripts/`:
+
+- `tests/test_git_skills.py`: the lint, which needs `yq` (yq-go) on
+  PATH, as the dev shell and `git-skills` have it.
+- `tests/git-skills.bats`: `git-skills test`, `scripts/git-skills.sh`.
+- `tests/copy-hook-scripts.bats`: how the hooks plugin's scripts are
+  copied in.
