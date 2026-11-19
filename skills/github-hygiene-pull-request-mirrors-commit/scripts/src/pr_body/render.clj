@@ -15,12 +15,9 @@
     - `:trailers` `:keep` or `:drop`;
     - `:attribution` the footer's last line, or nil for none;
     - `:verbatim?` skip the unwrapping;
-    - `:stack-parent` `{:number :title}` of the pull request this one stacks on;
     - `:line-counts` `{[sha path] lines}` for the files code references name;
-    - `:issue-titles` `{number title}` for the bare `#N` references;
-    - `:flake-locks` `[{:path :old :new}]`, each lock's parsed JSON."
+    - `:issue-titles` `{number title}` for the bare `#N` references."
   (:require [clojure.string :as str]
-            [pr-body.flake-lock :as flake-lock]
             [pr-body.footer :as footer]
             [pr-body.links :as links]
             [pr-body.message :as message]))
@@ -42,32 +39,13 @@
 
 (defn lookups
   "What the shell has to look up before `render`: `{:paths #{[sha path]}
-  :issues #{n}}`, from the lead commit's body and every subject, which
-  is all the body shows."
+  :issues #{n}}`, from the lead commit's subject and body, which are all
+  the title and body show."
   [commits opts]
-  (reduce (fn [acc commit]
-            (let [lead? (= commit (lead-commit commits opts))
-                  found (map links/scan (cons (:subject-md commit) (when lead? [(:body-md commit)])))]
-              (-> acc
-                  (update :paths into (for [p (mapcat :paths found)] [(:sha commit) p]))
-                  (update :issues into (mapcat :issues found)))))
-          {:paths #{} :issues #{}}
-          commits))
-
-(defn- commit-item
-  "One commit as its linked short SHA and subject. Its message stays in
-  the commit, one click away, rather than copied into the body."
-  [commit repo opts]
-  (let [sha (:sha commit)]
-    (str "- [`" (subs sha 0 7) "`](" (:url repo) "/commit/" sha ") "
-         (links/render (link-ctx commit repo opts) (:subject-md commit) false))))
-
-(defn- commits-section [commits repo opts]
-  (str "## Commits (" (count commits) ")\n\n"
-       (str/join "\n" (map #(commit-item % repo opts) commits))))
-
-(defn- stack-line [repo {:keys [number title]}]
-  (str "Stacks on " (:owner repo) "/" (:name repo) "#" number (when title (str " \"" title "\""))))
+  (let [lead (lead-commit commits opts)
+        found (map links/scan [(:subject-md lead) (:body-md lead)])]
+    {:paths (set (for [p (mapcat :paths found)] [(:sha lead) p]))
+     :issues (set (mapcat :issues found))}))
 
 (defn- warnings [commits opts]
   (vec (for [n (sort (:issues (lookups commits opts)))
@@ -78,13 +56,9 @@
   "`{:title :body :warnings}` for `commits` in `repo`."
   [commits repo opts]
   (let [lead (lead-commit commits opts)
-        single? (= 1 (count commits))
         above (str/join "\n\n"
                         (remove str/blank?
                                 [(rendered-body lead repo opts)
-                                 (when-not single? (commits-section commits repo opts))
-                                 (flake-lock/section (:flake-locks opts))
-                                 (some->> (:stack-parent opts) (stack-line repo))
                                  (str/join "\n" (message/kept-trailers commits (:trailers opts :drop)))]))]
     {:title (:subject lead)
      :body (footer/assemble above (:sha (last commits)) (:attribution opts))

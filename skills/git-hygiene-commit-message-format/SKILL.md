@@ -208,4 +208,5 @@ came from; don't apply it from memory.
 - `markdown-hygiene-lists-headings-tables`: the list and table syntax a body's lists and tables use, so they render as meant on the PR.
 - `writing-hygiene-declarative-statements`: the snapshot-or-delta vocabulary, the before → after notation and the narration word list behind "a commit is a delta".
 - `writing-hygiene-prose-to-lists`: rewriting a sentence that enumerates three or more items, or parallel options, as a list.
+- `writing-hygiene-refer-by-canonical-label`: naming a commit, pull request or file by its canonical label, and pointing at code with a pinned permalink instead of restating the diff.
 - `writing-hygiene-tables-for-comparison`: when a comparison goes in a table, and how to shape it.

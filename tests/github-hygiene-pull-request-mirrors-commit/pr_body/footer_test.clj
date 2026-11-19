@@ -22,13 +22,12 @@
   (let [rendered {:title "T" :body (footer/assemble "New." head "a")}
         untouched {:title "T" :body (footer/assemble "Old." head "a")}
         edited {:title "T" :body (str "Hand. " (:body untouched))}]
-    (testing "no pull request" (is (= :create (:action (sync/plan nil rendered false [])))))
-    (testing "in sync" (is (= :none (:action (sync/plan rendered rendered false [])))))
-    (testing "as generated" (is (= :patch (:action (sync/plan untouched rendered false [])))))
-    (testing "edited by hand" (is (= {:action :refuse :status :edited} (sync/plan edited rendered false []))))
-    (testing "forced" (is (= :patch (:action (sync/plan edited rendered true [])))))
+    (testing "no pull request" (is (= :create (:action (sync/plan nil rendered [] nil)))))
+    (testing "in sync" (is (= :none (:action (sync/plan rendered rendered [] nil)))))
+    (testing "as generated" (is (= :patch (:action (sync/plan untouched rendered [] nil)))))
+    (testing "edited by hand" (is (= {:action :refuse :status :edited} (sync/plan edited rendered [] nil))))
     (testing "a title change alone is drift"
-      (is (= :patch (:action (sync/plan (assoc rendered :title "Old") rendered false [])))))))
+      (is (= :patch (:action (sync/plan (assoc rendered :title "Old") rendered [] nil)))))))
 
 (deftest bodies-older-tools-generated
   (let [commits [{:subject "Fix it" :body "Why it\nbroke."
@@ -37,11 +36,11 @@
         rendered {:title "Fix it" :body (footer/assemble "New." head "a")}]
     (testing "the old script: %b reflowed, with the attribution line"
       (let [body "Why it broke.\n\nCo-Authored-By: C <c@x>\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)"]
-        (is (= :generated (sync/status body commits)))
-        (is (= {:action :patch :status :generated} (sync/plan {:title "Fix it" :body body} rendered false commits)))))
+        (is (= :generated (sync/status body commits (:body rendered))))
+        (is (= {:action :patch :status :generated} (sync/plan {:title "Fix it" :body body} rendered commits nil)))))
     (testing "gh pr create --fill on several commits"
-      (is (= :generated (sync/status "- Test it\n- Fix it" commits)))
-      (is (= :generated (sync/status "- Fix it\n- Test it\n" commits))))
+      (is (= :generated (sync/status "- Test it\n- Fix it" commits (:body rendered))))
+      (is (= :generated (sync/status "- Fix it\n- Test it\n" commits (:body rendered)))))
     (testing "a body matching neither is refused"
       (is (= {:action :refuse :status :unmarked}
-             (sync/plan {:title "Fix it" :body "Why it broke, and more."} rendered false commits))))))
+             (sync/plan {:title "Fix it" :body "Why it broke, and more."} rendered commits nil))))))

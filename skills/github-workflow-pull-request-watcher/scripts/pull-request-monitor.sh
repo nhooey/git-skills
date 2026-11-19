@@ -3,14 +3,13 @@
 # delta on check-runs, issue comments, review-thread comments, and PR
 # state — then breaks when the PR transitions to MERGED or CLOSED.
 #
-# Intended to be passed to the `Monitor` tool with `persistent: true`,
-# or, where Monitor has no such option, its longest `timeout_ms`,
-# re-armed on each expiry.
+# Intended to be passed to the `Monitor` tool with `timeout_ms: 1800000`,
+# the longest it allows, and restarted with --quiet-initial at each expiry.
 #
 # Usage:
 #   pull-request-monitor.sh [--pr N] [--repo OWNER/REPO] [--sha SHA]
 #                           [--interval SECONDS] [--body-check PATH]
-#                           [--dry-run] [-h|--help]
+#                           [--quiet-initial] [--dry-run] [-h|--help]
 #
 # All flags are optional; defaults are auto-detected from the current
 # branch and working tree:
@@ -28,6 +27,11 @@
 # drifted from the commits emits a BODY-DRIFT line. Without the body
 # check, it emits none.
 #
+# --quiet-initial records the first poll's checks, comments and state
+# as the baseline without emitting them, nor that poll's BODY-DRIFT
+# line, so a watcher restarted after a Monitor timeout reports only what
+# changed. A MERGED or CLOSED state is still emitted on that poll.
+#
 # --dry-run runs each distinct `gh` invocation once with stderr intact
 # and exits. Use this before arming the Monitor — a silent failure
 # (Unknown JSON field, missing permission, typo) otherwise leaves the
@@ -42,6 +46,7 @@ sha=""
 interval=30
 dry_run=0
 body_check=""
+quiet_initial=0
 
 usage() {
   sed -n '2,/^set -u$/p' "$0" | sed -e 's/^# \{0,1\}//' -e '$d'
@@ -68,6 +73,10 @@ while [ $# -gt 0 ]; do
   --body-check)
     body_check=$2
     shift 2
+    ;;
+  --quiet-initial)
+    quiet_initial=1
+    shift
     ;;
   --dry-run)
     dry_run=1
@@ -201,6 +210,11 @@ check_body() {
 fmt_comments='.[] | select(.id > $cutoff)
   | "COMMENT-\(if .user.login==$user then "SELF" else .user.login end): \(.body | gsub("\n"; " "))"'
 
+# --quiet-initial: send the first poll's output to /dev/null; fd 3 keeps
+# the real stdout to restore.
+exec 3>&1
+[ "$quiet_initial" -eq 1 ] && exec >/dev/null
+
 while :; do
   # PR state, review decision and head, read first so that a new head
   # moves the check-run polling to it before this round's fetch.
@@ -239,11 +253,15 @@ while :; do
     max_review=$(jq '[.[].id, 0] | max' <<<"$review")
   fi
 
+  # The state read at the top: a terminal one is news even on a quiet
+  # first poll.
+  case "$state" in *MERGED* | *CLOSED*) exec >&3 ;; esac
   if [ -n "$state" ] && [ "$state" != "$prev_state" ]; then
     echo "$state"
     prev_state=$state
   fi
   case "$state" in *MERGED* | *CLOSED*) break ;; esac
 
+  exec >&3
   sleep "$interval"
 done

@@ -27,18 +27,13 @@ Loading this skill changes nothing by itself; apply a workaround when its trap c
 
 ## Body edits replace the whole text, with no conflict check
 
-`gh issue edit --body-file`, `gh pr edit --body-file` and a REST `PATCH`
-of `body` all overwrite the body. GitHub has no compare-and-swap for
-it: no version or `If-Match` precondition. If someone else edited the
-body after you fetched it, such as a maintainer ticking a tracking
-issue's checklist as PRs merge, saving your draft erases their edit,
-and nothing warns either of you.
+`gh issue edit --body-file`, `gh pr edit --body-file` and a REST `PATCH` of `body` all overwrite the body.
+GitHub has no compare-and-swap for it: no version or `If-Match` precondition.
+If someone else edited the body after you fetched it, such as a maintainer ticking a tracking issue's checklist as PRs merge, saving your draft erases their edit, and nothing warns either of you.
 
-Before saving a body that anyone else edits, re-fetch it and compare it
-with the copy your draft started from. If it changed, three-way merge
-their changes into your draft and review the result before saving.
-The bundled `scripts/safe-body-edit.sh` does both, and saves only when
-the live body still matches:
+Before saving a body that anyone else edits, re-fetch it and compare it with the copy your draft started from.
+If it changed, three-way merge their changes into your draft and review the result before saving.
+The bundled `scripts/safe-body-edit.sh` does both, and saves only when the live body still matches:
 
 ```bash
 # the copy you draft from; tr drops the CRLF line ends of browser-edited bodies
@@ -47,64 +42,44 @@ cp base.md new.md   # ...edit new.md...
 safe-body-edit.sh <owner>/<repo> <num> base.md new.md
 ```
 
-- It works for PRs too, since the issues endpoint serves a PR's body,
-  but a PR whose body mirrors its commits is re-synced with
-  `github-hygiene-pull-request-mirrors-commit`'s
-  `create-or-update-pull-request.sh` instead, which checks for a hand
-  edit itself.
+- It works for PRs too, since the issues endpoint serves a PR's body, but a PR whose body mirrors its commits is re-synced with `github-hygiene-pull-request-mirrors-commit`'s `create-or-update-pull-request.sh` instead, which checks for a hand edit itself.
 - It PATCHes through REST, so the old `gh pr edit` trap below doesn't apply.
 - Unchanged live body: it saves `new.md` and exits 0.
-- Changed live body: it prints the diff, writes `new.md.merged`, saves
-  nothing, exits 1 and prints the rerun command, with the live copy as
-  the new base. Adjacent checklist lines changed on both sides come out
-  as a conflict, never as a silent pick.
-- A small race is left: an edit that lands between its check and its
-  save is still lost. Keep the gap short by running it right after the
-  review, not before.
+- Changed live body: it prints the diff, writes `new.md.merged`, saves nothing, exits 1 and prints the rerun command, with the live copy as the new base.
+  Adjacent checklist lines changed on both sides come out as a conflict, never as a silent pick.
+- A small race is left: an edit that lands between its check and its save is still lost.
+  Keep the gap short by running it right after the review, not before.
 
-For a one-line change, such as ticking one task-list box, edit that
-line in the browser instead of resending the whole body.
+For a one-line change, such as ticking one task-list box, edit that line in the browser instead of resending the whole body.
 
 ## `gh pr view --json` rejects field names that aren't on its list
 
-The fields `gh pr view --json` accepts are a subset of the GraphQL
-`pullRequest` type. Two ways to get bitten:
+The fields `gh pr view --json` accepts are a subset of the GraphQL `pullRequest` type.
+Two ways to get bitten:
 
-1. **Inventing a field name** because it sounds reasonable. There is
-   no `merged`: use `state` (`OPEN`, `MERGED` or `CLOSED`) or
-   `mergedAt` (non-null once merged).
-2. **Borrowing a field from the GraphQL type** that the CLI doesn't
-   expose. `reviewThreads` exists on the GraphQL `pullRequest` but not
-   in `gh pr view --json`. Inline review comments come from the REST
-   endpoint `repos/<owner>/<repo>/pulls/<num>/comments`.
+1. **Inventing a field name** because it sounds reasonable.
+   There is no `merged`: use `state` (`OPEN`, `MERGED` or `CLOSED`) or `mergedAt` (non-null once merged).
+2. **Borrowing a field from the GraphQL type** that the CLI doesn't expose.
+   `reviewThreads` exists on the GraphQL `pullRequest` but not in `gh pr view --json`.
+   Inline review comments come from the REST endpoint `repos/<owner>/<repo>/pulls/<num>/comments`.
 
-Either way the CLI exits 1 with `Unknown JSON field: "<name>"` and a
-list of the valid fields. A watcher written as
-`gh ... 2>/dev/null || echo '{}'` hides that: jq parses an empty `{}`,
-the loop polls a state that stays null and never reaches its
-terminal-state break. The watcher looks armed but never fires, and a
-merge goes unnoticed.
+Either way the CLI exits 1 with `Unknown JSON field: "<name>"` and a list of the valid fields.
+A watcher written as `gh ... 2>/dev/null || echo '{}'` hides that: jq parses an empty `{}`, the loop polls a state that stays null and never reaches its terminal-state break.
+The watcher looks armed but never fires, and a merge goes unnoticed.
 
-Validate the field list once, with stderr intact, before arming a
-watcher on it:
+Validate the field list once, with stderr intact, before arming a watcher on it:
 
 ```bash
 gh pr view <num> --json state,statusCheckRollup,comments 2>&1 | head -1
 ```
 
-`gh pr view --help` lists every accepted field under JSON FIELDS, and
-so does the error. The list grows across `gh` releases, so trust the
-local build over any list written down. Fields a PR watcher usually
-needs: `state`, `closed`, `mergedAt`, `mergedBy`, `mergeCommit`,
-`mergeStateStatus`, `mergeable`, `isDraft`, `reviewDecision`,
-`reviews`, `latestReviews`, `statusCheckRollup`, `comments`, `commits`,
-`headRefName`, `headRefOid`, `baseRefName`, `labels`.
+`gh pr view --help` lists every accepted field under JSON FIELDS, and so does the error.
+The list grows across `gh` releases, so trust the local build over any list written down.
+Fields a PR watcher usually needs: `state`, `closed`, `mergedAt`, `mergedBy`, `mergeCommit`, `mergeStateStatus`, `mergeable`, `isDraft`, `reviewDecision`, `reviews`, `latestReviews`, `statusCheckRollup`, `comments`, `commits`, `headRefName`, `headRefOid`, `baseRefName`, `labels`.
 
 ## `gh pr edit` before 2.82.1 exits 1 on a Projects (classic) error, without applying the edit
 
-On a `gh` older than 2.82.1 (check `gh --version`), `gh pr edit`
-queries the sunset `projectCards` field, and in a repository that
-still has a classic project the call fails:
+On a `gh` older than 2.82.1 (check `gh --version`), `gh pr edit` queries the sunset `projectCards` field, and in a repository that still has a classic project the call fails:
 
 ```text
 $ gh pr edit 3 --body-file body.md
@@ -114,50 +89,38 @@ $ echo $?
 1
 ```
 
-The body is not updated. Upgrade `gh`, or PATCH through the REST API,
-which doesn't touch Projects (classic):
+The body is not updated.
+Upgrade `gh`, or PATCH through the REST API, which doesn't touch Projects (classic):
 
 ```bash
 gh api --method PATCH "/repos/<owner>/<repo>/pulls/<num>" \
   -f body="$(cat body.md)"
 ```
 
-Use `-f` (`--raw-field`), not `-F` (`--field`), for prose: `-F`
-converts `true`, `false`, `null` and integers to JSON types, so a body
-of `42` becomes the number `42`. Prefer shell substitution
-(`$(cat …)`, `$(git log -1 --pretty=%b)`) over `-F body=@path`: no
-stale temporary file, no race with a parallel agent.
+Use `-f` (`--raw-field`), not `-F` (`--field`), for prose: `-F` converts `true`, `false`, `null` and integers to JSON types, so a body of `42` becomes the number `42`.
+Prefer shell substitution (`$(cat …)`, `$(git log -1 --pretty=%b)`) over `-F body=@path`: no stale temporary file, no race with a parallel agent.
 
 ## GitHub blocks self-approval
 
-Even with admin rights you can't `gh pr review --approve` a PR you
-authored; the API rejects it with `Review Can not approve your own pull
-request`. In a solo workflow, skip approval and merge directly:
+Even with admin rights you can't `gh pr review --approve` a PR you authored; the API rejects it with `Review Can not approve your own pull request`.
+In a solo workflow, skip approval and merge directly:
 
 ```bash
 gh pr merge <num> --merge --delete-branch
 ```
 
-`--delete-branch` deletes the local and the remote branch after the
-merge, which a repo with `github-policy-auto-delete-merged-branches`
-applied doesn't need.
+`--delete-branch` deletes the local and the remote branch after the merge, which a repo with `github-policy-auto-delete-merged-branches` applied doesn't need.
 
-A PR that is part of a stack refuses `gh pr merge`, with "This pull
-request is part of a stack and must be merged using the asynchronous
-merge REST API". Merge it with `gh stack merge <num> --merge --yes` in
-the repository's checkout, as `github-workflow-pull-request-stacked`
-says.
+A PR that is part of a stack refuses `gh pr merge`, with "This pull request is part of a stack and must be merged using the asynchronous merge REST API".
+Merge it with `gh stack merge <num> --merge --yes` in the repository's checkout, as `github-workflow-pull-request-stacked` says.
+`gh stack merge` reads a bare number as a stack number before a PR number, so with `--yes` a PR number that is also a stack's number merges that other stack unasked.
 
 ## Renaming a branch closes open PRs whose head it is
 
-`POST /repos/{owner}/{repo}/branches/{branch}/rename` succeeds and
-retargets open PRs whose base is the branch, but every open PR whose
-head is the branch is closed, with a `head_ref_deleted` event, and its
-`head.ref` keeps the old name. A PR's head can't be changed after
-creation, so recovery means reverting the rename or opening new PRs.
+`POST /repos/{owner}/{repo}/branches/{branch}/rename` succeeds and retargets open PRs whose base is the branch, but every open PR whose head is the branch is closed, with a `head_ref_deleted` event, and its `head.ref` keeps the old name.
+A PR's head can't be changed after creation, so recovery means reverting the rename or opening new PRs.
 
-Before running the rename API on any branch, check for open PRs on it,
-and stop if there is one:
+Before running the rename API on any branch, check for open PRs on it, and stop if there is one:
 
 ```bash
 gh pr list --state open --head <old> --json number,title
@@ -200,10 +163,8 @@ The PR number changes; that's unavoidable.
 
 ## Related skills
 
-When one of these applies and it's in your skill listing, load it
-without asking. If it isn't in your listing, tell the user which skill is
-missing and ask whether to install it from the same collection this skill
-came from; don't apply it from memory.
+When one of these applies and it's in your skill listing, load it without asking.
+If it isn't in your listing, tell the user which skill is missing and ask whether to install it from the same collection this skill came from; don't apply it from memory.
 
 - `github-hygiene-pull-request-mirrors-commit`: opens and re-syncs a PR from its commits with `create-or-update-pull-request.sh`, never `gh pr create`.
 - `github-workflow-pull-request-stacked`: merging a stacked PR with `gh stack merge`, which `gh pr merge` refuses.

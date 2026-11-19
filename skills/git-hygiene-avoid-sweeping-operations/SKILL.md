@@ -1,14 +1,11 @@
 ---
 name: git-hygiene-avoid-sweeping-operations
 description: |
-  Name the paths and refs a git command acts on, instead of running one that
-  acts on everything it can reach: `git add -A` / `--all` / `.` / `-u`,
-  `git commit -a`, bare `git stash`, `git checkout .` / `git restore .`,
-  `git reset --hard`, `git clean -f`, `git branch -D`, `git push --all` /
-  `--mirror`, `git worktree prune`, `git gc --prune=now`, `--no-verify`.
-  Prefer the variant that refuses when it would lose work. Use whenever
-  about to stage, stash, discard, delete, prune or push in a working tree
-  that the user, another agent or another session may also be using.
+  Load before any git command that stages, commits, stashes, discards,
+  resets, cleans, deletes, prunes or pushes more than named paths or refs,
+  such as `git add -A`, `git reset --hard`, `git clean` or
+  `git branch -D`. Names the paths and refs instead, in a tree others may
+  share. For files outside git, `shell-hygiene-delete-named-paths`.
 tags: [safety]
 allowed-tools:
   - Bash
@@ -97,3 +94,4 @@ came from; don't apply it from memory.
 - `git-hygiene-push-force-safely`: force-pushing with `--force-with-lease` and `--force-if-includes`.
 - `git-workflow-tidy-branches`: deleting merged branches in bulk without `git branch -D`.
 - `shell-hygiene-no-machine-wide-changes`: asking before `git config --global` and other changes beyond the project.
+- `shell-hygiene-delete-named-paths`: deleting, moving or overwriting files outside git by naming each path after listing them.

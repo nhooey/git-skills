@@ -1,0 +1,42 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :live {:title "Page the export through the shared cursor"
+        :body "The export walked the table on its own; with the shared cursor from the pull request below it pages like every other reader.
+
+## Commits (2)
+
+- [`5555555`](https://github.com/octo/widgets/commit/5555555555555555555555555555555555555551) Page the export through the shared cursor
+- [`5555555`](https://github.com/octo/widgets/commit/5555555555555555555555555555555555555552) Bump nixpkgs for the cursor's new client
+
+## What changes
+
+### `flake.lock`
+
+| Input | Revision | Age | Compare |
+| ----- | -------- | --- | ------- |
+| `nixpkgs` | `aaaaaaa` → `bbbbbbb` | 12 days newer | [compare](https://github.com/NixOS/nixpkgs/compare/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb) |
+
+Stacks on octo/widgets#41 \"Add the shared cursor\"
+
+[//]: # (pr-body: generated from 5555555555555555555555555555555555555552; digest baf9dc45b044e4d06b1a28a158f029868fea6323b7c3bb27eed3a4e8310f272c)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "5555555555555555555555555555555555555551"
+   :parents ["4444444444444444444444444444444444444444"]
+   :message "Page the export through the shared cursor
+
+The export walked the table on its own; with the shared cursor from the
+pull request below it pages like every other reader.
+
+Multi-commit: refactor-split
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Multi-commit: refactor-split
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}
+  {:sha "5555555555555555555555555555555555555552"
+   :parents ["5555555555555555555555555555555555555551"]
+   :message "Bump nixpkgs for the cursor's new client
+"
+   :trailers ""}]}

@@ -55,7 +55,7 @@
       prBodyInputs = import ./skills/github-hygiene-pull-request-mirrors-commit/script-inputs.nix;
 
       packs = {
-        # All 12 git-* skills.
+        # All 13 git-* skills.
         agent-skills-nhooey-git-all = [
           "git-hygiene-avoid-sweeping-operations"
           "git-hygiene-branch-naming"
@@ -69,6 +69,7 @@
           "git-workflow-inspect-before-commit"
           "git-workflow-push-mode"
           "git-workflow-tidy-branches"
+          "git-workflow-tidy-worktrees"
         ];
 
         # All git-hygiene-* skills: rules-of-thumb (commit/branch style,
@@ -90,6 +91,7 @@
           "git-workflow-inspect-before-commit"
           "git-workflow-push-mode"
           "git-workflow-tidy-branches"
+          "git-workflow-tidy-worktrees"
         ];
 
         # All 14 github-* skills (includes the agent-tagged ones).
@@ -211,13 +213,14 @@
             "clojure"
           ];
 
-          # `git-skills test [--language LANGUAGE] [SKILL...]` runs the
-          # tests in tests/, or in each named skill's folder there, with
-          # each language's own tool: pytest for Python, bats for `.bats`
-          # files, and `bb test` for a Babashka project's clojure.test
-          # tests. Other commands go to scripts/git_skills.py. The dev
-          # shell's menu lists it, and `nix flake check` runs it once per
-          # language.
+          # `git-skills test [--language LANGUAGE] [SKILL...]`, the shell
+          # script scripts/git-skills.sh, runs the tests in tests/, or in
+          # each named skill's folder there, with each language's own
+          # tool: pytest for Python, bats for `.bats` files, and `bb test`
+          # for a Babashka project's clojure.test tests. Other commands go
+          # to scripts/git_skills.py, which parses SKILL.md frontmatter
+          # with yq-go. The dev shell's menu lists it, and `nix flake check`
+          # runs it once per language.
           git-skills = pkgs.writeShellApplication {
             name = "git-skills";
             runtimeInputs = prBodyInputs pkgs ++ [
@@ -225,94 +228,38 @@
               pkgs.bats
               pkgs.git
               pkgs.jq
+              pkgs.yq-go
             ];
-            text = ''
-              if [ "''${1:-}" != test ]; then
-                exec python3 -B ${./scripts/git_skills.py} "$@"
-              fi
-              shift
-              usage() {
-                echo "git-skills: $*" >&2
-                echo "usage: git-skills test [--language ${builtins.concatStringsSep "|" testLanguages}] [SKILL...]" >&2
-                exit 2
-              }
-              read -ra languages <<<"${builtins.toString testLanguages}"
-              if [ "''${1:-}" = --language ]; then
-                case " ''${languages[*]} " in
-                *" ''${2:-} "*) languages=("$2") ;;
-                *) usage "no language ''${2:-}" ;;
-                esac
-                shift 2
-              fi
-              cd "''${PRJ_ROOT:-$(git rev-parse --show-toplevel)}"
-              export PYTHONDONTWRITEBYTECODE=1
-              dirs=()
-              for skill in "$@"; do
-                case $skill in
-                "" | */* | .* | _*) usage "no tests/$skill folder" ;;
-                esac
-                [ -d "tests/$skill" ] || usage "no tests/$skill folder"
-                dirs+=("tests/$skill")
-              done
-              if [ "$#" -eq 0 ]; then dirs=(tests); fi
-              failed=()
-              ran=0
-              run() {
-                echo "== $*"
-                ran=$((ran + 1))
-                "$@" || failed+=("$*")
-              }
-              bb_test() { (cd "$1" && bb test); }
-              # Each tool runs only on the files of its language; pytest's
-              # exit 5, for no test collected, is a failure like any other.
-              for language in "''${languages[@]}"; do
-                case $language in
-                python) pattern='test_*.py' ;;
-                bats) pattern='*.bats' ;;
-                clojure) pattern=bb.edn ;;
-                esac
-                mapfile -t found < <(find "''${dirs[@]}" -name "$pattern" | sort)
-                [ "''${#found[@]}" -gt 0 ] || continue
-                case $language in
-                python) run pytest "''${found[@]}" ;;
-                bats) run bats "''${found[@]}" ;;
-                clojure) for project in "''${found[@]}"; do run bb_test "''${project%/bb.edn}"; done ;;
-                esac
-              done
-              if [ "$ran" -eq 0 ]; then
-                echo "git-skills: no ''${languages[*]} test in ''${dirs[*]}" >&2
-                exit 1
-              fi
-              if [ "''${#failed[@]}" -gt 0 ]; then
-                printf 'git-skills: failed: %s\n' "''${failed[@]}" >&2
-                exit 1
-              fi
-            '';
+            # The script's two values from Nix: the lint program, and the
+            # test languages the checks below are generated from.
+            runtimeEnv = {
+              GIT_SKILLS_PROGRAM = "${./scripts/git_skills.py}";
+              GIT_SKILLS_TEST_LANGUAGES = builtins.toString testLanguages;
+            };
+            text = builtins.readFile ./scripts/git-skills.sh;
           };
+
+          # The files the `git-skills-hooks` plugin's scripts/ holds, each
+          # under its own name: the hook scripts and the PR body program.
+          hookFiles = pkgs.linkFarm "git-skills-hook-files" (
+            builtins.map (name: {
+              inherit name;
+              path = "${mirrorsCommitScripts}/${name}";
+            }) hookPrograms
+            ++ builtins.map (script: {
+              name = builtins.baseNameOf script;
+              path = script;
+            }) hookScripts
+          );
 
           # `git-skills-hooks`: a hooks-only Claude Code plugin, installed
           # through agent-plugins-nixpkgs: the PostToolUse sync check and
-          # the PreToolUse write guard. Each script gets the PR body
-          # program's tools on its PATH, for the program it runs.
+          # the PreToolUse write guard. scripts/copy-hook-scripts.sh copies
+          # them in and puts the PR body program's tools on each one's
+          # PATH, for the program it runs.
           hooks-plugin = claudePlugins.mkClaudePlugin pkgs {
             src = ./plugin;
-            # The tools go on each script's PATH by a line after the shebang,
-            # not makeWrapper: hooks.json runs `bash <script>`, and the
-            # bash on PATH may be macOS's 3.2, which misreads
-            # makeWrapper's PATH edits.
-            postPatch = ''
-              mkdir -p scripts
-              ${pkgs.lib.concatMapStrings (name: ''
-                cp -r ${mirrorsCommitScripts}/${name} scripts/${name}
-              '') hookPrograms}
-              ${pkgs.lib.concatMapStrings (script: ''
-                cp ${script} scripts/${builtins.baseNameOf script}
-              '') hookScripts}
-              chmod -R u+w scripts
-              for script in scripts/*.sh; do
-                sed -i '1a PATH=${pkgs.lib.makeBinPath (prBodyInputs pkgs)}''${PATH:+:$PATH}; export PATH' "$script"
-              done
-            '';
+            postPatch = "bash ${./scripts/copy-hook-scripts.sh} ${hookFiles} ${pkgs.lib.makeBinPath (prBodyInputs pkgs)}";
           };
         in
         {
@@ -335,11 +282,12 @@
 
           apps = base.apps.${system};
 
-          # The test tools, for running one suite by hand: `pytest`, `bats`
-          # and the PR body program's `bb`.
+          # The test tools, for running one suite by hand: `pytest`, `bats`,
+          # the PR body program's `bb`, and `yq` for the lint's tests.
           devshells.default.packages = prBodyInputs pkgs ++ [
             testPython
             pkgs.bats
+            pkgs.yq-go
           ];
 
           devshells.default.commands = [
@@ -388,11 +336,7 @@
                 // {
                   skill-lint = "git-skills --root ${./.} lint";
                   hooks-plugin = "bash ${./scripts/check-hooks-plugin.sh} ${hooks-plugin} git-skills-hooks";
-                  hooks-plugin-bb = ''
-                    decision=$(printf '%s' '{"tool_input":{"command":"gh pr create --fill"}}' |
-                      env -i ${pkgs.bash}/bin/bash ${hooks-plugin}/scripts/pull-request-write-guard.sh)
-                    case $decision in *'"permissionDecision":"deny"'*) ;; *) echo "the plugin's guard found no bb: $decision" >&2; exit 1 ;; esac
-                  '';
+                  hooks-plugin-bb = "bash ${./scripts/check-hooks-plugin-bb.sh} ${hooks-plugin}";
                 }
               );
 

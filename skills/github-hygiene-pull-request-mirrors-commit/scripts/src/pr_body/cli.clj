@@ -19,8 +19,8 @@
            :desc "commits to render (default: merge-base(base, head)..head)"}
    :lead {:ref "<sha>" :coerce :string :desc "commit whose subject is the title (default: the first commit)"}
    :stack-parent {:ref "<N>" :coerce :long
-                  :desc (str "pull request this one stacks on (default: the base branch's open pull "
-                             "request, when the base isn't the default branch)")}
+                  :desc (str "pull request this one stacks on; changes nothing, since the stack shows "
+                             "through the base branch and `gh stack link`")}
    :trailers {:ref "keep|drop" :coerce :keyword
               :validate {:pred #{:keep :drop}
                          :ex-msg #(str "--trailers takes keep or drop, not " (name (:value %)))}
@@ -30,14 +30,17 @@
             :desc "last line of the body (default: the Claude Code \"Generated with\" line)"}
    :no-footer {:coerce :boolean :desc "no attribution line; the invisible pr-body marker stays"}
    :draft {:coerce :boolean :desc "open a new pull request as a draft"}
-   :force {:coerce :boolean :desc "sync over a body edited by hand"}
+   :dropped-text-saved {:ref "<file>" :coerce :string
+                        :desc (str "sync over a body edited by hand whose text isn't all in the commit "
+                                   "message, once <file> holds it: the `gh pr view --json` output with "
+                                   "its body and number, or a file holding the body's text whole")}
    :verbatim {:coerce :boolean :desc "skip the unwrapping of commit bodies"}
    :quiet {:coerce :boolean :desc "print nothing; the exit code tells"}
    :help {:alias :h :coerce :boolean :desc "show this help"}})
 
 (def ^:private order
   [:base :head :repo :pr :range :lead :stack-parent :trailers :footer :no-footer
-   :draft :force :verbatim :quiet :help])
+   :draft :dropped-text-saved :verbatim :quiet :help])
 
 (def usage
   (str "Usage: create-or-update-pull-request.sh [render|sync|check] [options]
@@ -55,11 +58,10 @@ Modes:
 Options:
 " (cli/format-opts {:spec spec :order order}) "
 
-One commit: its subject is the title, and the body is its unwrapped body
-and the footer. Several commits: the subject and body of the lead commit,
-the one carrying the `Multi-commit:` trailer, then a \"Commits (N)\" list
-of each commit's linked SHA and subject, then the footer. A changed
-flake.lock adds a \"What changes\" section.
+The title is the lead commit's subject, and the body is its unwrapped
+body and the footer, nothing else. The lead commit is the only one, or
+of several the one carrying the `Multi-commit:` trailer. The body refers
+to the diff rather than repeating it.
 
 `check` also warns, without changing its exit code, about a sentence
 listing three or more comma-separated items (`- Prose list warning: off`
@@ -76,6 +78,16 @@ what the old create-or-update-pull-request.sh or `gh pr create --fill`
 wrote from these commits (compared with whitespace normalised): then
 `check` says it's safe to re-sync and `sync` overwrites it.
 
+`sync` overwrites a body edited by hand once its text is all in the
+commit message: each paragraph, list item, heading, code block and table
+row, whitespace normalised, apart from the footer, a closing trailer
+block, a Stacks on line and Commits (N) and What changes sections,
+which describe commits an amend or squash may have replaced. Otherwise it
+refuses and lists the text the commit message lacks: fold it into the
+commit message, push with --force-with-lease and sync again. Text that
+is no longer true of the commits may be dropped instead, once a file
+holds the live body: `--dropped-text-saved <file>`.
+
 A pull request based on a branch other than the default one belongs in a
 linked GitHub stack: `check` counts one outside a stack as drift and names
 the `gh stack link` command, and `sync` runs it, bottom to top.
@@ -85,7 +97,8 @@ Exit codes:
   1  drift or no stack (check), or the synced pull request didn't read
      back as sent or couldn't be linked into its stack
   2  usage error, or a range holding fixup!, squash! or merge commits
-  3  the body was edited by hand, so the sync was refused
+  3  the body holds text the commit message doesn't, and no
+     --dropped-text-saved file holds it, so the sync was refused
   4  several commits without an allowed Multi-commit reason
 
 Example:
@@ -127,6 +140,8 @@ Example:
           (:help opts) {:help true}
           (and mode (not (modes mode))) {:error (str "unknown mode: " mode " (render, sync or check)")}
           stray {:error (str "unexpected argument: " stray)}
+          (and (:dropped-text-saved opts) (not= "sync" (or mode "sync")))
+          {:error "--dropped-text-saved is for sync"}
           (conflicts opts) {:error (conflicts opts)}
           :else {:mode (or mode "sync") :opts opts}))
       (catch clojure.lang.ExceptionInfo e

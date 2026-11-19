@@ -45,10 +45,13 @@
                                    "git" "commit-tree" "--no-gpg-sign" "-F" "-" empty-tree)))]
     (assoc (commits/read-commit dir made) :sha sha :parents (or parents []))))
 
-(defn- sync-report [{:keys [live force?]} rendered commits]
-  (let [{:keys [action status]} (sync/plan live rendered force? commits)]
+(defn- sync-report [{:keys [live]} rendered commits]
+  (let [{:keys [action status]} (sync/plan live rendered commits nil)]
     (str "--- sync: " (name action) (when status (str " (" (name status) ")")) " ---\n"
-         (when (= action :refuse) (str (sync/refusal "PR #7 (octo/widgets)" live rendered status) "\n")))))
+         (when (= action :refuse)
+           (str (sync/refusal {:label "PR #7 (octo/widgets)" :live live :rendered rendered :status status
+                               :save-command (sync/save-command "octo/widgets" 7)})
+                "\n")))))
 
 (defn- github [{:keys [owner name] :as repo}]
   (assoc repo :url (str "https://github.com/" owner "/" name)))

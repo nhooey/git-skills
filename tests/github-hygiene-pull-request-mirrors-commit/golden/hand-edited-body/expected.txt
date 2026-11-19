@@ -5,12 +5,9 @@ Uploads failed for good on a single dropped connection; one retry covers the com
 [//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 1e47004b0310233d3289b3ed7023b53631ee13160ac63d93975c1ab431cce7c1)
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 --- sync: refuse (edited) ---
-PR #7 (octo/widgets)'s body was edited by hand since it was generated, so it wasn't overwritten.
-Fold the edit into the commit message and sync again, or rerun with --force to discard it.
-body diff (PR vs render, first 8 lines):
--Uploads failed for good on a single dropped connection.
-+Uploads failed for good on a single dropped connection; one retry covers the common case without hiding a server that is down.
--Reviewer note: also covers the resumable endpoint.
--
--[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 0000000000000000000000000000000000000000000000000000000000000000)
-+[//]: # (pr-body: generated from cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd; digest 1e47004b0310233d3289b3ed7023b53631ee13160ac63d93975c1ab431cce7c1)
+PR #7 (octo/widgets)'s body holds text its commit message doesn't, so it wasn't overwritten:
+  "Uploads failed for good on a single dropped connection."
+  "Reviewer note: also covers the resumable endpoint."
+Fold it into the commit message (git commit --amend), push with --force-with-lease and sync again. Text that is no longer true of the commits may be dropped instead: save the live body with
+  gh pr view 7 --repo octo/widgets --json url,number,title,body,headRefName,headRefOid,baseRefName,updatedAt > <file>
+and sync with --dropped-text-saved <file>.

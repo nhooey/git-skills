@@ -63,7 +63,7 @@ msg=$(
 
 ${listed}
 
-Consider squashing these into their parent (or amending forward) before pushing — mark them \`fixup\` in \`git rebase -i <base>\`, or for a new follow-up use \`git commit --fixup=<sha>\` + \`git rebase --autosquash <base>\` (no \`-i\` needed). Preserve any real lesson in the surviving commit's body. This is a nudge, not a block; keep a commit standalone if it is genuinely a separate concern.
+Consider squashing these into their parent (or amending forward) before pushing — mark them \`fixup\` in \`git rebase -i <base>\`, or for a new follow-up use \`git commit --fixup=<sha>\` + \`GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>\` (no editor opens; on Git 2.44+ plain \`git rebase --autosquash <base>\` does the same). Preserve any real lesson in the surviving commit's body. This is a nudge, not a block; keep a commit standalone if it is genuinely a separate concern.
 EOF
 )
 

@@ -7,12 +7,13 @@ With no SKILL, it covers every skill under `skills/`. The repository root
 is `--root`, else `$PRJ_ROOT` (set by the dev shell), else the current git
 work tree. Exit status: 0 when every check passes, 1 when one fails, 2 for
 a usage error. `git-skills test`, which runs the tests in `tests/`, is the
-dev shell command's own shell, in `flake.nix`.
+dev shell command's own shell script, `scripts/git-skills.sh`.
 
-Python 3.9+ standard library.
+Python 3.9+ standard library, with yq-go on PATH to parse the frontmatter.
 """
 
 import argparse
+import json
 import os
 import pathlib
 import re
@@ -34,47 +35,57 @@ PACKS = (
 )
 REQUIRED_KEYS = ("name", "description", "tags")
 FOLDER_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
-TOP_LEVEL_KEY = re.compile(r"([A-Za-z_][\w-]*):(.*)")
+
+
+@dataclass(frozen=True)
+class Frontmatter:
+    data: object  # the parsed YAML value, None when it is empty or invalid
+    error: Optional[str]  # yq's message when the block isn't valid YAML
 
 
 @dataclass(frozen=True)
 class Skill:
     name: str
     skill_md: Optional[str]  # SKILL.md's text, or None when it is missing
+    # SKILL.md's frontmatter, or None when the file or its frontmatter is missing
+    frontmatter: Optional[Frontmatter] = None
 
 
 # --- core --------------------------------------------------------------------
 
 
-def frontmatter(text):
-    """The top-level keys of a SKILL.md's YAML frontmatter, mapped to the
-    raw text after the colon, or None when the file opens without one."""
+def frontmatter_block(text):
+    """The text between a SKILL.md's opening and closing `---` lines, or None
+    when the file opens without frontmatter."""
     lines = tuple(text.splitlines())
     if not lines or lines[0].strip() != "---":
         return None
     end = next((i for i, line in enumerate(lines[1:], 1) if line.strip() == "---"), None)
     if end is None:
         return None
-    matches = (TOP_LEVEL_KEY.fullmatch(line) for line in lines[1:end])
-    return {m.group(1): m.group(2).strip() for m in matches if m}
+    return "\n".join(lines[1:end]) + "\n"
 
 
-def flow_list(value):
-    """The items of a YAML flow sequence such as `[style, safety]`, or None
-    when the value isn't one."""
-    if not (value.startswith("[") and value.endswith("]")):
+def string_list(value):
+    """The items of a YAML sequence of strings, in flow or block style, or
+    None when the value isn't one."""
+    if not (isinstance(value, list) and all(isinstance(item, str) for item in value)):
         return None
-    return tuple(item.strip() for item in value[1:-1].split(",") if item.strip())
+    return tuple(value)
 
 
 def lint(skill):
     """Each problem with one skill, as a tuple of messages."""
     if skill.skill_md is None:
         return ("has no SKILL.md",)
-    keys = frontmatter(skill.skill_md)
-    if keys is None:
+    if skill.frontmatter is None:
         return ("SKILL.md has no YAML frontmatter between `---` lines",)
-    tags = flow_list(keys.get("tags", ""))
+    if skill.frontmatter.error is not None:
+        return (f"frontmatter isn't valid YAML: {skill.frontmatter.error}",)
+    keys = {} if skill.frontmatter.data is None else skill.frontmatter.data
+    if not isinstance(keys, dict):
+        return ("frontmatter isn't a YAML mapping",)
+    tags = string_list(keys.get("tags"))
     return tuple(
         problem
         for problem in (
@@ -86,11 +97,11 @@ def lint(skill):
             else f"name starts with none of the packs: {', '.join(PACKS)}",
             *(f"frontmatter has no `{k}`" for k in REQUIRED_KEYS if not keys.get(k)),
             None
-            if keys.get("name", skill.name) in ("", skill.name)
+            if not keys.get("name") or keys["name"] == skill.name
             else f"frontmatter name `{keys['name']}` isn't the folder name",
             None
-            if "tags" not in keys or tags is not None
-            else "tags isn't a flow list such as `[style, safety]`",
+            if not keys.get("tags") or tags is not None
+            else "tags isn't a list of tags such as `[style, safety]`",
             *(
                 f"tag `{t}` isn't in the README's tag vocabulary"
                 for t in (tags or ())
@@ -141,14 +152,35 @@ def repo_root(given):
     return pathlib.Path(found.stdout.strip() if found.returncode == 0 else ".")
 
 
+def load_frontmatter(text):
+    """SKILL.md's frontmatter parsed by yq-go as YAML, or None when the file
+    is missing or opens without frontmatter."""
+    block = None if text is None else frontmatter_block(text)
+    if block is None:
+        return None
+    parsed = subprocess.run(
+        ["yq", "--input-format=yaml", "--output-format=json", "."],
+        input=block,
+        capture_output=True,
+        text=True,
+    )
+    if parsed.returncode != 0:
+        return Frontmatter(data=None, error=parsed.stderr.strip())
+    return Frontmatter(data=json.loads(parsed.stdout), error=None)
+
+
+def skill_from_dir(d):
+    text = (d / "SKILL.md").read_text() if (d / "SKILL.md").is_file() else None
+    return Skill(
+        name=d.name,
+        skill_md=text,
+        frontmatter=load_frontmatter(text),
+    )
+
+
 def read_skills(root):
-    dirs = sorted(d for d in (root / "skills").iterdir() if d.is_dir())
     return tuple(
-        Skill(
-            name=d.name,
-            skill_md=(d / "SKILL.md").read_text() if (d / "SKILL.md").is_file() else None,
-        )
-        for d in dirs
+        skill_from_dir(d) for d in sorted(d for d in (root / "skills").iterdir() if d.is_dir())
     )
 
 

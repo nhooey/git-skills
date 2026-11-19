@@ -107,15 +107,58 @@ open_pr() {
   [ "$(jq -r .title "$GH_STATE/pr.json")" = "Add the notes file" ]
 }
 
-@test "a body edited by hand is refused with exit 3, and --force overwrites it" {
-  open_pr "Written by a reviewer."
+@test "a body edited by hand whose text is in the commit message is overwritten" {
+  open_pr $'The notes list three things, wrapped here at a narrow width so the body has to be\nunwrapped; `notes.txt:2-3` are the last two.\n\nCo-Authored-By: Ada <ada@example.com>'
+  run bash "$script" check
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"edited by hand, and its text is all in the commit message: safe to re-sync"* ]]
+
+  run bash "$script" sync
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"synced https://github.com/octo/widgets/pull/7"* ]]
+  [[ "$(jq -r .body "$GH_STATE/pr.json")" == *"[//]: # (pr-body: generated from"* ]]
+}
+
+@test "a body holding text the commit message doesn't is refused with exit 3, with no --force" {
+  open_pr $'The notes list three things\n\nWritten by a reviewer.'
+  run bash "$script" check
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"holds text the commit message doesn't, so sync refuses it. Fold it into the commit message"* ]]
+
   run bash "$script" sync
   [ "$status" -eq 3 ]
-  [[ "$output" == *"no pr-body marker and isn't what an older tool generated"* ]]
-  [ "$(jq -r .body "$GH_STATE/pr.json")" = "Written by a reviewer." ]
+  [[ "$output" == *$'doesn\'t, so it wasn\'t overwritten:\n  "Written by a reviewer."\nFold it into the commit message'* ]]
+  [[ "$output" == *"gh pr view 7 --repo octo/widgets --json "*"--dropped-text-saved <file>"* ]]
+  [[ "$output" != *'"The notes list three things"'* ]]
+  [[ "${output//--force-with-lease/}" != *"--force"* ]]
+  [ "$(jq -r .body "$GH_STATE/pr.json")" = $'The notes list three things\n\nWritten by a reviewer.' ]
 
   run bash "$script" sync --force
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unknown option: --force"* ]]
+}
+
+@test "dropped text is overwritten once a backup holds the live body, and refused otherwise" {
+  open_pr "Describes a commit a squash replaced."
+  jq '{number, title, body}' "$GH_STATE/pr.json" >"$BATS_TEST_TMPDIR/other.json"
+  jq '.body = "Another body."' "$BATS_TEST_TMPDIR/other.json" >"$BATS_TEST_TMPDIR/stale.json"
+
+  run bash "$script" sync --dropped-text-saved "$BATS_TEST_TMPDIR/stale.json"
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"stale.json doesn't hold PR #7 (octo/widgets)'s live body"* ]]
+  [ "$(jq -r .body "$GH_STATE/pr.json")" = "Describes a commit a squash replaced." ]
+
+  run bash "$script" sync --dropped-text-saved "$BATS_TEST_TMPDIR/missing.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"can't read $BATS_TEST_TMPDIR/missing.json"* ]]
+
+  run bash "$script" check --dropped-text-saved "$BATS_TEST_TMPDIR/other.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--dropped-text-saved is for sync"* ]]
+
+  run bash "$script" sync --dropped-text-saved "$BATS_TEST_TMPDIR/other.json"
   [ "$status" -eq 0 ]
+  [[ "$output" == *"synced "* ]]
   [[ "$(jq -r .body "$GH_STATE/pr.json")" == "The notes list"* ]]
 }
 
@@ -162,10 +205,11 @@ open_pr() {
   run bash "$script" render
   [ "$status" -eq 0 ]
   [ "${lines[0]}" = "Second change" ]
-  [[ "$output" == *$'Why the pair.\n\n## Commits (2)\n\n- [`'* ]]
+  [[ "$output" == *$'Why the pair.\n\n[//]: # (pr-body: generated from '* ]]
   [[ "$output" != *"Multi-commit"* ]]
-  # Each commit is its linked SHA and subject; its message stays in it.
-  [[ "$output" != *"<details>"* ]]
+  # The other commits stay in the commits, unlisted.
+  [[ "$output" != *"Commits ("* ]]
+  [[ "$output" != *"Add the notes"* ]]
   [[ "$output" != *"The notes list three things"* ]]
 }
 
@@ -227,17 +271,21 @@ the body has to be unwrapped; \`notes.txt:2-3\` are the last two." --message "Mu
   open_pr $'- Add the notes\n- Second change'
   run bash "$script" sync
   [ "$status" -eq 0 ]
-  [[ "$(jq -r .body "$GH_STATE/pr.json")" == *"## Commits (2)"* ]]
+  [[ "$(jq -r .body "$GH_STATE/pr.json")" == "[//]: # (pr-body: generated from "* ]]
 }
 
-@test "a stacked branch names its parent" {
+@test "a stacked branch's body is its commit message and the footer alone" {
   git switch --quiet --create stacked
-  git commit --quiet --allow-empty --message "On top"
+  git commit --quiet --allow-empty --message "On top" --message "Why it stacks."
   jq -n '{number: 41, title: "Add the notes", head: "feature", base: "main",
     html_url: "https://github.com/octo/widgets/pull/41"}' >"$GH_STATE/parent.json"
-  run bash "$script" render --base feature
-  [ "$status" -eq 0 ]
-  [[ "$output" == *'Stacks on octo/widgets#41 "Add the notes"'* ]]
+  for parent in "" "--stack-parent 41"; do
+    # shellcheck disable=SC2086
+    run bash "$script" render --base feature $parent
+    [ "$status" -eq 0 ]
+    [[ "$output" == $'On top\n\nWhy it stacks.\n\n[//]: # (pr-body: generated from '* ]]
+    [[ "$output" != *"Stacks on"* ]]
+  done
 }
 
 # A pull request for branch `stacked`, based on `feature`, whose own pull

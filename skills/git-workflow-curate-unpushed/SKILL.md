@@ -35,82 +35,54 @@ Loading this skill is not a request to rewrite history now; it applies when you 
 
 ## 1. Squash noise before pushing
 
-Before pushing a feature branch, review your local commits. Anything
-that is just "fix typo", "oops", "actually make it compile", or several
-commits of trial-and-error on the same function is noise: squash it
-into the parent commit by marking it `fixup` (or `squash`, to edit
-the message) in `git rebase -i <base>`. Without an editor to drive,
-set `GIT_SEQUENCE_EDITOR` to a `sed` command that rewrites those
-`pick` lines.
+Before pushing a feature branch, review your local commits.
+Anything that is just "fix typo", "oops", "actually make it compile", or several commits of trial-and-error on the same function is noise: squash it into the parent commit by marking it `fixup` (or `squash`, to edit the message) in `git rebase -i <base>`.
+Without an editor to drive, set `GIT_SEQUENCE_EDITOR` to a `sed` command that rewrites those `pick` lines.
 
-Keep the lessons. If you hit a real landmine (an undocumented API
-quirk, a footgun in the framework, a subtle ordering requirement),
-put it where it belongs:
+Keep the lessons.
+If you hit a real landmine (an undocumented API quirk, a footgun in the framework, a subtle ordering requirement), put it where it belongs:
 
-- **Commit message body:** when the lesson explains why this commit
-  looks the way it does. ("Tried passing the buffer directly first; the
-  C API silently truncates above 4 KiB, so we chunk.")
-- **Code comment:** when the constraint affects future edits. ("Must
-  flush before close; the driver drops the last page otherwise.")
+- **Commit message body:** when the lesson explains why this commit looks the way it does.
+  ("Tried passing the buffer directly first; the C API silently truncates above 4 KiB, so we chunk.")
+- **Code comment:** when the constraint affects future edits.
+  ("Must flush before close; the driver drops the last page otherwise.")
 
 ## 2. Amend forward into existing unpushed commits
 
-When you change code you already touched in a local, unpushed commit,
-fold the change into that commit rather than stacking a new "fix the
-previous commit" commit on top, so the history reads as one change per
-concern.
+When you change code you already touched in a local, unpushed commit, fold the change into that commit rather than stacking a new "fix the previous commit" commit on top, so the history reads as one change per concern.
 
 - Most recent commit: stage the change, then `git commit --amend`.
-- Older unpushed commit: `git commit --fixup=<sha>`, then
-  `git rebase --autosquash <base>`. `--autosquash` works without `-i`,
-  so no editor is needed; add `-i` only to review the todo list by hand.
+- Older unpushed commit: `git commit --fixup=<sha>`, then `git rebase --autosquash <base>`.
+  From Git 2.44 `--autosquash` works without `-i`, so no editor is needed; older Git ignores it without `-i` and squashes nothing, so there run `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>`, which applies the fixups without opening an editor.
 
-If the follow-up is a different concern (different intent, different
-reviewer mental model), keep it as its own commit. The rule is about
-self-referential noise, not about cramming unrelated work together.
+If the follow-up is a different concern (different intent, different reviewer mental model), keep it as its own commit.
+The rule is about self-referential noise, not about cramming unrelated work together.
 
-Once a commit has been pushed and others may have pulled it, rewriting
-it is a coordination problem: see `git-hygiene-push-force-safely` for
-the lease, and `github-hygiene-pull-request-mirrors-commit` for
-re-syncing the PR after the rewrite.
+Once a commit has been pushed and others may have pulled it, rewriting it is a coordination problem: see `git-hygiene-push-force-safely` for the lease, and `github-hygiene-pull-request-mirrors-commit` for re-syncing the PR after the rewrite.
 
 ## The `detect-noise-commits.sh` hook
 
-The frontmatter wires `scripts/detect-noise-commits.sh` as a
-`PreToolUse` hook. On any Bash call containing `git push`, it lists the
-unpushed commits (`@{push}..HEAD`, falling back to `@{upstream}..HEAD`)
-and flags subjects that look like throwaway fixups: `fixup!`, `squash!`
-and `amend!` leftovers, "fix typo", "oops", "wip", "actually fix it",
-"make it compile" and similar. It then emits a `systemMessage`
-suggesting a squash or amend-forward. It never blocks (always exits 0):
-what to squash, and where the lesson goes, stays your call.
+The frontmatter wires `scripts/detect-noise-commits.sh` as a `PreToolUse` hook.
+On any Bash call containing `git push`, it lists the unpushed commits (`@{push}..HEAD`, falling back to `@{upstream}..HEAD`) and flags subjects that look like throwaway fixups: `fixup!`, `squash!` and `amend!` leftovers, "fix typo", "oops", "wip", "actually fix it", "make it compile" and similar.
+It then emits a `systemMessage` suggesting a squash or amend-forward.
+It never blocks (always exits 0): what to squash, and where the lesson goes, stays your call.
 
-It is silent when there is nothing to push, no upstream is configured
-yet, or every subject is clean.
+It is silent when there is nothing to push, no upstream is configured yet, or every subject is clean.
 
-- **It fires only while the skill is active.** A skill-frontmatter hook
-  registers when the skill is loaded, so the skill must already be in
-  context before the push.
-- **It finds the script in the skill's install places:** the project's
-  `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then
-  `~/.claude/skills/`. Claude Code substitutes `${CLAUDE_SKILL_DIR}`
-  only in a skill's body and `allowed-tools`, not in its hooks, and a
-  hook runs in Claude's current directory, so neither that variable
-  nor a relative path finds the script.
+- **It fires only while the skill is active.** A skill-frontmatter hook registers when the skill is loaded, so the skill must already be in context before the push.
+- **It finds the script in the skill's install places:** the project's `.claude/skills/`, through `$CLAUDE_PROJECT_DIR`, then `~/.claude/skills/`.
+  Claude Code substitutes `${CLAUDE_SKILL_DIR}` only in a skill's body and `allowed-tools`, not in its hooks, and a hook runs in Claude's current directory, so neither that variable nor a relative path finds the script.
 
 ## When to apply
 
 - About to push a feature branch: squash noise first.
-- Just made a follow-up change to an unpushed commit: amend, don't
-  stack.
+- Just made a follow-up change to an unpushed commit: amend, don't stack.
 - About to run `git commit -m "fix typo"`: amend forward instead.
 
 ## Related skills
 
-When one of these applies and it's in your skill listing, load it
-without asking. If it isn't in your listing, tell the user which skill is
-missing and ask whether to install it from the same collection this skill
-came from; don't apply it from memory.
+When one of these applies and it's in your skill listing, load it without asking.
+If it isn't in your listing, tell the user which skill is missing and ask whether to install it from the same collection this skill came from; don't apply it from memory.
 
 - `git-hygiene-push-force-safely`: push with `--force-with-lease` when curating rewrites commits that were already pushed.
 - `github-hygiene-pull-request-mirrors-commit`: re-sync an open PR's title and body after a rewrite changes the commit message.

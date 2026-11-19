@@ -17,6 +17,11 @@ as Markdown. `pr-body.markdown` parses commit bodies, subjects and
 preferences files with it, changes the tree (joining paragraph lines,
 linking code references) and writes the result.
 
+## Needs
+
+The parser with source positions is shared with document-skills' sentence-per-line check, so it is planned once, in github-config: [Write a Babashka Markdown library with source positions](https://github.com/nhooey/github-config/blob/master/agents/plans/open/write-babashka-markdown-library.md).
+This node adds the writer to that library and moves `pr-body.markdown` onto it.
+
 ## In place now
 
 The compromise taken, `markdown-read-through-cmark-gfm`.

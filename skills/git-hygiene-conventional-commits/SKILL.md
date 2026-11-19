@@ -1,12 +1,10 @@
 ---
 name: git-hygiene-conventional-commits
 description: |
-  Use the `type(scope): subject` Conventional Commits format for commit
-  subjects (type ∈ feat, fix, docs, refactor, chore, …), with `!` or a
-  `BREAKING CHANGE:` footer for breaking changes. Use when the repo's
-  existing `git log` already follows Conventional Commits, or when a team
-  has explicitly adopted it. Match the repo's existing convention first;
-  consistency within a repo beats matching an external standard.
+  Load when writing or reviewing a commit in a repository whose `git log`
+  already uses `type(scope): subject`, or whose team adopted Conventional
+  Commits. Gives the subject format and the breaking-change markers. Not
+  otherwise; the repository's own convention comes first.
 tags: [style, team-stance]
 allowed-tools:
   - Bash
