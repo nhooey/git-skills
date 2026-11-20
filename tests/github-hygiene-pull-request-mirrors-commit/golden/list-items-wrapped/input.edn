@@ -1,0 +1,37 @@
+{:repo {:owner "octo" :name "widgets"}
+ :opts {:trailers :drop
+        :attribution "🤖 Generated with [Claude Code](https://claude.com/claude-code)"}
+ :commits
+ [{:sha "cccccc0000000000000000000000000000000001"
+   :parents ["cccccc0000000000000000000000000000000000"]
+   :message "Read the open items from the transcript
+
+It reads three things from each turn:
+- the turns: a user record whose `turnOrigin` is human, peer or
+  task_notification, or that carries `pluginPrompt`, each one turn
+- the open Decide items: each turn's `kanban_options` input, read
+  until an answer settles it
+  * a reference by number settles one item
+  * a question settles none, and restates
+    the item
+- the count line, from the open items of every list
+
+It settles them in this order:
+1. answers from the user's own text, read from every turn since the
+   last reassess
+2. Review items, once `gh` says their pull requests merged
+   1. a closed pull request settles nothing
+   2. a failed read settles nothing, and
+      warns
+
+A turn reads like this:
+
+```
+- not a list item,
+  and not joined
+```
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"
+   :trailers "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+"}]}
