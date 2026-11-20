@@ -62,6 +62,19 @@ the remote-tracking ref at all, so it's also immune to the autofetch
 problem above, and `--force-if-includes` has no effect beside it. Use
 it when you know precisely what you're replacing.
 
+## Let agents force-push without a prompt
+
+A Claude Code allow rule in the user's settings lets an agent force-push its own rebased branches without asking:
+
+```json
+{ "permissions": { "allow": ["Bash(git push --force-with-lease=*)"] } }
+```
+
+The rule matches any branch, so it goes in only together with the bundled `scripts/pre-push` hook, set as the global `core.hooksPath`.
+For a push to a remote's default branch, read from `refs/remotes/<remote>/HEAD`, else `master` or `main`, the hook refuses a deletion and any push that isn't a fast-forward, then runs the repository's own `.git/hooks/pre-push`.
+The root flake's `git-push-force-safely-hooks` package is a directory holding it, for Home Manager's `programs.git.extraConfig.core.hooksPath`.
+The hook doesn't run for `git push --no-verify`, nor in a repository whose own `core.hooksPath` overrides the global one.
+
 ## When to apply
 
 - About to force-push for any reason.
