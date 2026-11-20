@@ -117,10 +117,17 @@ The skills' Claude Code hooks ship as one hooks-only plugin, `git-skills-hooks`,
 | Hook | Event | Skill | Does |
 | --- | --- | --- | --- |
 | `pull-request-write-guard.sh` | `PreToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | Denies `gh pr create` or `gh pr edit` with a title, body or `--fill` flag, and `gh api` POST or PATCH to `pulls` with a title or body, naming `create-or-update-pull-request.sh` instead, and `gh pr edit --base` onto a branch other than the default one, naming `gh stack link`. `- Write guard: deny\|remind\|off` in the skill's preferences file turns it down. |
+| `push-hook-bypass-guard.sh` | `PreToolUse` on `Bash` | `git-hygiene-push-force-safely` | Denies a `git push` that skips the pre-push hook: `--no-verify`, `git -c core.hooksPath=…`, `git --config-env`, or a `GIT_CONFIG_*` variable set on the command. `git push -n` is `--dry-run` and passes. `- Push guard: deny\|remind\|off` in the skill's preferences file turns it down. |
 | `pull-request-sync-check.sh` | `PostToolUse` on `Bash` | `github-hygiene-pull-request-mirrors-commit` | After a successful `git push`, re-syncs the branch's open PR from its commits with `create-or-update-pull-request.sh sync`, which also links a PR on another branch into a stack; after `git commit --amend`, flags drift with `check`; after a successful `git push` to a branch with an open PR, reminds the session once to arm `pull-request-monitor.sh`. |
 
 ```sh
 nix build github:nhooey/git-skills#hooks-plugin
+```
+
+The bypass guard keeps a push from skipping the git pre-push hook in the flake package `git-hooks-default-branch-guard`, a folder holding `pre-push` for a global `core.hooksPath`, which refuses rewrites and deletions of a remote's default branch and then runs the repository's own pre-push hook. With both in place, `git-hygiene-push-force-safely`'s allow rule for `git push --force-with-lease` can't rewrite a default branch that has no server-side ruleset.
+
+```sh
+nix build github:nhooey/git-skills#git-hooks-default-branch-guard
 ```
 
 The plugin's manifest and `hooks/hooks.json` live in [`plugin/`](plugin), not at the repository root, so the plugin doesn't load `skills/` a second time under a namespaced name. Each hook script stays in its skill's `scripts/`, where the skill documents it and the checks test it.

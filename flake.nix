@@ -165,6 +165,7 @@
       hookScripts = [
         ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-sync-check.sh
         ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-write-guard.sh
+        ./skills/git-hygiene-push-force-safely/scripts/push-hook-bypass-guard.sh
       ];
 
       # The PR body program the hooks run, copied beside them: the Bash
@@ -254,13 +255,26 @@
 
           # `git-skills-hooks`: a hooks-only Claude Code plugin, installed
           # through agent-plugins-nixpkgs: the PostToolUse sync check and
-          # the PreToolUse write guard. scripts/copy-hook-scripts.sh copies
-          # them in and puts the PR body program's tools on each one's
-          # PATH, for the program it runs.
+          # the PreToolUse write and push-hook bypass guards.
+          # scripts/copy-hook-scripts.sh copies them in and puts the PR
+          # body program's tools on each one's PATH, for the program it
+          # runs, and `jq`, which the bypass guard reads shfmt's syntax
+          # tree with.
           hooks-plugin = claudePlugins.mkClaudePlugin pkgs {
             src = ./plugin;
-            postPatch = "bash ${./scripts/copy-hook-scripts.sh} ${hookFiles} ${pkgs.lib.makeBinPath (prBodyInputs pkgs)}";
+            postPatch = "bash ${./scripts/copy-hook-scripts.sh} ${hookFiles} ${
+              pkgs.lib.makeBinPath (prBodyInputs pkgs ++ [ pkgs.jq ])
+            }";
           };
+
+          # A folder holding git-hygiene-push-force-safely's `pre-push`, for
+          # a global `core.hooksPath`: it refuses rewrites and deletions of
+          # a remote's default branch, then runs the repository's own hook.
+          git-hooks-default-branch-guard = pkgs.runCommand "git-hooks-default-branch-guard" { } ''
+            mkdir -p "$out"
+            install -m 0555 ${./skills/git-hygiene-push-force-safely/scripts/pre-push} "$out/pre-push"
+            patchShebangs "$out/pre-push"
+          '';
         in
         {
           # `base.packages` (mkAllSkillsFlake without a `name =`) carries a
@@ -277,7 +291,7 @@
             ])
             // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs
             // {
-              inherit git-skills hooks-plugin;
+              inherit git-skills hooks-plugin git-hooks-default-branch-guard;
             };
 
           apps = base.apps.${system};
