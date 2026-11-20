@@ -127,6 +127,17 @@ public API knob with full test coverage typically lands in 3
 paragraphs: motivation, ruled-out alternative, one non-obvious
 implementation detail.
 
+**The length check.** The bundled `scripts/commit-body-length-check.sh`,
+a PostToolUse hook on Bash shipped in the `git-skills-hooks` plugin,
+reads `git log -1` after each `git commit` and warns, without
+blocking, when the body passes 4 paragraphs or 25 non-blank lines,
+naming this "What to cut" list. A closing trailer block and any
+`Co-Authored-By:` line don't count, a blank line inside a code fence
+doesn't end a paragraph, and list blocks parted by blank lines count as
+one paragraph. On the warning, cut the body by this list or split the
+commit, and amend it. The `Body length warning` preference sets the
+thresholds.
+
 ## Shape the body for a reader who skims
 
 The body is read raw in `git log` and rendered as GFM on the PR, and
@@ -194,6 +205,24 @@ here, also…" paragraph (P5 → folded to a clause inside P3).
 - About to write a commit message.
 - About to amend an existing commit message.
 - Reviewing someone else's commit message in a PR.
+
+## Your preferences
+
+!`cat "$(dirname "${CLAUDE_SKILL_DIR}")/git-hygiene-commit-message-format.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/git-hygiene-commit-message-format.preferences.md" 2>/dev/null || true`
+
+If your agent doesn't run the line above, read these files yourself if they
+exist: `git-hygiene-commit-message-format.preferences.md` next to this skill's folder, then
+`.agents/skills/git-hygiene-commit-message-format.preferences.md` in the project. A project's
+file overrides the user's, and the user's overrides this skill's defaults.
+
+The keys this skill reads, with its own defaults:
+
+```markdown
+- Body length warning: 4 paragraphs, 25 lines
+```
+
+`Body length warning` is the body length past which the length check
+warns, as a number of paragraphs and of lines, or `off`.
 
 ## Related skills
 

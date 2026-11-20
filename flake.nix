@@ -165,6 +165,7 @@
       hookScripts = [
         ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-sync-check.sh
         ./skills/github-hygiene-pull-request-mirrors-commit/scripts/pull-request-write-guard.sh
+        ./skills/git-hygiene-commit-message-format/scripts/commit-body-length-check.sh
       ];
 
       # The PR body program the hooks run, copied beside them: the Bash

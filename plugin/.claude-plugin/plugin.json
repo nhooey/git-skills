@@ -1,7 +1,7 @@
 {
   "name": "git-skills-hooks",
   "version": "0.1.0",
-  "description": "Hooks for the git-skills skills: the PostToolUse check that flags a pull request whose title or body has drifted from its commit",
+  "description": "Hooks for the git-skills skills: the PostToolUse check that flags a pull request whose title or body has drifted from its commit, and the one that warns of a commit body past 4 paragraphs or 25 lines",
   "author": {
     "name": "Neil Hooey"
   },
