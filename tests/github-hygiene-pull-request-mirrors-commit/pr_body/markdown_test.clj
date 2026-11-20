@@ -21,7 +21,25 @@
   (testing "a lazy continuation line joins too"
     (is (= "- one two" (md/unwrap (lines "- one" "two")))))
   (testing "a list right after a paragraph line gets a blank line before it"
-    (is (= (lines "Intro line:" "" "- a b" "- c") (md/unwrap (lines "Intro" "line:" "- a" "  b" "- c"))))))
+    (is (= (lines "Intro line:" "" "- a b" "- c") (md/unwrap (lines "Intro" "line:" "- a" "  b" "- c")))))
+  (testing "each item keeps its own line, its continuation lines joined with single spaces"
+    (is (= (lines "- one, or task_notification" "- two three")
+           (md/unwrap (lines "- one, or" "  task_notification" "- two" "  three")))))
+  (testing "for every bullet marker and ordered lists"
+    (is (= (lines "* a b" "* c d") (md/unwrap (lines "* a" "  b" "* c" "  d"))))
+    (is (= (lines "+ a b" "+ c") (md/unwrap (lines "+ a" "  b" "+ c"))))
+    (is (= (lines "1. a b" "2. c d") (md/unwrap (lines "1. a" "   b" "2. c" "   d"))))
+    (is (= (lines "1) a b" "2) c") (md/unwrap (lines "1) a" "   b" "2) c")))))
+  (testing "nested lists by indent, three levels and back out"
+    (is (= (lines "- a b" "  * c d" "    1. e f" "- g h")
+           (md/unwrap (lines "- a" "  b" "  * c" "    d" "    1. e" "       f" "- g" "  h")))))
+  (testing "a second paragraph in an item joins on its own"
+    (is (= (lines "- a b" "" "  c d" "- e") (md/unwrap (lines "- a" "  b" "" "  c" "  d" "- e")))))
+  (testing "a fenced code block in an item stays as it is"
+    (is (= (lines "- a b:" "" "  ```" "  x" "    y" "  ```" "- c d")
+           (md/unwrap (lines "- a" "  b:" "" "  ```" "  x" "    y" "  ```" "- c" "  d")))))
+  (testing "list lines inside a fenced code block are not joined"
+    (is (= (lines "```" "- a" "  b" "1. c" "```") (md/unwrap (lines "```" "- a" "  b" "1. c" "```"))))))
 
 (deftest blockquotes-join-within-the-quote
   (is (= (lines "> one two" ">" "> three") (md/unwrap (lines "> one" "> two" ">" "> three")))))
