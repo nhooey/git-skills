@@ -5,7 +5,10 @@ description: |
   `git push --force` or `-f`. The lease rejects the push if the remote tip
   changed since your last fetch, so a collaborator's commits aren't
   silently clobbered; `--force-if-includes` also covers a background fetch.
-  Use whenever about to force-push.
+  Ships an allow rule for `--force-with-lease` with the two hooks it needs,
+  a git pre-push hook refusing rewrites and deletions of a default branch
+  and a Claude Code hook denying pushes that skip it. Use whenever about
+  to force-push, or when either hook refuses a push.
 tags: [safety]
 allowed-tools:
   - Bash
@@ -62,6 +65,58 @@ the remote-tracking ref at all, so it's also immune to the autofetch
 problem above, and `--force-if-includes` has no effect beside it. Use
 it when you know precisely what you're replacing.
 
+## Force-pushing without a prompt, off default branches
+
+`force-with-lease-allow-rule.nix`, beside this file, is a Claude Code
+settings snippet for a user's Home Manager configuration holding one
+allow rule, `Bash(git push --force-with-lease=*)`, so an agent can
+force-push its own rebased pull request branch without a prompt.
+
+The rule matches every branch, the default one too. It relies on a
+server-side block of default-branch rewrites where GitHub allows one, a
+ruleset as `github-policy-protect-default-branch` sets up, and on two
+hooks everywhere else: private repositories on GitHub Free, which can't
+have rulesets, and forks. Never install the rule without both hooks:
+
+- **`scripts/pre-push`**, a git pre-push hook for every repository,
+  through a global `core.hooksPath` pointed at the flake package
+  `git-hooks-default-branch-guard`, a folder holding it. It refuses an
+  update of the remote's default branch that isn't a fast-forward, a
+  push over a remote tip the repository doesn't have among them, and a
+  deletion of it. The default branch is `refs/remotes/<remote>/HEAD`'s,
+  else the remote's `HEAD` from `git ls-remote --symref`; with neither,
+  `master` and `main` are guarded. It then runs the repository's own
+  `.git/hooks/pre-push`, which a global `core.hooksPath` hides, with the
+  same arguments and stdin, and exits with its status.
+- **`scripts/push-hook-bypass-guard.sh`**, a Claude Code PreToolUse hook
+  in the repository's `git-skills-hooks` plugin. It denies a `git push`
+  that skips the pre-push hook: `--no-verify`, `git -c core.hooksPath=…`,
+  `git --config-env`, or a `GIT_CONFIG_*` variable such as
+  `GIT_CONFIG_PARAMETERS` set on the command. `git push -n` is
+  `--dry-run` and passes. It also denies a force push, by
+  `--force-with-lease`, `--force`, `-f` or a `+` refspec, from a
+  repository where the pre-push hook doesn't run.
+  `- Push guard: deny|remind|off` in this skill's preferences file turns
+  it down.
+
+A repository whose own config sets `core.hooksPath`, as lefthook and
+husky do, replaces the global one, so the pre-push hook doesn't run
+there. The PreToolUse hook reads the effective `core.hooksPath` with
+`git config --get core.hooksPath` in the folder the push runs in, its
+`cd` or `-C` target, else the session's, made absolute against the
+working tree, and lets a force push through only when that folder holds
+an executable `pre-push` carrying the guard's marker line,
+`# git-hooks-default-branch-guard pre-push`. A push that doesn't force
+passes there as anywhere. Where it refuses, the message names the
+`core.hooksPath`; either run the default-branch check from that
+repository's own hook manager too, from a `pre-push` in that folder
+carrying the marker line, or remove the local `core.hooksPath`
+(`git config --unset core.hooksPath`) so the global one applies.
+
+When the pre-push hook refuses a push, don't look for a way around it:
+push to another branch and open a pull request, or fetch and rebase onto
+the remote tip it names.
+
 ## When to apply
 
 - About to force-push for any reason.
@@ -69,6 +124,26 @@ it when you know precisely what you're replacing.
 - After interactive-rebasing a branch that's already pushed.
 - After squashing a PR's commits into one, as
   `github-hygiene-single-commit-pull-requests` does.
+- Setting up the allow rule for `--force-with-lease` and its two hooks.
+- When the pre-push hook or the PreToolUse hook refuses a push.
+
+## Your preferences
+
+!`cat "$(dirname "${CLAUDE_SKILL_DIR}")/git-hygiene-push-force-safely.preferences.md" "${CLAUDE_PROJECT_DIR}/.agents/skills/git-hygiene-push-force-safely.preferences.md" 2>/dev/null || true`
+
+If your agent doesn't run the line above, read these files yourself if they
+exist: `git-hygiene-push-force-safely.preferences.md` next to this skill's folder, then
+`.agents/skills/git-hygiene-push-force-safely.preferences.md` in the project. A project's
+file overrides the user's, and the user's overrides this skill's defaults.
+
+The keys this skill reads, with its own defaults:
+
+```markdown
+- Push guard: deny
+```
+
+`Push guard` is `deny`, `remind` or `off`: what the PreToolUse hook does
+with a `git push` that skips the pre-push hook.
 
 ## Related skills
 
@@ -78,3 +153,4 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `github-hygiene-single-commit-pull-requests`: squashes a PR into one commit, then force-pushes it with a lease.
+- `github-policy-protect-default-branch`: the GitHub ruleset that blocks force pushes and deletion of the default branch on the server.

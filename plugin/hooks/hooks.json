@@ -8,6 +8,11 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pull-request-write-guard.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/push-hook-bypass-guard.sh\"",
+            "timeout": 10
           }
         ]
       }

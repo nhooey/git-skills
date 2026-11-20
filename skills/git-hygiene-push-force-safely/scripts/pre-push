@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# git-hooks-default-branch-guard pre-push
+#
+# git pre-push hook for a global core.hooksPath: refuses any update of the
+# remote's default branch that isn't a fast-forward, and any deletion of
+# it, then runs the repository's own pre-push hook.
+#
+# Usage, as git runs it: pre-push <remote> <url>, with one line per ref on
+# stdin: <local ref> <local sha> <remote ref> <remote sha>.
+#
+# - An update whose remote sha this repository doesn't have counts as a
+#   rewrite: it can't be shown to be a fast-forward.
+# - The default branch is the target of refs/remotes/<remote>/HEAD, else
+#   the remote's HEAD from `git ls-remote --symref`; with neither, both
+#   master and main are guarded. Neither is looked up unless a push
+#   rewrites or deletes a branch.
+# - The repository's own hook is <common dir>/hooks/pre-push, the folder
+#   `git rev-parse --git-path hooks` names when no core.hooksPath is set;
+#   with one set, that command names the core.hooksPath folder instead,
+#   this hook's own. It gets the same arguments and stdin, and its exit
+#   status is this hook's.
+#
+# The flake package `git-hooks-default-branch-guard` is a folder holding
+# this script as `pre-push`, for core.hooksPath to point at. Its second
+# line is the marker push-hook-bypass-guard.sh looks for, a line of its
+# own, to tell that a repository's core.hooksPath runs this hook.
+set -o nounset -o pipefail
+
+remote=${1-}
+
+# All of stdin, its last newline kept, to hand on to the repository's hook.
+input=$(
+  cat
+  printf x
+)
+input=${input%x}
+
+defaults=
+defaults_known=false
+
+# The remote's default branches, one per line: its HEAD's branch, or
+# master and main when nothing names it.
+default_branches() {
+  local ref a b c
+  if ref=$(git symbolic-ref --quiet "refs/remotes/$remote/HEAD" 2>/dev/null) &&
+    [[ $ref == "refs/remotes/$remote/"* ]]; then
+    printf '%s\n' "${ref#"refs/remotes/$remote/"}"
+    return
+  fi
+  while read -r a b c; do
+    if [ "$a" = "ref:" ] && [ "$c" = HEAD ] && [[ $b == refs/heads/* ]]; then
+      printf '%s\n' "${b#refs/heads/}"
+      return
+    fi
+  # Not the loop's stdin: ssh would read the ref lines.
+  done < <(git ls-remote --symref "$remote" HEAD 2>/dev/null </dev/null)
+  printf '%s\n' master main
+}
+
+is_default() {
+  if [ "$defaults_known" = false ]; then
+    defaults=$(default_branches)
+    defaults_known=true
+  fi
+  grep -qxF -- "$1" <<<"$defaults"
+}
+
+is_zero() { [[ $1 =~ ^0+$ ]]; }
+
+refuse() {
+  printf 'pre-push: refusing to %s\n' "$*" >&2
+  refused=true
+}
+
+refused=false
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "${remote_ref-}" ] || continue
+  [[ $remote_ref == refs/heads/* ]] || continue
+  branch=${remote_ref#refs/heads/}
+  # A new branch on the remote rewrites nothing.
+  is_zero "$remote_sha" && continue
+  if is_zero "$local_sha"; then
+    is_default "$branch" &&
+      refuse "delete $branch, the default branch of $remote."
+    continue
+  fi
+  if git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null && continue
+    is_default "$branch" &&
+      refuse "rewrite $branch, the default branch of $remote: its tip ${remote_sha:0:12} isn't an ancestor of $local_ref (${local_sha:0:12}), so the push would drop commits. Push to another branch and open a pull request."
+  else
+    is_default "$branch" &&
+      refuse "update $branch, the default branch of $remote: its tip ${remote_sha:0:12} isn't in this repository, so the push can't be shown to be a fast-forward. Fetch, rebase onto it, and push again."
+  fi
+done <<<"$input"
+
+[ "$refused" = false ] || exit 1
+
+common_dir=$(git rev-parse --git-common-dir) || exit 0
+own="$common_dir/hooks/pre-push"
+if [ -f "$own" ] && [ -x "$own" ] && ! [ "$own" -ef "${BASH_SOURCE[0]}" ]; then
+  "$own" "$@" < <(printf '%s' "$input")
+  exit $?
+fi
+exit 0
