@@ -261,6 +261,15 @@
             src = ./plugin;
             postPatch = "bash ${./scripts/copy-hook-scripts.sh} ${hookFiles} ${pkgs.lib.makeBinPath (prBodyInputs pkgs)}";
           };
+
+          # A directory holding the `pre-push` hook that refuses rewriting a
+          # remote's default branch, for a global `core.hooksPath`.
+          git-push-force-safely-hooks = pkgs.writeTextFile {
+            name = "git-push-force-safely-hooks";
+            destination = "/pre-push";
+            executable = true;
+            text = builtins.readFile ./skills/git-hygiene-push-force-safely/scripts/pre-push;
+          };
         in
         {
           # `base.packages` (mkAllSkillsFlake without a `name =`) carries a
@@ -277,7 +286,7 @@
             ])
             // builtins.mapAttrs (packName: skillNames: mkEnv system packName skillNames) packs
             // {
-              inherit git-skills hooks-plugin;
+              inherit git-skills hooks-plugin git-push-force-safely-hooks;
             };
 
           apps = base.apps.${system};

@@ -1,0 +1,39 @@
+#!/bin/sh
+# Refuses deleting or rewriting the remote's default branch, then runs the
+# repository's own pre-push hook. Git runs it as `pre-push <remote> <url>`,
+# with one `<local ref> <local sha> <remote ref> <remote sha>` line per ref.
+remote=$1
+default=$(git symbolic-ref --quiet --short "refs/remotes/$remote/HEAD" 2>/dev/null)
+default=${default#"$remote"/}
+input=$(cat)
+status=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  branch=${remote_ref#refs/heads/}
+  if [ -n "$default" ]; then
+    [ "$branch" = "$default" ] || continue
+  else
+    case $branch in master | main) ;; *) continue ;; esac
+  fi
+  case $local_sha in
+  *[!0]*) ;;
+  *)
+    echo "pre-push: refusing to delete $branch, the default branch of $remote" >&2
+    status=1
+    continue
+    ;;
+  esac
+  case $remote_sha in *[!0]*) ;; *) continue ;; esac
+  if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+    echo "pre-push: refusing to rewrite $branch, the default branch of $remote" >&2
+    status=1
+  fi
+done <<EOF
+$input
+EOF
+
+[ "$status" -eq 0 ] || exit 1
+
+hook="$(git rev-parse --git-common-dir)/hooks/pre-push"
+[ -x "$hook" ] || exit 0
+if [ -n "$input" ]; then printf '%s\n' "$input"; fi | "$hook" "$@"
