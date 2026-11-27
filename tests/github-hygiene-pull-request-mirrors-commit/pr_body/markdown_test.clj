@@ -9,6 +9,10 @@
   (is (= "one two three" (md/unwrap (lines "one" "two" "three"))))
   (is (= "a b\n\nc d" (md/unwrap (lines "a" "b" "" "" "c" "d")))))
 
+(deftest a-body-with-nothing-to-join-is-unchanged
+  (let [body (lines "One paragraph, on one line." "" "Another, on one line too.")]
+    (is (= body (md/unwrap body)))))
+
 (deftest hard-breaks-stay
   (is (= (lines "one  " "two") (md/unwrap (lines "one  " "two"))))
   (is (= (lines "one\\" "two three") (md/unwrap (lines "one\\" "two" "three")))))
@@ -25,6 +29,15 @@
   (testing "each item keeps its own line, its continuation lines joined with single spaces"
     (is (= (lines "- one, or task_notification" "- two three")
            (md/unwrap (lines "- one, or" "  task_notification" "- two" "  three")))))
+  (testing "items with no continuation stay one per line beside items that have one"
+    (is (= (lines "Intro:" "" "- a" "- b" "- c d e" "- f")
+           (md/unwrap (lines "Intro:" "" "- a" "- b" "- c" "  d" "  e" "- f")))))
+  (testing "a list right under a heading"
+    (is (= (lines "## H" "- a b" "- c") (md/unwrap (lines "## H" "- a" "  b" "- c")))))
+  (testing "task list items"
+    (is (= (lines "- [ ] a b" "- [x] c") (md/unwrap (lines "- [ ] a" "  b" "- [x] c")))))
+  (testing "a list inside a block quote"
+    (is (= (lines "> - a b" "> - c") (md/unwrap (lines "> - a" ">   b" "> - c")))))
   (testing "for every bullet marker and ordered lists"
     (is (= (lines "* a b" "* c d") (md/unwrap (lines "* a" "  b" "* c" "  d"))))
     (is (= (lines "+ a b" "+ c") (md/unwrap (lines "+ a" "  b" "+ c"))))
@@ -56,6 +69,8 @@
            (md/unwrap (lines "text:" "| a | b |" "|---|---|" "| 1 | 2 |")))))
   (testing "a heading ends the paragraph before it"
     (is (= (lines "a" "## H" "b c") (md/unwrap (lines "a" "## H" "b" "c")))))
+  (testing "a setext heading keeps its underline"
+    (is (= (lines "Title" "=====" "b c") (md/unwrap (lines "Title" "=====" "b" "c")))))
   (testing "HTML and link definitions"
     (is (= (lines "<details>" "<summary>x</summary>" "" "[a]: https://example.com")
            (md/unwrap (lines "<details>" "<summary>x</summary>" "" "[a]: https://example.com"))))))
