@@ -3,8 +3,8 @@
 # inform the push-workflow-mode question — whether the repo has any PR
 # history, and the PR/branch state of the current branch — and prints a
 # recommended default mode. NOT a hook: which mode applies is a one-time
-# user decision saved to project memory, and Mode 3 / anomalous states
-# need an interactive prompt. This only gathers the facts the agent uses
+# user decision saved in the project's preferences file, and Mode 3 /
+# anomalous states need an interactive prompt. This only gathers the facts the agent uses
 # to ask (or to apply a saved mode).
 #
 # Output: KEY=value lines on stdout, e.g.
