@@ -7,7 +7,7 @@ Each rule lives in its own skill so you can pick and choose. Skills are grouped 
 - `git-hygiene-*` — local style rules (commit format, branch naming, `.gitignore`, force-push safety, SSH remotes)
 - `git-workflow-*` — interactive / multi-step procedures (inspect-before-commit, curate unpushed history, branch and worktree tidying, push-mode choice)
 - `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` CLI gotchas
-- `github-policy-*` — one-time repo configuration (branch ruleset, codeowners, auto-delete, merge-commits-only)
+- `github-policy-*` — one-time repo configuration (branch ruleset, codeowners, auto-delete, merge-commits-only, no hosted CI)
 - `github-workflow-*` — PR lifecycle including the agent-driven watcher / status-line / changeset-prompt, browser drafting with a rendered preview, and a user's activity on a repo
 
 Each skill belongs to exactly one pack — the second segment of the name is the pack. Skills that only make sense when an LLM is driving the session carry the `agent` tag (see [Tag vocabulary](#tag-vocabulary)); filter by tag, not by name prefix.
@@ -94,7 +94,7 @@ Each per-skill package produces `$out/share/claude-skills/<name>/` containing `S
 
 Curated subsets exposed as flake packages. Build a pack the same way as a single skill. There's no package holding every skill; the `#install` app installs them all.
 
-Five prefix packs partition the 27 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
+Five prefix packs partition the 28 skills — each skill is a member of exactly one. The two `*-all` packs are aggregate roll-ups and overlap with the prefix packs by design.
 
 | Pack | Contents | Why |
 | --- | --- | --- |
@@ -102,9 +102,9 @@ Five prefix packs partition the 27 skills — each skill is a member of exactly 
 | `agent-skills-nhooey-git-workflow` | All 5 `git-workflow-*` skills | Interactive procedures: inspect-before-commit, curate unpushed history, branch and worktree tidying, push-mode choice. |
 | `agent-skills-nhooey-git-all` | All 13 `git-*` skills | Everything local. |
 | `agent-skills-nhooey-github-hygiene` | All 4 `github-hygiene-*` skills | Single-commit PRs, PR-mirrors-commit discipline, issue/PR references + `gh` CLI gotchas. |
-| `agent-skills-nhooey-github-policy` | All 4 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only. |
+| `agent-skills-nhooey-github-policy` | All 5 `github-policy-*` skills | Branch ruleset, auto-delete, codeowners, merge-commits-only, no hosted CI. |
 | `agent-skills-nhooey-github-workflow` | All 6 `github-workflow-*` skills | PR lifecycle: changeset-prompt, stacked-PR workflow, status-line, background watcher; drafting in the browser; a user's activity on a repo. |
-| `agent-skills-nhooey-github-all` | All 14 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
+| `agent-skills-nhooey-github-all` | All 15 `github-*` skills (including the four `agent`-tagged ones) | Everything GitHub. |
 
 ```sh
 nix build github:nhooey/git-skills#agent-skills-nhooey-git-hygiene
@@ -177,6 +177,7 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | [github-policy-auto-delete-merged-branches](skills/github-policy-auto-delete-merged-branches) | setup | Enable `delete_branch_on_merge`. |
 | [github-policy-codeowners](skills/github-policy-codeowners) | setup | `.github/CODEOWNERS` + `require_code_owner_review` for multi-contributor repos. |
 | [github-policy-merge-commits-only](skills/github-policy-merge-commits-only) | setup, team-stance | Disable squash + rebase merges; every PR lands as a merge commit. |
+| [github-policy-no-hosted-ci](skills/github-policy-no-hosted-ci) | setup, team-stance | No `.github/workflows/` or `garnix.yaml`; `nix flake check`, run locally, is the test, and a PR with no checks is expected. |
 | [github-policy-protect-default-branch](skills/github-policy-protect-default-branch) | setup, safety | Rulesets-API protection: require PR, status checks, block force-push, block deletion. |
 
 ### `github-workflow-*` — PR lifecycle, browser drafting and repo activity (includes the agent-tagged skills)

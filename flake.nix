@@ -94,7 +94,7 @@
           "git-workflow-tidy-worktrees"
         ];
 
-        # All 14 github-* skills (includes the agent-tagged ones).
+        # All 15 github-* skills (includes the agent-tagged ones).
         agent-skills-nhooey-github-all = [
           "github-hygiene-gh-cli-gotchas"
           "github-hygiene-pull-request-mirrors-commit"
@@ -103,6 +103,7 @@
           "github-policy-auto-delete-merged-branches"
           "github-policy-codeowners"
           "github-policy-merge-commits-only"
+          "github-policy-no-hosted-ci"
           "github-policy-protect-default-branch"
           "github-workflow-browser-draft-preview"
           "github-workflow-pull-request-changeset-prompt"
@@ -125,6 +126,7 @@
           "github-policy-auto-delete-merged-branches"
           "github-policy-codeowners"
           "github-policy-merge-commits-only"
+          "github-policy-no-hosted-ci"
           "github-policy-protect-default-branch"
         ];
 
