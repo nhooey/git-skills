@@ -70,10 +70,13 @@ A Claude Code allow rule in the user's settings lets an agent force-push its own
 { "permissions": { "allow": ["Bash(git push --force-with-lease=*)"] } }
 ```
 
-The rule matches any branch, so it goes in only together with the bundled `scripts/pre-push` hook, set as the global `core.hooksPath`.
+The rule matches any branch, so it goes in only together with the bundled `scripts/pre-push` hook, in a folder set as the global `core.hooksPath`.
 For a push to a remote's default branch, read from `refs/remotes/<remote>/HEAD`, else `master` or `main`, the hook refuses a deletion and any push that isn't a fast-forward, then runs the repository's own `.git/hooks/pre-push`.
-The root flake's `git-push-force-safely-hooks` package is a directory holding it, for Home Manager's `programs.git.extraConfig.core.hooksPath`.
-The hook doesn't run for `git push --no-verify`, nor in a repository whose own `core.hooksPath` overrides the global one.
+
+A global `core.hooksPath` makes git skip every hook in a repository's `.git/hooks`, so the folder holds a hook for each one git documents in githooks(5).
+Each runs the bundled `scripts/forward-hook`, which runs the repository's own hook of that name, if it has an executable one, with the same arguments and stdin, and exits with its status.
+The root flake's `git-push-force-safely-hooks` package is that folder, for Home Manager's `programs.git.extraConfig.core.hooksPath`.
+The hooks don't run for `git push --no-verify` or `git commit --no-verify`, nor in a repository whose own `core.hooksPath` overrides the global one.
 
 ## When to apply
 

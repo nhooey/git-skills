@@ -262,14 +262,14 @@
             postPatch = "bash ${./scripts/copy-hook-scripts.sh} ${hookFiles} ${pkgs.lib.makeBinPath (prBodyInputs pkgs)}";
           };
 
-          # A directory holding the `pre-push` hook that refuses rewriting a
-          # remote's default branch, for a global `core.hooksPath`.
-          git-push-force-safely-hooks = pkgs.writeTextFile {
-            name = "git-push-force-safely-hooks";
-            destination = "/pre-push";
-            executable = true;
-            text = builtins.readFile ./skills/git-hygiene-push-force-safely/scripts/pre-push;
-          };
+          # A directory for a global `core.hooksPath`: the `pre-push` hook
+          # that refuses rewriting a remote's default branch, and for every
+          # other hook this git documents one that runs the repository's own.
+          git-push-force-safely-hooks = pkgs.runCommand "git-push-force-safely-hooks" { } ''
+            bash ${./scripts/write-forwarding-hooks.sh} \
+              ${./skills/git-hygiene-push-force-safely/scripts} "$out" \
+              ${pkgs.git}/share/man/man5/githooks.5.gz
+          '';
         in
         {
           # `base.packages` (mkAllSkillsFlake without a `name =`) carries a

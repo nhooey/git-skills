@@ -1,7 +1,8 @@
 #!/bin/sh
 # Refuses deleting or rewriting the remote's default branch, then runs the
-# repository's own pre-push hook. Git runs it as `pre-push <remote> <url>`,
-# with one `<local ref> <local sha> <remote ref> <remote sha>` line per ref.
+# repository's own pre-push hook through `forward-hook` beside it. Git runs
+# it as `pre-push <remote> <url>`, with one
+# `<local ref> <local sha> <remote ref> <remote sha>` line per ref.
 remote=$1
 default=$(git symbolic-ref --quiet --short "refs/remotes/$remote/HEAD" 2>/dev/null)
 default=${default#"$remote"/}
@@ -34,6 +35,5 @@ EOF
 
 [ "$status" -eq 0 ] || exit 1
 
-hook="$(git rev-parse --git-common-dir)/hooks/pre-push"
-[ -x "$hook" ] || exit 0
-if [ -n "$input" ]; then printf '%s\n' "$input"; fi | "$hook" "$@"
+if [ -n "$input" ]; then printf '%s\n' "$input"; fi |
+  "$(dirname "$0")/forward-hook" pre-push "$@"
