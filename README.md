@@ -158,7 +158,7 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | [git-workflow-curate-unpushed](skills/git-workflow-curate-unpushed) | workflow, style | Squash noise commits + amend forward to curate unpushed history. |
 | [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow, safety | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
 | [git-workflow-push-mode](skills/git-workflow-push-mode) | workflow, interactive, team-stance | Ask once per repo and save the answer in its tracked preferences file: direct-to-main / PRs-always / ask-each-time. |
-| [git-workflow-tidy-branches](skills/git-workflow-tidy-branches) | workflow, interactive, safety | Report, then apply: delete merged branches (squash merges included), rebase branches that replay cleanly onto the base, flag stacks, conflicts and diverged copies. |
+| [git-workflow-tidy-branches](skills/git-workflow-tidy-branches) | workflow, interactive, safety | Report, then apply: delete merged branches (squash merges included), rebase branches that replay cleanly onto the base, flag stacks, conflicts and diverged copies; archive a branch before removing it unless its content is provably elsewhere. |
 | [git-workflow-tidy-worktrees](skills/git-workflow-tidy-worktrees) | workflow, interactive, safety | When and how to tidy worktrees with the `worktrees` program (status, sweep, finish, clean), and what never goes without the user's word: uncommitted changes, unlanded commits, stashes, kept gitignored files, each archived before removal unless its content is provably elsewhere. |
 
 ### `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` gotchas

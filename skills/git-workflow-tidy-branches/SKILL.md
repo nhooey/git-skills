@@ -6,9 +6,12 @@ description: |
   local and remote branches whose changes are already in the base (squash and
   rebase merges included), rebases branches that replay onto the base without
   conflicts and force-pushes them with a lease, and flags what needs a person:
-  stacks, conflicts, diverged copies, branches checked out elsewhere. Saves the
-  user's choices as preferences. Use after merging, when branches pile up,
-  or when asked to clean up, prune or rebase branches.
+  stacks, conflicts, diverged copies, branches checked out elsewhere. Removes
+  nothing whose content isn't provably elsewhere without first archiving it
+  to a local bare repository under one backup directory, each level of which
+  has a README. Saves the user's choices as preferences. Use after merging,
+  when branches pile up, or when asked to clean up, prune or rebase
+  branches.
 tags: [workflow, interactive, safety]
 allowed-tools:
   - Bash
@@ -98,11 +101,75 @@ line names the base and its sha.
    tool, such as `git rebase --update-refs` or git-spice's
    `gs repo restack`, not to this script. A branch checked out in a
    worktree goes to `git-workflow-tidy-worktrees`, which removes the
-   worktree first.
+   worktree first. A noted branch the user wants deleted is archived
+   first, as [Nothing is lost](#nothing-is-lost) says.
 
 If the agent's permission layer refuses a force-push or a delete, stop and
 give the user the exact `apply` input or `git push` line to run
 themselves; don't rewrite it into a form the layer allows.
+
+## Nothing is lost
+
+A branch is removed only when its content is provably somewhere else, or
+after it is archived:
+
+- **Provably elsewhere:** its changes are in the base (the report's
+  `delete-local` and `delete-remote` lines), its tip is on a remote
+  branch that stays, or it points at the same commit as another ref.
+- **Otherwise, archive it first:** any other branch the user wants gone,
+  such as a noted one whose upstream is gone or a diverged local copy,
+  is archived before it is deleted, and deleted only once the archive
+  checks out.
+
+### The archive
+
+Archives live in local bare repositories under one backup directory,
+`~/backups/git-archive/`, and are never pushed to a remote:
+
+- **One bare repository per project:** `<owner>/<repo>.git`, named from
+  the clone's `origin` URL, or `local/<folder>.git` for a clone with no
+  `origin`.
+- **One ref per archived branch:** `refs/archive/<branch>/<UTC time>`, at
+  the branch's tip, with `-2`, `-3` added to a name that is taken.
+- **The check:** an archive counts once `git rev-parse` of its ref in the
+  bare repository gives the branch's tip,
+  `git rev-list --objects --missing=error <tip>` passes there, and so does
+  `git fsck --connectivity-only`. A branch whose archive fails the check
+  stays.
+
+```bash
+archive="$HOME/backups/git-archive/<owner>/<repo>.git"
+[ -d "$archive" ] || git init --bare "$archive"
+git push "$archive" "<tip>:refs/archive/<branch>/$(date -u +%Y-%m-%dT%H%M%SZ)"
+```
+
+### A README at every level
+
+Every folder from the backup directory down to the owner folder holds a
+`README.md` saying what it holds, where it came from, when and why, so
+someone finding it later knows what it is and whether it can go:
+
+- `~/backups/README.md` lists each folder under it with one line on what
+  it holds.
+- `~/backups/git-archive/README.md` gives the layout above, the check, and
+  how to restore a branch from an archive.
+- `~/backups/git-archive/<owner>/README.md` lists that owner's
+  repositories.
+
+Read the READMEs that exist and match them. When an archive adds a
+folder or a repository, update the README above it in the same step; a
+missing README is written before the first archive goes in.
+
+To restore a branch, list its archives and fetch the one wanted:
+
+```bash
+git ls-remote "$archive" 'refs/archive/<branch>/*'
+git fetch "$archive" "refs/archive/<branch>/<time>"
+git branch <branch> FETCH_HEAD
+```
+
+The final report names, for each branch removed, where its content
+survives: the base, a remote branch, another ref or an archive ref.
 
 ## Preference keys
 
@@ -144,6 +211,7 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/tidy-branches.py" prefs show
 - `git branch` lists more branches than are in flight.
 - The user asks to clean up, prune or rebase branches, or to bring them up
   to date with the base.
+- About to delete a branch the report didn't plan: archive it first.
 
 ## Your preferences
 
