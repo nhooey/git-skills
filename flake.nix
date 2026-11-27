@@ -97,6 +97,7 @@
         # All 15 github-* skills (includes the agent-tagged ones).
         agent-skills-nhooey-github-all = [
           "github-hygiene-gh-cli-gotchas"
+          "github-hygiene-public-text-names-nothing-private"
           "github-hygiene-pull-request-mirrors-commit"
           "github-hygiene-refer-to-issues-and-pull-requests"
           "github-hygiene-single-commit-pull-requests"
@@ -113,9 +114,10 @@
           "github-workflow-repo-activity"
         ];
 
-        # All github-hygiene-* skills: PR-shape discipline, issue/PR references + `gh` CLI gotchas.
+        # All github-hygiene-* skills: PR-shape discipline, issue/PR references, nothing private in public text + `gh` CLI gotchas.
         agent-skills-nhooey-github-hygiene = [
           "github-hygiene-gh-cli-gotchas"
+          "github-hygiene-public-text-names-nothing-private"
           "github-hygiene-pull-request-mirrors-commit"
           "github-hygiene-refer-to-issues-and-pull-requests"
           "github-hygiene-single-commit-pull-requests"
