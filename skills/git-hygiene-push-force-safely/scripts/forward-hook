@@ -1,0 +1,11 @@
+#!/bin/sh
+# Runs the repository's own hook named first, with the remaining arguments
+# and stdin, and exits with its status; exits 0 when the repository has no
+# such executable hook. A global `core.hooksPath` hides the repository's
+# hooks from git, so each hook in the folder runs this one.
+#
+# Usage: forward-hook <hook> [ARG...]
+hook="$(git rev-parse --git-common-dir)/hooks/$1"
+shift
+[ -x "$hook" ] || exit 0
+exec "$hook" "$@"
