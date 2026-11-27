@@ -7,9 +7,11 @@ description: |
   that stays. Covers when to tidy, what to do when a build is refused for
   disk space, stale and personal locks, and what never goes without the
   user's word: uncommitted changes, unlanded commits, stashes and gitignored
-  files nothing regenerates. Use after a branch lands, at the end of a job
-  that made worktrees, when a build is refused below the disk floor, and
-  when the user asks what worktrees are lying around.
+  files nothing regenerates, and how each is archived under one backup
+  directory, each level of which has a README, before anything whose content
+  isn't provably elsewhere is removed. Use after a branch lands, at the end
+  of a job that made worktrees, when a build is refused below the disk
+  floor, and when the user asks what worktrees are lying around.
 tags: [workflow, interactive, safety]
 allowed-tools:
   - Bash
@@ -89,6 +91,54 @@ ask before anything removes it:
 - **Ask one question per worktree,** naming its path, branch and what is in
   it, with "keep it" as an option. Never answer it with `--force`,
   `git branch -D`, `git stash drop` or `git clean -f`.
+- **When the user says remove it,** archive what is in it first, as
+  [Nothing is lost](#nothing-is-lost) says, and remove it only once the
+  archive checks out.
+
+## Nothing is lost
+
+A worktree, its branch or anything in it is removed only when its
+content is provably somewhere else, or after it is archived:
+
+- **Provably elsewhere:** the branch has landed in the base, its tip is
+  on a remote branch that stays, or it points at the same commit as
+  another ref; and the tree has no uncommitted changes, no stash and no
+  kept gitignored files. This is what `worktrees sweep` and `finish`
+  remove on their own.
+- **Otherwise, archive it first,** under the one backup directory,
+  `~/backups/`, never pushed to a remote:
+  - **Unlanded commits:** archive the branch as
+    `refs/archive/<branch>/<UTC time>` in the project's bare repository
+    under `~/backups/git-archive/`, with the layout and check
+    `git-workflow-tidy-branches` gives.
+  - **A stash:** archive each entry naming the branch the same way, as
+    `refs/archive/<branch>/<UTC time>-stash`, before it is dropped.
+  - **Files in no commit:** uncommitted changes, untracked files and kept
+    gitignored files are copied, with their paths relative to the
+    worktree, to
+    `~/backups/worktrees/<owner>/<repo>/<worktree folder>/<UTC time>/`,
+    with `git -C <worktree> diff HEAD` saved there as `changes.diff`.
+    Check each copied path against the worktree with `diff -r` before
+    removing it.
+
+### A README at every level
+
+Every folder from `~/backups/` down to the worktree's folder holds a
+`README.md` saying what it holds, where it came from, when and why:
+
+- `~/backups/README.md` lists each folder under it with one line.
+- `~/backups/worktrees/README.md` gives the layout above and how to put
+  the files back into a fresh worktree of the branch.
+- Each `<owner>/` and `<repo>/` folder's README lists what is under it.
+- Each worktree folder's README names the worktree's path, its branch
+  and tip, the time it was archived and why it was removed.
+
+Read the READMEs that exist and match them. When an archive adds a
+folder, update the README above it in the same step.
+
+The final report names, for each worktree removed, where its content
+survives: the base, a remote branch, another ref, an archive ref or a
+backup folder.
 
 ## When a build is refused for disk space
 

@@ -159,7 +159,7 @@ One section per pack. The four skills tagged `agent` (only meaningful when an LL
 | [git-workflow-inspect-before-commit](skills/git-workflow-inspect-before-commit) | workflow, safety | `git status` / `git diff` / `git diff --cached` before every commit; catch secrets, debug logging, format churn. |
 | [git-workflow-push-mode](skills/git-workflow-push-mode) | workflow, interactive, team-stance | Ask once per repo per session: direct-to-main / PRs-always / ask-each-time. |
 | [git-workflow-tidy-branches](skills/git-workflow-tidy-branches) | workflow, interactive, safety | Report, then apply: delete merged branches (squash merges included), rebase branches that replay cleanly onto the base, flag stacks, conflicts and diverged copies. |
-| [git-workflow-tidy-worktrees](skills/git-workflow-tidy-worktrees) | workflow, interactive, safety | When and how to tidy worktrees with the `worktrees` program (status, sweep, finish, clean), and what never goes without the user's word: uncommitted changes, unlanded commits, stashes, kept gitignored files. |
+| [git-workflow-tidy-worktrees](skills/git-workflow-tidy-worktrees) | workflow, interactive, safety | When and how to tidy worktrees with the `worktrees` program (status, sweep, finish, clean), and what never goes without the user's word: uncommitted changes, unlanded commits, stashes, kept gitignored files, each archived before removal unless its content is provably elsewhere. |
 
 ### `github-hygiene-*` — PR-shape discipline, issue/PR references + `gh` gotchas
 
