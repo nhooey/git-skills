@@ -3,13 +3,14 @@ name: git-workflow-push-mode
 description: |
   Know which push workflow a repo uses before pushing to it: Mode 1 (direct
   to main), Mode 2 (PRs always, never push main) or Mode 3 (ask each time).
-  On the first push of a session, check the preferences and project memory
-  for a saved push-mode; if there is none, ask the user once, with a
-  `gh pr list` detection probe to recommend a mode and follow-up questions
-  for pushing from a feature branch in Mode 1 or Mode 2, and save the
-  answer as a project memory so future sessions don't ask again. Use before
-  the first push of a session to any repo, and whenever the user asks to
-  switch push modes.
+  On the first push of a session, read the mode from the project's tracked
+  preferences file, `.agents/skills/git-workflow-push-mode.preferences.md`;
+  if it names none, ask the user once, with a `gh pr list` detection probe
+  to recommend a mode and follow-up questions for pushing from a feature
+  branch in Mode 1 or Mode 2, and save the answer in that file so future
+  sessions don't ask again. In Mode 2 the agent opens the PR and stops; the
+  user merges. Use before the first push of a session to any repo, and
+  whenever the user asks to switch push modes.
 tags: [workflow, interactive, team-stance]
 allowed-tools:
   - Bash
@@ -20,16 +21,15 @@ allowed-tools:
 
 # Push workflow mode
 
-_Each repo has one push workflow, chosen by the user once, saved in project memory and applied silently on every later push._
+_Each repo has one push workflow, chosen by the user once, saved in the project's tracked preferences file and applied silently on every later push._
 
 ## Workflow
 
 1. On the first push of a session, use the mode the preferences below
-   name, if any. Otherwise read project memory for a `push-workflow-mode`
-   entry (see [Memory format](#memory-format)).
+   name (see [Preferences file format](#preferences-file-format)).
 2. If a mode is found, apply it without asking.
 3. If not, ask the user with the [question script](#question-script),
-   save the answer to project memory, then apply it.
+   save the answer in the project's preferences file, then apply it.
 4. Apply the saved mode silently for the rest of this session and in
    future sessions. Mode 3 is the exception: it asks on every push.
 
@@ -84,6 +84,13 @@ boundary. Never push commits directly to main.
   exists (`gh pr list --head <branch>`), just push: its diff updates,
   but its title and body don't, so after an amend or reword re-sync
   them per `github-hygiene-pull-request-mirrors-commit`.
+- *After the PR is open:* stop. The user merges their own PRs. A task
+  to open PRs, a green check run, an approving review or a later
+  "continue" grants no authority to merge; merging is a separate,
+  outward-facing step the user keeps. Work that waits on the merge,
+  such as the next PR in a chain, waits for it: arm
+  `github-workflow-pull-request-watcher` and pick up when it reports
+  the merge.
 
 **Mode 3: ask each time.** Before every push, probe
 `gh pr list --head <branch> --state open`, then ask with the branch
@@ -156,39 +163,36 @@ saved on-branch answer.
 
 ### After the answers
 
-Write the answers to project memory before applying them. A request
-that contradicts the saved mode ("open a PR for this one") is a one-off
-override, not a mode change. When the user says to switch modes, update
-the saved memory first, then apply the new mode.
+Write the answers to the project's preferences file before applying
+them. A request that contradicts the saved mode ("open a PR for this
+one") is a one-off override, not a mode change. When the user says to
+switch modes, update the preferences file first, then apply the new
+mode.
 
-## Memory format
+## Preferences file format
 
-Save the decision as a `feedback` memory in the project's auto-memory
-directory, under a stable slug like `push-workflow-mode` so later reads
-find it:
+The mode lives in the project's
+`.agents/skills/git-workflow-push-mode.preferences.md`, tracked in git
+and committed like any other file, so every checkout, worktree and
+agent of the repo reads the same answer. It never goes in an agent's
+project memory, which only one agent on one machine sees.
 
-```markdown
----
-name: push-workflow-mode
-description: Push workflow mode chosen for this repo (Mode 1 / 2 / 3
-  + on-branch follow-up if applicable)
-metadata:
-  type: feedback
----
-
-**Mode:** 2 (PRs always — never push to main)
-**On-branch behavior:** Push branch + open PR
-**Why:** Repo has prior PR history; user confirmed PRs-always
-**How to apply:** On any push from this repo, follow Mode 2 silently.
-Never push to main; always open or update a PR. On amend behind an
-open PR, re-sync the title/body per `github-hygiene-pull-request-mirrors-commit`.
-```
-
-Add a one-line index entry to the project's `MEMORY.md`:
+The file holds one `- Mode:` line, and an `- On a feature branch:` line
+once Q2 or Q3 is answered:
 
 ```markdown
-- [Push workflow mode](push-workflow-mode.md) — Mode 2; PRs always
+- Mode: 2 (PRs always, never push to the default branch)
+- On a feature branch: Push branch + open PR
 ```
+
+`- Mode:` is the only key for the mode. A file that writes it another
+way, such as `- Push mode:`, still names a mode; read it, and rewrite
+the line as `- Mode:` the next time you edit the file.
+
+In Mode 2 the commit that writes the file goes through a PR like any
+other. The user's own
+`~/.agents/skills/git-workflow-push-mode.preferences.md` can name a
+default mode for every repo; the project's file overrides it.
 
 ## Safety net
 
@@ -205,8 +209,9 @@ check hook" section covers the plugin.
 - First push to a repo, in any session, whose mode isn't saved: ask and
   save.
 - Later pushes: apply the saved mode silently.
+- A PR opened in Mode 2: stop there; the user merges.
 - Anomalous push state: stop and ask, whatever the saved mode.
-- The user says to switch modes: update the saved memory before
+- The user says to switch modes: update the preferences file before
   applying it.
 
 ## Your preferences
@@ -226,3 +231,4 @@ missing and ask whether to install it from the same collection this skill
 came from; don't apply it from memory.
 
 - `github-hygiene-pull-request-mirrors-commit`: re-syncing an existing PR's title and body after you amend or reword the commit, and the `pull-request-sync-check.sh` safety-net hook that flags a PR whose title or body has drifted from HEAD.
+- `github-workflow-pull-request-watcher`: watching an open PR in the background, so work that waits on the user's merge picks up when it lands.
