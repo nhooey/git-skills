@@ -225,21 +225,15 @@ hand-written body is either in the commit or in a backup.
 
 ## Shape the body for unwrapping; `--verbatim` is an escape hatch
 
-The script unwraps each paragraph onto one line and leaves fenced and
-indented code, tables, HTML blocks and lines ending in a hard break as
-they are. A list stays a list: each item of a `-`, `*`, `+`, `1.` or
-`1)` list keeps its own line, with its indented continuation lines
-joined onto it by single spaces, and a nested list keeps its indent. A
-list right after a paragraph line gets a blank line before it. Bullets
-wrapped at 72 columns with a hanging indent need no `--verbatim`.
-Shape the body as `git-hygiene-commit-message-format`'s "Shape the
-body for a reader who skims" says.
+The script unwraps each prose paragraph onto one line, and a body with no GFM structure needs nothing more.
+Headings, fenced and indented code, block quotes, tables, HTML blocks, lines ending in a hard break and the kept trailers stay as they are.
+A list stays a list: each item of a `-`, `*`, `+`, `1.` or `1)` list keeps its own line, its indented continuation lines are joined onto it by single spaces, and a nested list keeps its indent.
+A list right after a paragraph line gets a blank line before it.
+Bullets wrapped at 72 columns with a hanging indent need no `--verbatim`.
+Shape the body as `git-hygiene-commit-message-format`'s "Shape the body for a reader who skims" says.
 
-GitHub's parser decides what is a list: an ordered list that starts at
-any number but 1 can't interrupt a paragraph, so put a blank line
-before it, or it is joined into the paragraph. Pass `--verbatim` only
-for a body the unwrapping still misreads, and check the rendered PR
-afterwards with `render`.
+GitHub's parser decides what is a list: an ordered list that starts at any number but 1 can't interrupt a paragraph, so put a blank line before it, or it is joined into the paragraph.
+Pass `--verbatim` only for a body that must reach the PR byte for byte, and check the rendered PR afterwards with `render`.
 
 ## Mark code for GFM
 

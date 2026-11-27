@@ -1,0 +1,14 @@
+Bump the skill collections, agent-skill-flake and agent-plugins-nixpkgs
+
+Takes the round's skill-collection releases into the root, sources/aggregated and sources/combinations locks:
+
+- coding-agent-skills to dab2c22, nhooey/coding-agent-skills#148
+- git-skills to 15485a1, nhooey/git-skills#146
+- software-design-skills to ba73ded and writing-skills to 8a453dc, which move one-list-element-per-line to writing-skills as writing-hygiene-line-breaks-for-reading (nhooey/software-design-skills#23, nhooey/writing-skills#35); nothing here named the old skill
+- skill-authoring-skills to 12d31ec, nhooey/skill-authoring-skills#14, pinned only under shell-skills and xtdb-skills
+- agent-plugins-nixpkgs to ab7c995, nhooey/agent-plugins-nixpkgs#33, pinned only under git-skills
+
+agent-skill-flake was already at 2c21db1 as a direct input; the copies pinned under skill-authoring-skills and nix-gstack, which don't follow it, move to 2c21db1 too.
+
+[//]: # (pr-body: generated from dddddd0000000000000000000000000000000001; digest a40d1e29670175e714a42e5f2588e96f15b74b2a99b1723907591cfeb19103f6)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
