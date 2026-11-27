@@ -4,8 +4,9 @@ description: |
   Name branches long, descriptive, dash-separated and autocomplete-friendly:
   `rate-limit-cache-eviction` over `fix-rl` or `2026-04-task-1234`. Date
   prefixes, bare ticket numbers and counter suffixes are out, because they
-  push the topic word past where autocomplete reaches it first. Use when
-  creating a new branch or renaming an existing one.
+  push the topic word past where autocomplete reaches it first. A branch
+  for a rename is named after the new name, not the one going away. Use
+  when creating a new branch or renaming an existing one.
 tags: [style]
 allowed-tools:
   - Bash
@@ -46,6 +47,20 @@ _A branch name is a short sentence about the change, such as `rate-limit-cache-e
 - **Counter suffixes** (`tmp-3`, `feature-7`, `wip2`). The number
   disambiguates without describing.
 
+## A rename is named after the new name
+
+A branch that renames something names what the rename produces, not
+what it removes: `rename-pr-to-pull-request-lifecycle-pack`, not
+`rename-pr-to-pull-request-and-agent-pack` when `agent-pack` is the
+name going away. The branch name lives on in the merge commit's
+subject, and someone reading `git log --first-parent` later searches
+for the name that exists now; the old one leads nowhere.
+
+The same holds for a branch that follows someone else's rename, such
+as a lock bump in a downstream repo: name it after the new upstream
+name the bump brings in (`bump-skillspkgs-for-pull-request-lifecycle`),
+not the old one being phased out.
+
 ## Read your branch list before opening the PR
 
 If a name doesn't tell you what the work was in one glance six months
@@ -56,5 +71,6 @@ merge commit subject.
 ## When to apply
 
 - About to `git switch -c <name>` or `git checkout -b <name>`.
+- Naming a branch for a rename: lead with the new name.
 - About to open a PR with a branch whose name doesn't say what the work
   is: rename it first.
