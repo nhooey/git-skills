@@ -4,8 +4,13 @@
 # such executable hook. A global `core.hooksPath` hides the repository's
 # hooks from git, so each hook in the folder runs this one.
 #
+# Git runs `reference-transaction` during `git init` before the repository
+# is valid, when there is no repository hook to forward to, so it exits 0
+# quietly there too.
+#
 # Usage: forward-hook <hook> [ARG...]
-hook="$(git rev-parse --git-common-dir)/hooks/$1"
+common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+hook="$common_dir/hooks/$1"
 shift
 [ -x "$hook" ] || exit 0
 exec "$hook" "$@"

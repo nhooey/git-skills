@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 
+bats_require_minimum_version 1.5.0
+
 setup() {
   export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$BATS_TEST_TMPDIR/gitconfig"
   hooks="$BATS_TEST_TMPDIR/hooks"
@@ -71,4 +73,26 @@ own_hook() {
   run git push --force origin master
   [ "$status" -ne 0 ]
   [[ "$output" == *"refusing to rewrite master"* ]]
+}
+
+@test "git init prints nothing to stderr" {
+  run --separate-stderr git init --quiet "$BATS_TEST_TMPDIR/fresh"
+  [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
+}
+
+@test "git init --bare prints nothing to stderr" {
+  run --separate-stderr git init --quiet --bare "$BATS_TEST_TMPDIR/fresh.git"
+  [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
+}
+
+@test "git clone of a local repository prints nothing to stderr" {
+  git commit --quiet --allow-empty -m one
+  run --separate-stderr git clone --quiet "$BATS_TEST_TMPDIR/work" "$BATS_TEST_TMPDIR/clone"
+  [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
+  run --separate-stderr git clone --quiet --no-local "$BATS_TEST_TMPDIR/work" "$BATS_TEST_TMPDIR/copy"
+  [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
 }
